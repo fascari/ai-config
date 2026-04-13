@@ -98,6 +98,30 @@ var (
 )
 ```
 
+## Struct Literals
+
+Always name every field. Place each field on its own line:
+
+```go
+// Good
+u := User{
+    ID:    "abc",
+    Email: "user@example.com",
+}
+
+// Bad — positional, breaks silently when fields are reordered
+u := User{"abc", "user@example.com"}
+
+// Bad — multiple fields on one line
+u := User{ID: "abc", Email: "user@example.com"}
+```
+
+Single-field structs may stay on one line when the context is obvious:
+
+```go
+err := MyError{Code: "not_found"}
+```
+
 ## Control Flow
 
 No `else`. Early returns only:
