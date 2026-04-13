@@ -13,6 +13,7 @@ This project uses **Go 1.26.1** — all features below are available.
 | Legacy pattern | Modern replacement | Since |
 |---|---|---|
 | `v := 42; &v` | `new(42)` | 1.26 |
+| `&T{field: val}` | `new(T{field: val})` | 1.26 |
 | `errors.As(err, &target)` | `errors.AsType[T](err)` | 1.26 |
 | `wg.Add(1); go func(){ defer wg.Done(); f() }()` | `wg.Go(f)` | 1.25 |
 | `for i := 0; i < n; i++` | `for i := range n` | 1.22 |
@@ -45,6 +46,22 @@ cfg := Config{Timeout: &timeout}
 
 // After
 cfg := Config{Timeout: new(30)}
+```
+
+Applies to struct literals too:
+
+```go
+// Before
+resp := &MintTokenResponse{
+    Success: true,
+    Hash:    hash,
+}
+
+// After
+resp := new(MintTokenResponse{
+    Success: true,
+    Hash:    hash,
+})
 ```
 
 Type is inferred: `new(0)` → `*int`, `new("s")` → `*string`, `new(T{})` → `*T`.
@@ -241,6 +258,7 @@ ptr.Store(cfg)
 | Mistake | Fix |
 |---|---|
 | Using `new(int(0))` | Just `new(0)` — type is inferred |
+| Using `&T{field: val}` for pointer to struct literal | Use `new(T{field: val})` on Go 1.26+ |
 | Using `errors.As` when `errors.AsType` is available | Always prefer `errors.AsType[T]` on Go 1.26+ |
 | Using `wg.Add(1)` + `go func` + `defer wg.Done()` | Use `wg.Go(fn)` on Go 1.25+ |
 | Using `context.Background()` in tests | Use `t.Context()` on Go 1.24+ |
