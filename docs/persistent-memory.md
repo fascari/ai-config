@@ -23,7 +23,7 @@ AI coding agents start every session with zero context. They re-read the same fi
 Create the directory structure for the Obsidian vault:
 
 ```bash
-VAULT_DIR="$HOME/dev/tools/vault-obs"
+VAULT_DIR="<your-vault-path>"
 
 mkdir -p "$VAULT_DIR"/{permanent,inbox,fleeting,templates,logs,references,session-captures}
 ```
@@ -152,7 +152,7 @@ What it does:
 The skill ensures project directories exist before writing:
 
 ```bash
-VAULT_DIR="$HOME/dev/tools/vault-obs/{project}"
+VAULT_DIR="<your-vault-path>/{project}"
 mkdir -p "$VAULT_DIR/logs" "$VAULT_DIR/architecture"
 ```
 
@@ -233,7 +233,7 @@ Tell the agent where the vault is and how to navigate it:
 ```markdown
 ## Obsidian Vault (Persistent Memory)
 
-The vault at `~/dev/tools/vault-obs` is the long-term memory across sessions.
+The vault at `<your-vault-path>` is the long-term memory across sessions.
 
 ### Identify Current Project
 
