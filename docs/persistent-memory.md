@@ -32,24 +32,24 @@ This is the global vault. Each project gets its own folder created automatically
 
 ### Vault Structure
 
-```text
-vault-obs/
-├── permanent/              # atomic Zettelkasten notes (1 concept per note)
-├── inbox/                  # raw ideas and drafts
-├── fleeting/               # quick temporary notes
-├── templates/              # note templates (session log, default note)
-├── logs/                   # global session logs
-├── references/             # reference material
-├── session-captures/       # compressed session summaries
-├── graphify/               # Graphify-generated vault notes
-│   └── {project}/
-└── {project}/              # per-project knowledge
-    ├── architecture/       # decisions and conventions
-    ├── pipeline/           # data flows, APIs
-    ├── data/               # schema, data model
-    ├── features/           # planned and implemented features
-    └── logs/               # project session logs
-```
+Top-level directories:
+
+- `permanent/` - atomic Zettelkasten notes (1 concept per note)
+- `inbox/` - raw ideas and drafts
+- `fleeting/` - quick temporary notes
+- `templates/` - note templates (session log, default note)
+- `logs/` - global session logs
+- `references/` - reference material
+- `session-captures/` - compressed session summaries
+- `graphify/{project}/` - Graphify-generated vault notes
+
+Each project gets its own folder with these subdirectories:
+
+- `architecture/` - decisions and conventions
+- `pipeline/` - data flows, APIs
+- `data/` - schema, data model
+- `features/` - planned and implemented features
+- `logs/` - project session logs
 
 ### Create Templates
 
@@ -311,16 +311,7 @@ Run `graphify .` on a project, then in a new session ask the agent about the cod
 
 ### Session Start (automatic)
 
-```text
-Agent receives first message
-  -> recall skill triggers
-    -> reads vault/{project}/logs/ (last 3 logs)
-    -> reads vault/{project}/architecture/decisions.md
-    -> reads graphify-out/GRAPH_REPORT.md
-    -> reads git log and status
-    -> presents 30-line summary
-  -> responds to user message with full context
-```
+When the agent receives the first message, the recall skill triggers automatically. It reads the last 3 session logs from `vault/{project}/logs/`, the architecture decisions, the Graphify report from `graphify-out/GRAPH_REPORT.md`, and the current git log and status. It then presents a 30-line summary before responding to the user message with full context.
 
 ### During the Session
 
@@ -331,14 +322,7 @@ The agent follows the 3-layer query rule:
 
 ### Session End (manual)
 
-```text
-User says "checkpoint"
-  -> checkpoint skill triggers
-    -> writes session log to vault
-    -> appends architecture decisions (if any)
-    -> creates new vault notes for discovered knowledge
-    -> confirms what was saved
-```
+When the user says "checkpoint", the checkpoint skill triggers. It writes a session log to the vault, appends architecture decisions if any were made, creates new vault notes for discovered knowledge, and confirms what was saved.
 
 ### Across Sessions
 
