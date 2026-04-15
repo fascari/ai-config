@@ -53,19 +53,7 @@ Use **orchestrating-tasks** as the single entry point for any task involving cod
 
 ## Standard Workflow
 
-```text
-User Request
-  -> orchestrating-tasks
-    -> researching-codebase
-    -> analyzing-system-design
-    -> planning-implementation
-    -> implementing-feature
-    -> testing-implementation
-    -> reviewing-code
-    -> sanitizing-text
-    -> committing-changes
-    -> creating-pull-request
-```
+orchestrating-tasks -> researching-codebase -> analyzing-system-design -> planning-implementation -> implementing-feature -> testing-implementation -> reviewing-code -> sanitizing-text -> committing-changes -> creating-pull-request.
 
 
 ## Project Customization

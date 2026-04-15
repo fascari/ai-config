@@ -5,13 +5,11 @@ Shared configuration, coding instructions, and workflow skills for AI-assisted s
 
 ## What This Repo Contains
 
-```
-ai-config/
-├── copilot-instructions.md   # GitHub Copilot project-level instructions template
-├── instructions/              # Coding standards auto-injected by file pattern
-├── skills/                    # Workflow skills for AI agents
-└── claude/                    # Claude-specific configuration and templates
-```
+- `copilot-instructions.md` - GitHub Copilot project-level instructions template
+- `instructions/` - coding standards auto-injected by file pattern
+- `skills/` - workflow skills for AI agents
+- `claude/` - Claude-specific configuration and templates
+- `docs/` - guides and reference documentation
 
 
 ## Quick Start
@@ -53,21 +51,7 @@ Workflow skills that guide AI agents through multi-step software engineering tas
 
 **Entry point:** Use **orchestrating-tasks** to start any task involving codebase analysis or changes. It detects complexity and delegates to the right skill chain.
 
-Standard workflow:
-
-```text
-User Request
-  -> orchestrating-tasks
-    -> researching-codebase
-    -> analyzing-system-design
-    -> planning-implementation
-    -> implementing-feature
-    -> testing-implementation
-    -> reviewing-code
-    -> sanitizing-text
-    -> committing-changes
-    -> creating-pull-request
-```
+Standard workflow: orchestrating-tasks -> researching-codebase -> analyzing-system-design -> planning-implementation -> implementing-feature -> testing-implementation -> reviewing-code -> sanitizing-text -> committing-changes -> creating-pull-request.
 
 See [`skills/README.md`](skills/README.md) for the full catalog organized by category.
 
