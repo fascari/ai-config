@@ -19,10 +19,16 @@ Read-only: never suggests improvements or critiques code quality.
 
 1. Read architecture rules for context:
    - `.github/instructions/` — all project-specific architecture and design rules
-2. **Locate**: use `grep_search`, `file_search`, `list_dir` to find where things live. Group by layer according to the project's architecture (e.g. `domain/`, `service/`, `handler/`, `repository/`, `lib/`, tests, migrations). Do not read file contents in this step.
-3. **Analyze**: use `read_file` to trace data flow through layers. Document with exact `file:line` references: domain types, service interfaces and implementations, data access methods, API/handler registration.
-4. **Pattern Extract**: find actual code snippets that can be modeled: route/handler registration, service constructors, data access patterns, test factories, test patterns, mock usage.
-5. Write results to `.github/plans/{slug}/research.md`.
+2. **Query Graphify first** (primary research tool — do this before reading any source file):
+   - `graphify query "concept"` — broad context about a domain or module
+   - `graphify path "A" "B"` — trace connection between two nodes
+   - `graphify explain "NodeName"` — details about a specific node
+   - Read `graphify-out/GRAPH_REPORT.md` for high-level architecture overview
+   Never use `grep`, `find`, or `list_dir` for code discovery — use graphify instead.
+3. **Locate**: if graphify is unavailable or does not have the answer, use `file_search` to find where things live. Group by layer according to the project's architecture (e.g. `domain/`, `service/`, `handler/`, `repository/`, `lib/`, tests, migrations). Do not read file contents in this step.
+4. **Analyze**: use `read_file` to trace data flow through layers — only after graphify query. Document with exact `file:line` references: domain types, service interfaces and implementations, data access methods, API/handler registration.
+5. **Pattern Extract**: find actual code snippets that can be modeled: route/handler registration, service constructors, data access patterns, test factories, test patterns, mock usage.
+6. Write results to `.github/plans/{slug}/research.md`.
 
 ## Output
 

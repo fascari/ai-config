@@ -4,6 +4,50 @@ This file is the entry point for AI agents working in this repo. It provides pro
 
 ---
 
+## Persistent Memory
+
+### `$COPILOT_VAULT` Convention
+
+Each developer sets their Obsidian vault path once:
+```bash
+export COPILOT_VAULT="$HOME/path/to/your/obsidian-vault"
+```
+
+When `COPILOT_VAULT` is set, the agent reads and writes session logs, decisions, and plans to `$COPILOT_VAULT/{project}/`. When it is not set, vault steps are skipped automatically — no errors, no prompts.
+
+### 3-Layer Context Query Rule
+
+Before reading any source file, exhaust these layers in order:
+
+1. **Graphify graph**: `graphify query "concept"` or `graphify-out/GRAPH_REPORT.md` — code structure and relationships
+2. **Obsidian vault**: `$COPILOT_VAULT/{project}/` — prior decisions, session history, active plans
+3. **Source code**: read files only when editing or when layers 1–2 don't have the answer
+
+### AGENTS.md Bootstrap
+
+`AGENTS.md` at the project root is loaded natively by Copilot CLI at session start. It triggers an automatic recall: reads recent vault logs, architecture decisions, Graphify context, and git state — then presents a summary before the first response. No action needed from the user.
+
+### Codebase Search
+
+Never use `grep` or `find` to explore the codebase. Use:
+
+| Need | Command |
+|---|---|
+| Broad context | `graphify query "concept"` |
+| Trace connection | `graphify path "A" "B"` |
+| Node details | `graphify explain "NodeName"` |
+
+Read source files only when editing or when graphify returns no result.
+
+### Session Skills
+
+| Command | Skill | Purpose |
+|---|---|---|
+| `recall` | `~/.copilot/skills/recall/` | Load vault context (explicit refresh) |
+| `checkpoint` | `~/.copilot/skills/checkpoint/` | Save decisions and progress at session end |
+
+---
+
 ## Project Basics
 
 > **Fill in for each project.**
