@@ -8,6 +8,12 @@ Follow the [Google Go Style Guide](https://google.github.io/styleguide/go/) as t
 
 ## Naming
 
+### File Names
+
+- No underscores in file names. Concatenate words: `depositmonitor.go`, `errormapping.go`
+- The only allowed `_` is the `_test.go` suffix: `depositmonitor_test.go`
+- Exception: generated files (`mocks/`, `.pb.go`, `.gen.go`) follow their generator's convention
+
 ### Packages
 
 - Lowercase, single word preferred: `handler`, `usecase`, `repository`, `domain`
