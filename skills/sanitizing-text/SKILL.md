@@ -109,7 +109,7 @@ Replace or remove any of the following. The list is not exhaustive; apply the sa
 | at the end of the day | ultimately |
 | moving forward | (remove or be specific about what changes) |
 
-### Rule 2 — Remove em-dashes, en-dashes, colons as connectors, and decorative punctuation
+### Rule 2 — Remove em-dashes, en-dashes, colons and semicolons as connectors, and decorative punctuation
 
 - Replace ` — ` (em-dash with spaces) by rewriting the sentence with a comma, period, or two sentences
 - Replace ` -- ` (double hyphen used as dash) with `,` or rewrite
@@ -117,8 +117,9 @@ Replace or remove any of the following. The list is not exhaustive; apply the sa
 - Do not remove hyphens in compound words (`auto-withdraw`, `date-range`, `rule-2`) or code identifiers
 - Remove repeated punctuation (`...`, `!!!`, `???`) — use a single character
 - Do not use `:` as a clause connector or list introducer in prose sentences. Rewrite as a new sentence, or use "including", "such as", or a comma instead.
+- Do not use `;` as a clause connector. Rewrite as two sentences with a period, or join with a comma plus conjunction (`, and`, `, but`). Semicolons in prose are an AI-flavored pattern and should be avoided.
 
-**Exception**: Em-dashes, en-dashes, and colons inside code blocks, SQL, or inline code spans are untouched. Colons in label-value pairs inside structured sections (e.g., `Languages: Go, Python`, `Status: done`) are also untouched.
+**Exception**: Em-dashes, en-dashes, colons, and semicolons inside code blocks, SQL, or inline code spans are untouched. Colons in label-value pairs inside structured sections (e.g., `Languages: Go, Python`, `Status: done`) are also untouched. Semicolons inside in-line lists with internal commas are acceptable when a period would be ambiguous.
 
 ### Rule 3 — Remove emojis and icons
 
