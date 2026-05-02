@@ -36,7 +36,7 @@ task(agent_type: "explore"|"general-purpose", mode: "background", name: "...", p
 
 ## Step 1 — Setup & Plan Discovery
 
-1. Ensure plans symlink exists — run setup from `.github/skills/references/plans-setup.md`
+1. Ensure plans symlink exists — run setup from `.github/skills/plans-setup.md`
 2. Correct legacy paths: `.github/ai/skills/` → `.github/skills/`
 
 When no slug is provided, scan `.github/plans/` and read each `progress.md`:

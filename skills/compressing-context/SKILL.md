@@ -17,7 +17,7 @@ a new chat session to resume exactly where this one left off.
 
 ## Steps
 
-1. Ensure the plans symlink exists — run setup from `.github/skills/references/plans-setup.md`
+1. Ensure the plans symlink exists — run setup from `.github/skills/plans-setup.md`
 2. Scan the conversation from the beginning. Collect: current state, completed work, key decisions, discoveries, open blockers, next steps.
 3. **Resolve the plan slug**:
    a. Scan `.github/plans/` for a directory containing a `progress.md` with status `IN_PROGRESS`. Use that slug.
