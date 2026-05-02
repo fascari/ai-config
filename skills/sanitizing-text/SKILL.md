@@ -1,11 +1,25 @@
 ---
 name: sanitizing-text
 description: Use when text produced by other skills is about to be written to a file or sent to an issue tracker, wiki, or GitHub
+model: claude-haiku-4.5
 ---
 
 # Sanitizing Text
 
-Post-processing pass applied to any text produced by other skills before it is written to a file or sent to an external system (issue tracker, wiki, GitHub). Never generates content; only cleans content that already exists.
+Post-processing pass applied to any text produced by other skills before it is written to a file or sent to an external system (issue tracker, wiki, GitHub). Covers two concerns:
+
+1. **Formatting and structure** — list markers, heading levels, em-dashes, emojis. Applies to all content.
+2. **AI writing patterns** — inflated language, sycophantic tone, vague attributions, mechanical structure. Applies to narrative text (descriptions, PR bodies, prose). Based on [Wikipedia: Signs of AI writing](https://en.wikipedia.org/wiki/Wikipedia:Signs_of_AI_writing).
+
+Never generates content. Only cleans content that already exists.
+
+If the personal `humanizer` skill is available in the session, prefer it for the AI writing pass on prose — it has a richer voice-calibration process. If it is not available, the narrative rules in this skill cover the same ground.
+
+## Execution Model
+
+**Required model**: `claude-haiku-4.5` · **Agent type**: `general-purpose`
+
+When dispatched by `orchestrating-tasks`, this skill MUST run as an isolated task agent. The caller must use the `task` tool with `model: "claude-haiku-4.5"` and `agent_type: "general-purpose"`. Rationale: rule-based text transformation requires no deep reasoning — Haiku is fast and sufficient.
 
 ## When to use
 
@@ -17,13 +31,15 @@ Post-processing pass applied to any text produced by other skills before it is w
 ## Steps
 
 1. Read the target text (from conversation context, file, or user selection).
-2. Apply all sanitization rules in order (see Rules section below).
-3. Return the sanitized text only. No commentary about what was changed.
+2. Identify whether the text is **narrative** (prose descriptions) or **structured** (checklists, tables, code). Most PR bodies and issue descriptions are a mix of both.
+3. Apply **Formatting rules** (Rules 1-6) to the entire text.
+4. Apply **Narrative rules** (Rules 7-18) to prose sections only. Skip checklists, table cells with short values, and code comments.
+5. For narrative sections: run the **audit pass** — ask "What still sounds AI-generated?" and revise.
+6. Return the sanitized text only. No commentary about what was changed unless the user asked for it.
 
 ## Output
 
-The sanitized text, unchanged in structure, cleaned in language and formatting.
-If nothing required sanitization, return the original text unchanged.
+The sanitized text, unchanged in structure, cleaned in language and formatting. If nothing required sanitization, return the original text unchanged.
 
 ---
 
@@ -31,14 +47,14 @@ If nothing required sanitization, return the original text unchanged.
 
 Every skill that produces user-facing text must run its output through this skill before finalizing. Mandatory invocation points:
 
-| producing skill | Invocation point |
+| Producing skill | Invocation point |
 |---|---|
 | planning-implementation | Before writing `implementation-plan.md` |
 | researching-codebase | Before writing `research.md` |
 | implementing-feature | Before writing inline code comments or docstrings |
 | reviewing-code | Before writing `reviews/*.md` |
+| creating-pull-request | Before presenting the PR body for approval |
 | any skill or direct edit | Before writing or modifying any `.md` or `.txt` file under `docs/` or `.github/` |
-| writing-cv | After writing or updating any `.html` resume file — before saving and before generating the PDF |
 
 ### Direct edits (no skill involved)
 
@@ -46,7 +62,7 @@ When a `.md` or `.txt` file under `docs/` or `.github/` is written directly (not
 
 ### HTML files (CV and site content)
 
-> **MANDATORY**: Every `.html` file written or modified — including resumes under `docs/resume/` and site pages — must be sanitized before the file is saved. This applies to the full visible text content of the file (not CSS, HTML tags, or attribute values).
+Every `.html` file written or modified must be sanitized before the file is saved. This applies to the full visible text content of the file (not CSS, HTML tags, or attribute values).
 
 Steps for HTML sanitization:
 1. Extract all visible text (content between tags, excluding `<style>`, `<script>`, and HTML comments).
@@ -54,11 +70,9 @@ Steps for HTML sanitization:
 3. Write the corrected content back to the file.
 4. Only then generate the PDF (if applicable).
 
-This rule applies regardless of whether a skill or a direct edit produced the HTML.
-
 ---
 
-## Rules
+## Formatting rules (apply to all content)
 
 Apply all rules in order. Each rule is independent — do not skip any.
 
@@ -81,7 +95,7 @@ Replace or remove any of the following. The list is not exhaustive; apply the sa
 | revolutionize | change / improve / redesign |
 | game-changer | (remove or describe the impact concretely) |
 | empower / empowering | allow / enable |
-| foster | support / encourage / build |
+| foster / fostering | support / encourage / build |
 | delve into | examine / review / look at |
 | it is worth noting that | (remove the phrase, keep the content) |
 | it is important to note that | (remove the phrase, keep the content) |
@@ -108,24 +122,48 @@ Replace or remove any of the following. The list is not exhaustive; apply the sa
 | in a nutshell | in summary |
 | at the end of the day | ultimately |
 | moving forward | (remove or be specific about what changes) |
+| additionally | also / (remove if implied) |
+| align with | match / follow / fit |
+| crucial | important / critical (or remove if obvious) |
+| enduring | lasting / long-standing |
+| enhance | improve |
+| garner | get / earn / attract |
+| highlight (verb) | show / point out |
+| interplay | interaction / relationship |
+| intricate / intricacies | complex / complexity (or describe concretely) |
+| key (adjective before noun) | main / primary / critical (or remove) |
+| landscape (abstract noun) | industry / market / field |
+| pivotal | important / decisive |
+| showcase | show / present / demonstrate |
+| tapestry (abstract noun) | (remove or describe concretely) |
+| testament | proof / sign / evidence |
+| underscore (verb) | show / confirm |
+| valuable | useful / important (or remove if obvious) |
+| vibrant | active / busy (or describe concretely) |
+| actually | (remove unless used for genuine contrast) |
+| the real question is | (remove, state the question directly) |
+| at its core | (remove) |
+| in reality | (remove) |
+| what really matters | (state the point directly) |
+| fundamentally | (remove) |
+| the deeper issue | (state the issue directly) |
+| the heart of the matter | (remove) |
 
-### Rule 2 — Remove em-dashes, en-dashes, colons and semicolons as connectors, and decorative punctuation
+### Rule 2 — Remove em-dashes, en-dashes, and decorative punctuation
 
-- Replace ` — ` (em-dash with spaces) by rewriting the sentence with a comma, period, or two sentences
-- Replace ` -- ` (double hyphen used as dash) with `,` or rewrite
+- Replace ` — ` (em-dash with spaces) with `, ` or rewrite the sentence to eliminate the dash
+- Replace ` -- ` (double hyphen used as dash) with `, ` or rewrite
 - Replace `–` (en-dash) in prose with `-` (hyphen) or `, ` as context requires
 - Do not remove hyphens in compound words (`auto-withdraw`, `date-range`, `rule-2`) or code identifiers
 - Remove repeated punctuation (`...`, `!!!`, `???`) — use a single character
-- Do not use `:` as a clause connector or list introducer in prose sentences. Rewrite as a new sentence, or use "including", "such as", or a comma instead.
-- Do not use `;` as a clause connector. Rewrite as two sentences with a period, or join with a comma plus conjunction (`, and`, `, but`). Semicolons in prose are an AI-flavored pattern and should be avoided.
 
-**Exception**: Em-dashes, en-dashes, colons, and semicolons inside code blocks, SQL, or inline code spans are untouched. Colons in label-value pairs inside structured sections (e.g., `Languages: Go, Python`, `Status: done`) are also untouched. Semicolons inside in-line lists with internal commas are acceptable when a period would be ambiguous.
+**Exception**: Em-dashes inside code blocks, SQL, or inline code spans are untouched.
 
 ### Rule 3 — Remove emojis and icons
 
 - Remove all emoji characters (Unicode ranges U+1F300 to U+1FFFF and U+2600 to U+26FF)
 - Remove all icon shortcodes (e.g. `:white_check_mark:`, `:x:`, `:warning:`)
-- Replace visual status indicators (`✅`, `❌`, `⚠️`, `🔴`, `🟡`, `🟢`) with plain text equivalents:
+- Replace visual status indicators with plain text equivalents:
 
 | Icon | Plain text replacement |
 |---|---|
@@ -145,20 +183,182 @@ Replace or remove any of the following. The list is not exhaustive; apply the sa
 
 - Write in third person or imperative voice. Avoid first person (`I`, `we`, `our`) in ticket descriptions, plans, and reports.
 - Use present or future tense for requirements. Avoid past tense unless describing existing behaviour.
-- Remove hedging language: `might`, `could potentially`, `sort of`, `kind of`, `basically`, `essentially`, `actually`, `obviously`, `clearly`.
-- Remove filler openings: sentences that start with `So,`, `Well,`, `Actually,`, `Basically,`, `In essence,`.
-- Remove closing affirmations: `Hope this helps`, `Feel free to`, `Let me know if`, `Happy to`.
+- Remove hedging language: `might`, `could potentially`, `sort of`, `kind of`, `basically`, `essentially`, `obviously`, `clearly`.
+- Remove filler openings: sentences that start with `So,`, `Well,`, `Basically,`, `In essence,`.
+- Remove closing affirmations: `Hope this helps`, `Feel free to`, `Let me know if`, `Happy to`, `I hope this helps`.
+- Remove sycophantic openings: `Great question!`, `Of course!`, `Certainly!`, `You're absolutely right!`.
 - Keep sentences short. If a sentence exceeds 30 words, split it.
 - Use active voice. Passive constructions such as `it was decided that` must be rewritten (`the team decided`).
+- Remove subjectless fragments: `No configuration file needed` → `No configuration file is needed` or `You do not need a configuration file`.
 
-### Rule 5 — Normalize formatting
+### Rule 5 — Replace colons and semicolons with natural connectors
+
+Colons (`:`) and semicolons (`;`) used as sentence connectors make prose feel mechanical. Replace them with natural language connectors when they join two related clauses or introduce a consequence.
+
+**Semicolons (`;`) in prose:**
+
+| Pattern | Replacement |
+|---|---|
+| `X; Y` (two related independent clauses) | Rewrite as two sentences, or join with `and`, `but`, `while`, `whereas` |
+| `X; therefore Y` | `X, so Y` or split into two sentences |
+| `X; however Y` | `X. However, Y` or `X, but Y` |
+| `X; otherwise Y` | `X. Otherwise, Y` or `if not, Y` |
+
+**Colons (`:`) as clause connectors:**
+
+| Pattern | Replacement |
+|---|---|
+| `X: Y` where Y completes a thought (not a list) | Rewrite with `because`, `so`, `and`, `which means`, or split sentences |
+| `This means: Y` | `This means Y` (remove colon) |
+| `The result: Y` | `The result is Y` or `Y is the result` |
+
+**Keep colons when:**
+- Introducing a bullet list or numbered list
+- Inside code spans or code blocks
+- After section labels in tables (e.g., `Note:`, `Warning:`)
+- In time expressions (`09:00`)
+- In URLs or file paths
+
+**Exception**: Colons and semicolons inside code blocks, inline code spans, or quoted strings are untouched.
+
+### Rule 6 — Normalize formatting
 
 - Use plain `-` for unordered list items. Do not use `*`, `+`, or `•`.
 - Do not mix heading levels arbitrarily. `##` for major sections, `###` for subsections, `####` only if strictly necessary.
+- Use sentence case for headings, not title case. `## Strategic negotiations` not `## Strategic Negotiations And Partnerships`.
 - Code blocks must always declare the language: ` ```go `, ` ```sql `, ` ```bash `. A plain ` ``` ` is not acceptable.
 - Table alignment must be consistent. All `|---|` separators must match the number of columns.
 - Do not insert blank lines inside a list item block.
 - One blank line between sections; two blank lines only before `##` top-level headings.
+- Do not use curly/smart quotes (`"..."`, `'...'`). Use straight quotes (`"..."`, `'...'`).
+- Do not bold entire phrases for emphasis. Bold is for UI labels, key terms on first use, or table headers — not for decorative emphasis.
+- Do not use inline-header list style (bolded word + colon + description on same line). Convert to prose or a proper table.
+
+---
+
+## Narrative rules (apply to prose sections only)
+
+These rules target AI writing patterns. Apply them to paragraph prose, PR descriptions, and issue description fields. Skip checklists, table cells with short values, and code comments.
+
+### Rule 7 — Remove inflated significance and legacy language
+
+AI writing inflates the importance of ordinary facts by adding statements about how they "represent", "mark", or "contribute to" broader themes.
+
+**Words to watch:** stands as, serves as, marks a, represents a, is a testament to, vital/significant/crucial/pivotal role, underscores its importance, reflects broader, symbolizing its enduring, setting the stage for, shaping the, evolving landscape, deeply rooted
+
+| Before | After |
+|---|---|
+| The fix marks a pivotal moment in how the system handles resolution. | The fix changes how the system resolves the issue. |
+| This approach underscores our commitment to correctness. | (remove — it says nothing) |
+
+### Rule 8 — Remove superficial -ing endings
+
+AI appends present participle phrases (`-ing`) to sentences to fake depth. These add no information.
+
+**Words to watch:** highlighting, underscoring, emphasizing, ensuring, reflecting, symbolizing, contributing to, cultivating, fostering, encompassing, showcasing
+
+| Before | After |
+|---|---|
+| The query was rewritten, ensuring correctness. | The query was rewritten. |
+| The handler returns a 404, reflecting the domain convention. | The handler returns a 404 per domain convention. |
+
+### Rule 9 — Remove promotional and advertisement language
+
+**Words to watch:** boasts, vibrant, rich (figurative), profound, enhancing its, showcasing, exemplifies, commitment to, nestled, in the heart of, groundbreaking, renowned, breathtaking
+
+Replace with plain factual statements. If the sentence only carries promotional weight and no information, remove it.
+
+### Rule 10 — Remove vague attributions
+
+AI attributes opinions to unnamed authorities.
+
+**Words to watch:** Industry reports, Observers have cited, Experts argue, Some critics argue, Several sources, It is widely believed
+
+Replace with a specific source or remove entirely. If the point is worth making, make it directly.
+
+### Rule 11 — Replace copula avoidance
+
+AI avoids `is`/`are`/`has` by substituting elaborate constructions.
+
+| Before | After |
+|---|---|
+| The function serves as the entry point. | The function is the entry point. |
+| The repository boasts three query methods. | The repository has three query methods. |
+| This commit marks the introduction of the feature. | This commit introduces the feature. |
+
+### Rule 12 — Remove negative parallelisms
+
+AI overuses `It's not just X, it's Y` and tailing negation fragments.
+
+| Before | After |
+|---|---|
+| It's not just about correctness; it's about predictability. | The fix improves predictability, not just correctness. |
+| Options come from the selected item, no guessing. | Options come from the selected item without requiring a guess. |
+
+### Rule 13 — Break up rule-of-three patterns
+
+AI forces ideas into groups of three to appear comprehensive. If two items are the natural scope, use two.
+
+| Before | After |
+|---|---|
+| The change improves correctness, reliability, and maintainability. | The change improves correctness and makes the code easier to maintain. |
+
+### Rule 14 — Remove chatbot artifacts
+
+Chatbot conversational fragments that end up in published text.
+
+**Phrases to remove entirely:** `Here is an overview of`, `I hope this helps!`, `Let me know if you'd like`, `Would you like me to expand`, `Of course!`, `Certainly!`, `Great question!`, `You're absolutely right!`
+
+Keep the content. Remove the meta-commentary.
+
+### Rule 15 — Remove knowledge-cutoff disclaimers
+
+**Phrases to watch:** `as of [date]`, `up to my last training update`, `while specific details are limited`, `based on available information`
+
+Remove these. State what is known directly, or omit if genuinely unknown.
+
+### Rule 16 — Remove excessive hedging
+
+| Before | After |
+|---|---|
+| It could potentially possibly be argued that the policy might have some effect. | The policy may affect outcomes. |
+| This is essentially a workaround for what is basically a timing issue. | This is a workaround for a timing issue. |
+
+### Rule 17 — Remove generic positive conclusions
+
+Vague upbeat endings that add no information.
+
+| Before | After |
+|---|---|
+| The future looks bright. Exciting times lie ahead as we continue this journey. | (remove entirely) |
+| This represents a major step in the right direction. | (remove entirely — or state what specifically changes next) |
+
+### Rule 18 — Remove signposting and fragmented headers
+
+AI announces what it is about to do instead of doing it.
+
+**Phrases to watch:** `Let's dive in`, `let's explore`, `here's what you need to know`, `without further ado`, `now let's look at`
+
+Remove the announcement. Start with the content.
+
+Also remove warm-up sentences that restate the heading before the real content:
+
+| Before | After |
+|---|---|
+| `## Performance` + `Speed matters.` + `When users hit a slow page, they leave.` | `## Performance` + `When users hit a slow page, they leave.` |
+
+---
+
+## Audit pass (for narrative text)
+
+After applying all rules, run a quick audit on narrative sections:
+
+1. Ask: "What still sounds AI-generated in this text?"
+2. List the remaining tells briefly (if any).
+3. Revise those sections.
+4. Return the final version.
+
+Common remaining tells after the first pass: overly uniform sentence length, sentences that all start with a noun, absence of any specific detail, and conclusions that summarize rather than advance.
 
 ---
 
@@ -168,7 +368,7 @@ Replace or remove any of the following. The list is not exhaustive; apply the sa
 - Content inside ` ` ` inline code spans
 - Issue tracker keys (e.g. issue numbers, references)
 - File paths (`internal/app/user/domain/user.go`)
-- Package or function names used in prose (`FindActiveTierByProgramID`, `r.DB(ctx)`)
+- Package or function names used in prose (`MyFunc`, `r.DB(ctx)`)
 - Quoted error messages or log output
 - Acceptance criteria checklist markers (`- [ ]`, `- [x]`)
 

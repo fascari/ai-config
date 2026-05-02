@@ -19,7 +19,7 @@ Never starts implementation before presenting the restored state to the user.
 
 ### Step 0 — Setup
 
-1. Ensure the plans symlink exists — run setup from `.github/skills/references/plans-setup.md`
+1. Ensure the plans symlink exists — run setup from `.github/skills/plans-setup.md`
 
 ### Step 1 — Discover the Plan
 

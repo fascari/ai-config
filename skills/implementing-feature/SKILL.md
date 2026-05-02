@@ -45,7 +45,7 @@ Wait for the user to explicitly say: "commit", "go ahead and commit", or equival
 > project-level style rules. Skipping it is not allowed — not even for "trivial" changes.
 > Both compilation checks (after every edit) and linting (after every phase) must pass.
 
-1. Ensure the plans symlink exists — run setup from `.github/skills/references/plans-setup.md`
+1. Ensure the plans symlink exists — run setup from `.github/skills/plans-setup.md`
 
 ## Implementation Protocol
 
