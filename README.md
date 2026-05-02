@@ -24,6 +24,18 @@ git submodule add <repo-url> .github
 
 Copilot and other AI tools read files from `.github/instructions/` and `.github/skills/` automatically.
 
+After cloning a repo that uses this submodule, initialize it with:
+
+```bash
+git submodule update --init --recursive
+```
+
+To have `git pull` always sync submodules automatically:
+
+```bash
+git config --global submodule.recurse true
+```
+
 ### For Claude Projects
 
 Attach the relevant instruction files from `instructions/` as project knowledge. See [`claude/README.md`](claude/README.md) for details.
