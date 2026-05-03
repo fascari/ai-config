@@ -33,7 +33,7 @@ When dispatched by `orchestrating-tasks`, this skill MUST run as an isolated tas
 1. Read the target text (from conversation context, file, or user selection).
 2. Identify whether the text is **narrative** (prose descriptions) or **structured** (checklists, tables, code). Most PR bodies and issue descriptions are a mix of both.
 3. Apply **Formatting rules** (Rules 1-6) to the entire text.
-4. Apply **Narrative rules** (Rules 7-18) to prose sections only. Skip checklists, table cells with short values, and code comments.
+4. Apply **Narrative rules** (Rules 7-21) to prose sections only. Skip checklists, table cells with short values, and code comments.
 5. For narrative sections: run the **audit pass** — ask "What still sounds AI-generated?" and revise.
 6. Return the sanitized text only. No commentary about what was changed unless the user asked for it.
 
@@ -347,18 +347,57 @@ Also remove warm-up sentences that restate the heading before the real content:
 |---|---|
 | `## Performance` + `Speed matters.` + `When users hit a slow page, they leave.` | `## Performance` + `When users hit a slow page, they leave.` |
 
+### Rule 19 — Use contractions in prose
+
+Uncontracted forms ("does not", "it is", "would not", "cannot") read as stiff and machine-generated. Use natural contractions in prose.
+
+| Before | After |
+|---|---|
+| It does not mention tests. | It doesn't mention tests. |
+| This is not a valid approach. | This isn't a valid approach. |
+| The function would not compile. | The function wouldn't compile. |
+
+**Exception**: Keep the uncontracted form when used for deliberate emphasis ("The service does not retry. Ever.") or in formal specifications and acceptance criteria.
+
+### Rule 20 — Vary sentence openings
+
+Runs of sentences starting with the same subject ("It names...", "It covers...", "It also...") are a strong AI tell. Break the pattern.
+
+- No two consecutive sentences should start with the same word.
+- No three consecutive sentences should start with a pronoun (It, This, That, They).
+- Vary by leading with the object, a dependent clause, or a different subject.
+
+| Before | After |
+|---|---|
+| It covers PSS. It adds a test helper. It organizes changes file by file. | PSS support lands too. A test helper keeps the setup clean. File-by-file changes make the diff easy to follow. |
+
+### Rule 21 — Mix sentence lengths
+
+Uniform sentence length (all 15-25 words) is an AI signature. Vary the rhythm.
+
+- Each paragraph needs at least one sentence under 10 words.
+- Short sentences add punch and emphasis. Use them after a longer sentence to land a point.
+- Do not let three consecutive sentences sit in the same word-count band.
+
+| Before | After |
+|---|---|
+| Model A comes last because it describes the same core logic but omits too much detail in its output. | Model A comes last. Same core logic, but too much is left out. |
+
 ---
 
 ## Audit pass (for narrative text)
 
-After applying all rules, run a quick audit on narrative sections:
+After applying all rules, run a final audit on narrative sections:
 
-1. Ask: "What still sounds AI-generated in this text?"
-2. List the remaining tells briefly (if any).
-3. Revise those sections.
+1. Read the full text aloud in your head. Flag anything that sounds like a report rather than a person writing.
+2. Check specifically for:
+   - Uniform sentence length (all sentences in a similar word-count band)
+   - Consecutive sentences starting with the same word or pronoun
+   - Zero contractions (a strong AI tell in informal or semi-formal prose)
+   - Parallel paragraph structure (every paragraph follows the same template)
+   - Balanced, even-handed tone where a human would be opinionated
+3. Revise flagged sections. Prefer short, punchy rewrites over elaborate restructuring.
 4. Return the final version.
-
-Common remaining tells after the first pass: overly uniform sentence length, sentences that all start with a noun, absence of any specific detail, and conclusions that summarize rather than advance.
 
 ---
 
