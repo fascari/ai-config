@@ -33,7 +33,7 @@ When dispatched by `orchestrating-tasks`, this skill MUST run as an isolated tas
 1. Read the target text (from conversation context, file, or user selection).
 2. Identify whether the text is **narrative** (prose descriptions) or **structured** (checklists, tables, code). Most PR bodies and issue descriptions are a mix of both.
 3. Apply **Formatting rules** (Rules 1-6) to the entire text.
-4. Apply **Narrative rules** (Rules 7-26) to prose sections only. Skip checklists, table cells with short values, and code comments.
+4. Apply **Narrative rules** (Rules 7-27) to prose sections only. Skip checklists, table cells with short values, and code comments.
 5. For narrative sections: run the **audit pass** — ask "What still sounds AI-generated?" and revise.
 6. Return the sanitized text only. No commentary about what was changed unless the user asked for it.
 
@@ -427,6 +427,18 @@ When comparing items (models, options, approaches), AI gives each item roughly t
 | Model A handles validation with 3 tests. Model B handles validation with 4 tests. Model C handles validation with 2 tests. | B has the most tests at 4. A covers 3. C only manages 2. |
 
 Different items deserve different depth. The winner might get 3 sentences, the loser just one.
+
+### Rule 27 — Reduce hyphenated word pair overuse
+
+AI hyphenates compound modifiers with perfect consistency. Humans are inconsistent with common pairs.
+
+**Words to watch:** cross-functional, client-facing, data-driven, decision-making, high-quality, real-time, long-term, end-to-end, well-known
+
+When three or more hyphenated pairs appear in the same paragraph, drop the hyphens on the most common ones. Keep hyphens on technical or ambiguous compounds where meaning changes without them.
+
+| Before | After |
+|---|---|
+| The cross-functional team delivered a high-quality, data-driven report. | The cross functional team delivered a high quality, data driven report. |
 
 ---
 
