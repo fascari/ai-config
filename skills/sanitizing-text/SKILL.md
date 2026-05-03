@@ -9,7 +9,7 @@ model: claude-haiku-4.5
 Post-processing pass applied to any text produced by other skills before it is written to a file or sent to an external system (issue tracker, wiki, GitHub). Covers two concerns:
 
 1. **Formatting and structure** — list markers, heading levels, em-dashes, emojis. Applies to all content.
-2. **AI writing patterns** — inflated language, sycophantic tone, vague attributions, mechanical structure. Applies to narrative text (descriptions, PR bodies, prose). Based on [Wikipedia: Signs of AI writing](https://en.wikipedia.org/wiki/Wikipedia:Signs_of_AI_writing).
+2. **AI writing patterns** — inflated language, sycophantic tone, vague attributions, mechanical structure. Applies to narrative text (descriptions, PR bodies, prose). Based on [Wikipedia: Signs of AI writing](https://en.wikipedia.org/wiki/Wikipedia:Signs_of_AI_writing) and patterns from [blader/humanizer](https://github.com/blader/humanizer) (MIT).
 
 Never generates content. Only cleans content that already exists.
 
@@ -33,7 +33,7 @@ When dispatched by `orchestrating-tasks`, this skill MUST run as an isolated tas
 1. Read the target text (from conversation context, file, or user selection).
 2. Identify whether the text is **narrative** (prose descriptions) or **structured** (checklists, tables, code). Most PR bodies and issue descriptions are a mix of both.
 3. Apply **Formatting rules** (Rules 1-6) to the entire text.
-4. Apply **Narrative rules** (Rules 7-21) to prose sections only. Skip checklists, table cells with short values, and code comments.
+4. Apply **Narrative rules** (Rules 7-26) to prose sections only. Skip checklists, table cells with short values, and code comments.
 5. For narrative sections: run the **audit pass** — ask "What still sounds AI-generated?" and revise.
 6. Return the sanitized text only. No commentary about what was changed unless the user asked for it.
 
@@ -383,6 +383,51 @@ Uniform sentence length (all 15-25 words) is an AI signature. Vary the rhythm.
 |---|---|
 | Model A comes last because it describes the same core logic but omits too much detail in its output. | Model A comes last. Same core logic, but too much is left out. |
 
+### Rule 22 — Remove elegant variation and synonym cycling
+
+AI avoids repeating a word by cycling through synonyms, creating unnatural variety. Humans repeat words naturally.
+
+**Pattern**: Using "the feature", "the capability", "the functionality", "the enhancement" for the same concept within a paragraph.
+
+| Before | After |
+|---|---|
+| The implementation handles edge cases. The solution also covers error paths. The approach validates inputs. | The implementation handles edge cases, covers error paths, and validates inputs. |
+
+If you mean the same thing, use the same word. Forced synonyms sound artificial.
+
+### Rule 23 — Remove false ranges
+
+AI creates "from X to Y" constructions that sound comprehensive but add nothing.
+
+| Before | After |
+|---|---|
+| From novice developers to seasoned engineers, everyone benefits. | Developers at any level benefit. |
+| Everything from configuration to deployment is automated. | Configuration and deployment are automated. |
+
+### Rule 24 — Remove viral and manipulation phrases
+
+Social media and engagement-bait phrases that AI picks up from training data.
+
+**Phrases to remove entirely:** `Let that sink in`, `Read that again`, `The truth is`, `And honestly?`, `Here's the kicker`, `Spoiler alert`, `Plot twist`, `Hot take`, `Unpopular opinion`, `Let me be clear`, `Make no mistake`, `Full stop`, `Period.` (as emphasis), `I said what I said`
+
+### Rule 25 — Remove filler phrase clusters
+
+AI inserts conversational filler to sound human, but overuses specific phrases in clusters.
+
+**Watch for clusters of:** `Here's the thing`, `The thing is`, `Fair enough`, `At the end of the day`, `Look`, `Listen`, `I mean`, `To be fair`, `That said`, `That being said`, `Having said that`, `With that in mind`
+
+One filler phrase per paragraph is natural. Two or more in the same paragraph is a tell. Remove extras.
+
+### Rule 26 — Avoid symmetric treatment in comparisons
+
+When comparing items (models, options, approaches), AI gives each item roughly the same word count and structure. Humans spend more words on what matters and less on the obvious.
+
+| Before | After |
+|---|---|
+| Model A handles validation with 3 tests. Model B handles validation with 4 tests. Model C handles validation with 2 tests. | B has the most tests at 4. A covers 3. C only manages 2. |
+
+Different items deserve different depth. The winner might get 3 sentences, the loser just one.
+
 ---
 
 ## Audit pass (for narrative text)
@@ -396,6 +441,9 @@ After applying all rules, run a final audit on narrative sections:
    - Zero contractions (a strong AI tell in informal or semi-formal prose)
    - Parallel paragraph structure (every paragraph follows the same template)
    - Balanced, even-handed tone where a human would be opinionated
+   - Symmetric word count across compared items (Rule 26)
+   - Synonym cycling for the same concept (Rule 22)
+   - Filler phrase clusters, more than one per paragraph (Rule 25)
 3. Revise flagged sections. Prefer short, punchy rewrites over elaborate restructuring.
 4. Return the final version.
 
