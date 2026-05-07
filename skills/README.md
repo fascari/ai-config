@@ -50,6 +50,7 @@ Use **orchestrating-tasks** as the single entry point for any task involving cod
 |---|---|
 | [copying-to-clipboard](copying-to-clipboard/) | Places text directly in the macOS clipboard via `pbcopy`, avoiding line-break artifacts when pasting into forms or external apps. |
 | [reading-pdf](reading-pdf/) | Extracts text from PDF files page by page using `pypdf`. Text only, no OCR. |
+| [scaffolding-project](scaffolding-project/) | Bootstraps a new repository with the standard layout: git remote (personal SSH alias), ai-config submodule, plans symlink, language tooling, `.mise.toml` tasks, and base files. Stops before any implementation. |
 
 
 ## Standard Workflow
