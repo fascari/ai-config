@@ -1,6 +1,8 @@
 ---
 name: creating-pull-request
 description: Use when opening a GitHub pull request for a branch that has commits ready for review
+model: claude-haiku-4.5
+agent_type: general-purpose
 ---
 
 # Creating Pull Request

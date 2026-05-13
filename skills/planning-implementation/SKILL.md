@@ -1,6 +1,8 @@
 ---
 name: planning-implementation
 description: Use when creating a phased, verifiable implementation plan from research findings, before any code is written
+model: claude-sonnet-4.6
+agent_type: general-purpose
 ---
 
 # Planning Implementation

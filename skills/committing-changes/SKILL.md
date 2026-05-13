@@ -1,6 +1,8 @@
 ---
 name: committing-changes
 description: Use when committing changes to the repository, or when the user asks to stage, organize, or push commits
+model: claude-haiku-4.5
+agent_type: general-purpose
 ---
 
 # Committing Changes
@@ -245,7 +247,9 @@ git add path/to/file.go
 git commit --fixup=<sha-of-original-commit>
 
 # 3. Squash fixup into the original via interactive rebase
-git rebase -i --autosquash origin/HEAD
+#    --committer-date-is-author-date preserves the original "X days ago"
+#    display on GitHub for the unrelated commits above the fixup target.
+git rebase -i --autosquash --committer-date-is-author-date origin/HEAD
 ```
 
 To find the SHA of the commit that introduced the file:
@@ -255,7 +259,11 @@ git --no-pager log --oneline -- path/to/file.go
 
 The `--autosquash` flag automatically moves `fixup!` commits immediately after their target and marks them for squashing — no manual reordering needed.
 
+**Why `--committer-date-is-author-date`:** default rebase rewrites the committer date to "now" for every replayed commit. GitHub uses the committer date for relative-time labels ("2 days ago"), so plain rebase makes every commit above your fixup target appear as "just now". This flag preserves the original timeline for unchanged commits; only the actual fixup target gets a fresh committer date.
+
 > **Always present the fixup + rebase plan to the user and wait for approval before executing.**
+
+> If during this flow the user asks to remove content from commits **older than the current branch tip** (not just the last commit — that's `git commit --amend`), redirect to the `rewriting-git-history` skill.
 
 ## Anti-patterns (never do these)
 

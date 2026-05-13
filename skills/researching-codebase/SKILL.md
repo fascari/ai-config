@@ -1,6 +1,8 @@
 ---
 name: researching-codebase
 description: Use when analyzing the codebase to understand how and where something is implemented, before planning or coding
+model: claude-haiku-4.5
+agent_type: explore
 ---
 
 # Researching Codebase

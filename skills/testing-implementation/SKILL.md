@@ -1,6 +1,8 @@
 ---
 name: testing-implementation
 description: Use when implementing-feature delegates testing, when validating test coverage for a feature, or when any prompt mentions tests, test files, assertions, mocks, or test adjustments
+model: claude-sonnet-4.6
+agent_type: general-purpose
 ---
 
 # Testing Implementation

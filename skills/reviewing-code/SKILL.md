@@ -1,6 +1,7 @@
 ---
 name: reviewing-code
 description: Use when reviewing code against project rules after implementation, or verifying requirements traceability against an issue tracker ticket
+agent_type: code-review
 ---
 
 # Reviewing Code

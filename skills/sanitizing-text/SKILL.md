@@ -2,6 +2,7 @@
 name: sanitizing-text
 description: Use when text produced by other skills is about to be written to a file or sent to an issue tracker, wiki, or GitHub
 model: claude-haiku-4.5
+agent_type: general-purpose
 ---
 
 # Sanitizing Text

@@ -1,6 +1,8 @@
 ---
 name: implementing-feature
 description: Use when implementing a plan, feature, or bug fix phase by phase in the codebase
+model: claude-sonnet-4.6
+agent_type: general-purpose
 ---
 
 # Implementing Feature
