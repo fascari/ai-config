@@ -131,6 +131,20 @@ If all sentences land in the 8-14 word range, the text reads as "uniform" to det
 **After (high burstiness):**
 > Config files? Done. It also handles test scaffolding and those repetitive refactors nobody wants to touch by hand, which honestly saves more time than the flashier features.
 
+#### Anti-pattern: clustered fragments
+
+Burstiness must be **distributed**, not clustered. Three or more short sentences in a row reads as deliberately staccato and is itself an AI tell — detectors are trained on this overcorrection.
+
+Specifically: when you have a paragraph that lists 2-4 parallel examples (logistics flows, fiscal pipelines, money movement; config files, test scaffolding, refactors), the natural human form is **one sentence with commas or a colon-introduced list**, not three sequential fragments. Fragments work as **emphasis after a longer sentence**, not as enumeration.
+
+**Before (clustered fragments — AI overcorrection):**
+> I've worked on systems where failure has consequences. Trucks blocked when logistics stalls. Fiscal pipelines that halt entire networks. Money movement where consistency is non-negotiable. Email sits in the same bucket.
+
+**After (parallel list + single fragment for punch):**
+> For 15 years I've worked on systems where failure has loud consequences: logistics flows that block trucks when they stall, fiscal pipelines that halt distribution under Brazilian tax law, money movement where consistency isn't optional. Email sits in the same bucket.
+
+Rule of thumb: **one short sentence per paragraph, placed after a long one for emphasis**. Two short fragments back-to-back is still acceptable if the second lands a punchline. Three or more in a row is over-correction.
+
 ### Rule P3 — Syntactic inversions
 
 Use at least one inverted construction per 2 paragraphs. LLMs almost never generate these. Humans use them all the time.
