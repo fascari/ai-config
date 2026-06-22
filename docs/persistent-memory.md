@@ -53,7 +53,7 @@ Session N+1 picks up where session N left off because `recall` loads the logs wr
 Add to `~/.zshrc` or `~/.bashrc`:
 
 ```bash
-export COPILOT_VAULT="$HOME/path/to/your/obsidian-vault"
+export AI_MEMORY_HOME="$HOME/.ai-memory"
 ```
 
 This is the only per-developer configuration required. The agent reads this variable to locate the vault. Developers without Obsidian can skip this step — all vault operations degrade gracefully when the variable is unset.
@@ -64,7 +64,7 @@ This is the only per-developer configuration required. The agent reads this vari
 Create the directory structure for the Obsidian vault:
 
 ```bash
-VAULT_DIR="$COPILOT_VAULT"
+VAULT_DIR="$AI_MEMORY_HOME"
 
 mkdir -p "$VAULT_DIR"/{permanent,inbox,fleeting,templates,logs,references,session-captures}
 ```

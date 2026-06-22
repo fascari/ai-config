@@ -15,8 +15,8 @@ Saves session output to the Obsidian vault so the next session picks up exactly 
 
 ## Prerequisites
 
-`COPILOT_VAULT` must be set. If it is not, inform the user and stop:
-> "COPILOT_VAULT is not set. Add `export COPILOT_VAULT=\"$HOME/path/to/vault\"` to ~/.zshrc and restart the shell."
+`AI_MEMORY_HOME` must be set. If it is not, fall back to `COPILOT_VAULT`; if neither is set, inform the user and stop:
+> "AI_MEMORY_HOME is not set. Add `export AI_MEMORY_HOME=\"$HOME/.ai-memory\"` to your shell profile and restart the shell."
 
 ## Steps
 
@@ -24,7 +24,12 @@ Saves session output to the Obsidian vault so the next session picks up exactly 
 
 ```bash
 REPO_NAME=$(basename "$(git rev-parse --show-toplevel)")
-PROJECT_VAULT="$COPILOT_VAULT/$REPO_NAME"   # or mapped name from personal instructions
+MEMORY_ROOT="${AI_MEMORY_HOME:-${COPILOT_VAULT:-}}"
+if [ -z "$MEMORY_ROOT" ]; then
+  echo "AI_MEMORY_HOME is not set. Add `export AI_MEMORY_HOME=\"$HOME/.ai-memory\"` to your shell profile and restart the shell."
+  exit 1
+fi
+PROJECT_VAULT="$MEMORY_ROOT/$REPO_NAME"   # or mapped name from personal instructions
 mkdir -p "$PROJECT_VAULT/logs" "$PROJECT_VAULT/architecture" "$PROJECT_VAULT/plans"
 ```
 
@@ -42,7 +47,7 @@ If the user says "checkpoint" without providing detail, summarize from the conve
 ### 3. Write session log
 
 Create a new file at:
-`$COPILOT_VAULT/{project}/logs/{YYYY-MM-DD}-{short-description}.md`
+`$AI_MEMORY_HOME/{project}/logs/{YYYY-MM-DD}-{short-description}.md`
 
 - Date: today's date in `YYYY-MM-DD` format
 - Short description: max 5 words in kebab-case, derived from the main topic of the session
@@ -92,7 +97,7 @@ If the file does not exist, create it with a top-level heading first:
 
 ### 5. Create vault notes for new knowledge (if applicable)
 
-If new domain knowledge, business rules, or patterns were discovered, create permanent notes in `$COPILOT_VAULT/{project}/`:
+If new domain knowledge, business rules, or patterns were discovered, create permanent notes in `$AI_MEMORY_HOME/{project}/`:
 
 Follow Zettelkasten rules:
 - One concept per file

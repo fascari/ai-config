@@ -19,23 +19,23 @@ Loads all persistent context from the Obsidian vault and Graphify graph to resto
 
 ```bash
 REPO_NAME=$(basename "$(git rev-parse --show-toplevel)" 2>/dev/null || echo "unknown")
-echo "VAULT=${COPILOT_VAULT:-NO_VAULT}"
+echo "VAULT=${AI_MEMORY_HOME:-${COPILOT_VAULT:-NO_VAULT}}"
 echo "REPO=$REPO_NAME"
 ```
 
-Map the repo name to the vault project folder using the table in your personal copilot instructions. If `COPILOT_VAULT` is not set, skip all vault steps and note that no vault is configured.
+Map the repo name to the vault project folder using the table in your personal copilot instructions. If `AI_MEMORY_HOME` is not set, fall back to `COPILOT_VAULT`; if neither is set, skip all vault steps and note that no vault is configured.
 
 ### 2. Read recent session logs
 
 Vault devs only. Read the 3 most recent files (sorted by name, descending) from:
-`$COPILOT_VAULT/{project}/logs/`
+`$AI_MEMORY_HOME/{project}/logs/`
 
 If the directory does not exist: note "No prior sessions found" and continue.
 
 ### 3. Read architecture decisions
 
 Vault devs only. Read:
-`$COPILOT_VAULT/{project}/architecture/decisions.md`
+`$AI_MEMORY_HOME/{project}/architecture/decisions.md`
 
 If the file does not exist: skip silently.
 
@@ -77,6 +77,6 @@ Conclude with: "Ready. What would you like to work on?"
 ## Constraints
 
 - Never write to vault, create files, or modify any file
-- Never ask the user for the vault path — it comes from `$COPILOT_VAULT`
+- Never ask the user for the vault path — it comes from `AI_MEMORY_HOME`, then `COPILOT_VAULT`
 - Never crash if vault or graphify files are missing — always degrade gracefully
 - Keep summary under 20 lines — do not dump raw log content

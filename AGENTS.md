@@ -14,17 +14,17 @@ Skip bootstrap when any of the following is true:
 **1. Resolve vault and project:**
 ```bash
 REPO_NAME=$(basename "$(git rev-parse --show-toplevel)" 2>/dev/null || echo "unknown")
-echo "VAULT=${COPILOT_VAULT:-NO_VAULT}"
+echo "VAULT=${AI_MEMORY_HOME:-${COPILOT_VAULT:-NO_VAULT}}"
 echo "REPO=$REPO_NAME"
 ```
 Map the repo name to the vault project folder using the table in your personal copilot instructions.
-If `COPILOT_VAULT` is not set: skip steps 2, 3, and vault parts of 4 and 5 — proceed gracefully with what is available locally.
+If `AI_MEMORY_HOME` and `COPILOT_VAULT` are not set: skip steps 2, 3, and vault parts of 4 and 5 — proceed gracefully with what is available locally.
 
 **2. Read recent session logs** (3 most recent):
-`$COPILOT_VAULT/{project}/logs/`
+`$AI_MEMORY_HOME/{project}/logs/`
 
 **3. Read architecture decisions:**
-`$COPILOT_VAULT/{project}/architecture/decisions.md`
+`$AI_MEMORY_HOME/{project}/architecture/decisions.md`
 
 **4. Read active plans:**
 - All devs: `.github/plans/` (symlink, always available)
@@ -51,7 +51,7 @@ Add to `~/.zshrc` or `~/.bashrc`:
 export COPILOT_VAULT="$HOME/path/to/your/obsidian-vault"
 ```
 
-Developers without Obsidian do not need this variable — all vault steps are skipped automatically when `COPILOT_VAULT` is unset.
+Developers without Obsidian do not need this variable — all vault steps are skipped automatically when `AI_MEMORY_HOME` and `COPILOT_VAULT` are unset.
 
 ---
 
