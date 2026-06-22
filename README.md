@@ -1,6 +1,6 @@
 # ai-config
 
-Shared configuration, coding instructions, and workflow skills for AI-assisted software development. Designed to be added as a submodule (at `.github/`) in any project repository.
+Shared configuration, coding instructions, and workflow skills for AI-assisted software development. It is meant to provide a project's shared `.github/` tree.
 
 
 ## What This Repo Contains
@@ -12,29 +12,11 @@ Shared configuration, coding instructions, and workflow skills for AI-assisted s
 - `docs/` - guides and reference documentation
 
 
-## Quick Start
+## Project setup
 
-### As a Git Submodule
+Use this repo as the shared `.github/` tree for a consuming project. The exact wiring depends on the workflow. A local clone, symlink, or copy all work in practice.
 
-Add this repo as a submodule at `.github/` in any project:
-
-```bash
-git submodule add <repo-url> .github
-```
-
-Copilot and other AI tools read files from `.github/instructions/` and `.github/skills/` automatically.
-
-After cloning a repo that uses this submodule, initialize it with:
-
-```bash
-git submodule update --init --recursive
-```
-
-To have `git pull` always sync submodules automatically:
-
-```bash
-git config --global submodule.recurse true
-```
+Copilot and other AI tools read files from `.github/instructions/` and `.github/skills/` when that tree is present.
 
 ### For Claude Projects
 
@@ -94,7 +76,7 @@ See [`docs/persistent-memory.md`](docs/persistent-memory.md) for the full setup 
 
 ## Adapting to a New Project
 
-1. Add this repo as a submodule at `.github/`.
+1. Expose this repo as the project's `.github/` tree.
 2. Copy `copilot-instructions.md` to the project root and fill in the blanks.
 3. Add or update files in `instructions/` with project-specific conventions.
 4. Run `graphify .` to generate the code knowledge graph.

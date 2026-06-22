@@ -24,7 +24,7 @@
 
 ## Conventions
 
-The coding conventions for this project follow the standards in `.github/instructions/` (if this project uses the ai-config submodule) or in the attached Claude Project knowledge files:
+The coding conventions for this project follow the standards in `.github/instructions/`, when that tree is available, or in the attached Claude Project knowledge files:
 
 - `go-style.instructions.md` — naming, formatting, control flow
 - `clean-architecture.instructions.md` — layer rules, DI, domain isolation

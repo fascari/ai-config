@@ -153,7 +153,7 @@ All notes in the vault follow these rules:
 
 ## Step 3 - Add `AGENTS.md` to Each Project
 
-Copy `AGENTS.md` from this repo to the project root (or add this repo as `.github/` submodule — `AGENTS.md` lives at the submodule root and is symlinked or copied as needed).
+Copy `AGENTS.md` from this repo to the project root, or keep the repo available as the project's `.github/` tree and copy or link `AGENTS.md` as needed.
 
 Copilot CLI reads `AGENTS.md` natively at session start — no configuration required. The file triggers the automatic bootstrap described above.
 
@@ -354,4 +354,3 @@ Run `graphify .` on a project, then ask the agent about the codebase architectur
 - **Vault cleanup**: periodically move resolved pending items out of logs, consolidate repeated decisions into permanent notes
 - **Graph rebuild**: run `graphify . --update` after major refactors or new module additions
 - **Repo mapping**: update the mapping table in personal instructions when adding new projects with non-obvious vault folder names
-
