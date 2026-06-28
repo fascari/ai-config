@@ -20,7 +20,7 @@ Also performs requirements traceability reviews when an issue tracker ticket key
 
 1. Read `.github/skills/implementing-feature/SKILL.md` — apply its Quality Checklist, Testing Rules, and all anti-pattern tables verbatim.
 2. Read `.github/instructions/` — apply all project-specific coding rules, architecture rules, and anti-patterns.
-3. Run `skills/plans-setup.md` to resolve `{plan_root}` and create or refresh the repo-local `.plans` symlink.
+3. Use the `{plan_root}` provided by `orchestrating-tasks`. If running standalone, resolve `{plan_root}` with the same rule: prefer `$AI_MEMORY_HOME/{project}/plans/`; if unset, use `$COPILOT_VAULT/{project}/plans/`; then create or refresh `.plans` as a symlink to `{plan_root}`.
 4. Read `{plan_root}/{slug}/implementation-plan.md` and `{plan_root}/{slug}/progress.md` for context.
 5. Review all changed files against the checklists below.
 6. If an issue tracker ticket key is provided, run the Requirements Traceability Review.

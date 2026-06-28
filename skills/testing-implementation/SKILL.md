@@ -33,7 +33,7 @@ When dispatched by `orchestrating-tasks`, use `agent_type: "go-tester"` if the r
    - If `VAULT_AVAILABLE=true`: read domain notes for prior decisions on testing patterns.
    - If neither exists, proceed directly.
 
-2. Run `skills/plans-setup.md` to resolve `{plan_root}` and create or refresh the repo-local `.plans` symlink.
+2. Use the `{plan_root}` provided by `orchestrating-tasks`. If running standalone, resolve `{plan_root}` with the same rule: prefer `$AI_MEMORY_HOME/{project}/plans/`; if unset, use `$COPILOT_VAULT/{project}/plans/`; then create or refresh `.plans` as a symlink to `{plan_root}`.
 3. Read `{plan_root}/{slug}/implementation-plan.md` to understand success criteria for the current phase.
 4. Read `.github/instructions/testing.instructions.md` and any other project testing conventions.
 5. Analyze existing test files for the affected packages. Identify patterns, mock setup, factory functions, and whether the target code starts goroutines.

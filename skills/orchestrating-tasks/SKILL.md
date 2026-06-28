@@ -17,6 +17,7 @@ This skill is split into focused sub-files. Always read this SKILL.md first for 
 | [`gates.md`](gates.md) | Running Critique Gate, Test Design Judge, or Output Judge Gate |
 | [`task-types.md`](task-types.md) | Picking the skill chain for a task type; testing dispatch order; NEVER-dispatch-agents-directly rule |
 | [`approval-and-output.md`](approval-and-output.md) | Approval checkpoints before external writes; expected artifact set in the external vault plan directory |
+| [`plans-setup.md`](plans-setup.md) | Resolve `{plan_root}` and create the repo-local `.plans` symlink |
 
 ---
 
@@ -58,7 +59,7 @@ Answer these questions explicitly in your reasoning BEFORE dispatching any subag
 ## Step 1 — Setup & Plan Discovery
 
 1. Resolve the external plan root. Prefer `$AI_MEMORY_HOME/{project}/plans/`; if unset, use `$COPILOT_VAULT/{project}/plans/`. If neither is set, stop and ask the user to configure the Obsidian vault path.
-2. Run `skills/plans-setup.md`: ensure `{plan_root}` exists and create or refresh the repo-local `.plans` symlink pointing to `{plan_root}`.
+2. Read and run [`plans-setup.md`](plans-setup.md): ensure `{plan_root}` exists and create or refresh the repo-local `.plans` symlink pointing to `{plan_root}`.
 3. Do not create real repo-local plan folders, provider-specific AI configuration inside the project repository, or `.github/plans`.
 
 When no slug is provided, scan the external plan root and read each `progress.md`:

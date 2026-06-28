@@ -17,7 +17,7 @@ a new chat session to resume exactly where this one left off.
 
 ## Steps
 
-1. Run `skills/plans-setup.md` to resolve `{plan_root}` and create or refresh the repo-local `.plans` symlink.
+1. Use the `{plan_root}` resolved by `orchestrating-tasks`. If running standalone, resolve `{plan_root}` with the same rule: prefer `$AI_MEMORY_HOME/{project}/plans/`; if unset, use `$COPILOT_VAULT/{project}/plans/`; then create or refresh `.plans` as a symlink to `{plan_root}`.
 2. Scan the conversation from the beginning. Collect: current state, completed work, key decisions, discoveries, open blockers, next steps.
 3. **Resolve the plan slug**:
    a. Resolve the external `{plan_root}` with the same rule as `orchestrating-tasks`: prefer `$AI_MEMORY_HOME/{project}/plans/`; if unset, use `$COPILOT_VAULT/{project}/plans/`. If neither is set, stop and ask the user to configure an external plan root.

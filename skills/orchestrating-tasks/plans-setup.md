@@ -1,18 +1,20 @@
 # Plans Directory Setup
 
-Create a repo-local symlink for inspection, but keep the real plan artifacts in the external vault.
+Create a repo-local symlink for inspection, but keep the real plan artifacts
+in the external vault.
 
-Resolve the external `{plan_root}` with the same rule as `orchestrating-tasks`:
+Resolve the external `{plan_root}`:
 
 1. Prefer `$AI_MEMORY_HOME/{project}/plans/`.
 2. If unset, use `$COPILOT_VAULT/{project}/plans/`.
 3. If neither is set, stop and ask the user to configure an external plan root.
 
-Then ensure `{plan_root}` exists and create or refresh `.plans` in the current repo root:
+Then ensure `{plan_root}` exists and create or refresh `.plans` in the current
+repo root:
 
 ```bash
 REPO_ROOT="$(rtk git rev-parse --show-toplevel)"
-PROJECT="$(basename "$REPO_ROOT")"
+PROJECT="${REPO_ROOT##*/}"
 
 if [ -n "${AI_MEMORY_HOME:-}" ]; then
   PLAN_ROOT="$AI_MEMORY_HOME/$PROJECT/plans"

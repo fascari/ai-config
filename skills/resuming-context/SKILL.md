@@ -19,7 +19,7 @@ Never starts implementation before presenting the restored state to the user.
 
 ### Step 0 — Setup
 
-1. Run `skills/plans-setup.md` to resolve `{plan_root}` and create or refresh the repo-local `.plans` symlink.
+1. Use the `{plan_root}` resolved by `orchestrating-tasks`. If running standalone, resolve `{plan_root}` with the same rule: prefer `$AI_MEMORY_HOME/{project}/plans/`; if unset, use `$COPILOT_VAULT/{project}/plans/`; then create or refresh `.plans` as a symlink to `{plan_root}`.
 
 ### Step 1 — Discover the Plan
 

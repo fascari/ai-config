@@ -36,7 +36,7 @@ When dispatched by `orchestrating-tasks`, use the `task` tool. For Go file chang
 
 ## Setup
 
-1. Run `skills/plans-setup.md` to resolve `{plan_root}` and create or refresh the repo-local `.plans` symlink.
+1. Use the `{plan_root}` provided by `orchestrating-tasks`. If running standalone, resolve `{plan_root}` with the same rule: prefer `$AI_MEMORY_HOME/{project}/plans/`; if unset, use `$COPILOT_VAULT/{project}/plans/`; then create or refresh `.plans` as a symlink to `{plan_root}`.
 2. **Context Bootstrap** — skip entirely if the prompt contains `Violations:` (repair cycle):
    ```bash
    GRAPHIFY_AVAILABLE=false
