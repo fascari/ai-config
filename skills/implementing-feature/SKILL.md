@@ -5,19 +5,24 @@ description: Use when implementing a plan, feature, or bug fix phase by phase in
 
 # Implementing Feature
 
-Implements plans phase by phase, validates each step with linter and tests,
-and only commits after explicit user approval.
+Implements **production code only**, phase by phase, validates with linter and style gate, then hands off to `testing-implementation`.
+
+## Scope Boundary
+
+| In scope | Out of scope |
+|---|---|
+| Production source files | Test files (`*_test.go`, `*.test.*`, etc.) |
+| Linter, static analysis, fmt | Running tests |
+| Style compliance gate | Writing or modifying testdata/fixtures |
+| validate-loop (phase: implementation) | validate-loop (phase: testing) |
+
+**If a plan phase lists test files:** skip them, note them in the Testing Context Handoff, and proceed with production files only.
 
 ---
 
-## ⛔ HARD RULE — NEVER COMMIT
+## Execution Model
 
-This skill implements code only. It NEVER executes `git commit`, `git add`, or `git push` — not even after all phases are complete. Commits require a separate, explicit user authorization via the `committing-changes` skill.
-
-**"Go ahead and implement"** is NOT authorization to commit.
-**Completing all implementation phases** is NOT authorization to commit.
-
-Wait for the user to explicitly say: "commit", "go ahead and commit", or equivalent.
+When dispatched by `orchestrating-tasks`, use the `task` tool. For Go file changes, use `agent_type: "go-implementer"` if the repo defines that agent at `agents/go-implementer.md` — its system prompt front-loads project Go conventions. For non-Go work, use `agent_type: "general-purpose"`.
 
 ---
 
@@ -25,187 +30,170 @@ Wait for the user to explicitly say: "commit", "go ahead and commit", or equival
 
 - User asks to implement a plan or feature
 - orchestrating-tasks delegates implementation
-- User says "implement", "code this", "start coding"
-- User types /implement_plan
-- User says "continue", "continue implementation", "continue the plan", "continue the code"
-- User says "next phase", "next step", "proceed", "go ahead", "start"
-- User says "inicia", "continua", "continua a implementação", "continua o plano", "próxima fase"
-- User says "faz", "implementa", "codifica", "escreve o código", "começa a implementar"
-- User says "revise", "fix", "correct", "refactor" targeting specific implementation files
-- User references a phase number or task from a plan (e.g. "do phase 2", "implement task 3")
-- User pastes code and asks to apply a rule or pattern to it
-- Any instruction that results in writing or modifying production code
+- User says "implement", "code this", "start coding", "next phase", "proceed"
 
-## Steps
+---
 
-### Step 0 — Setup
+## Setup
 
-> **Critical**: compilation error checks only catch syntax/type errors. They do NOT replace the linter.
-> The project linter (configured in `.github/instructions/` or project config) is the only tool that enforces all
-> project-level style rules. Skipping it is not allowed — not even for "trivial" changes.
-> Both compilation checks (after every edit) and linting (after every phase) must pass.
-
-1. Ensure the plans symlink exists — run setup from `.github/skills/plans-setup.md`
-
-## Implementation Protocol
-
-### Per Phase
-1. Read the full plan: `.github/plans/{slug}/implementation-plan.md`
-2. Read ALL files referenced in the current phase before editing
-3. **Compatibility gate** — before modifying any existing signature, type, field, or contract:
-   - Does this change alter an existing HTTP request/response shape visible to callers?
-   - Does this change an exported Go interface that other packages implement?
-   - Does this drop, rename, or change the type of a database column?
-   - Does this change a SQS message schema consumed by external systems?
-
-   If yes to any of the above, and no `## Compatibility Decision` was recorded in the plan, stop and ask:
+1. Run the plans symlink/directory setup from `skills/plans-setup.md`
+2. **Context Bootstrap** — skip entirely if the prompt contains `Violations:` (repair cycle):
+   ```bash
+   GRAPHIFY_AVAILABLE=false
+   [ -f "graphify-out/GRAPH_REPORT.md" ] && GRAPHIFY_AVAILABLE=true
+   VAULT_AVAILABLE=false
+   [ -n "${COPILOT_VAULT:-${AI_MEMORY_HOME:-}}" ] && VAULT_AVAILABLE=true
    ```
-   ⚠️  Potential breaking change in this phase:
-   - {description of what changes and who is affected}
+   - If `GRAPHIFY_AVAILABLE=true` **and** the plan_excerpt does NOT contain explicit file paths: use `graphify query` for domains/packages in the plan.
+   - If `GRAPHIFY_AVAILABLE=true` **and** the plan already specifies exact files to edit: **skip graphify** — scope is known.
+   - If `VAULT_AVAILABLE=true`: read architecture decisions relevant to the target area.
 
-   How would you like to proceed?
-   A) Maintain backward compatibility — propose a compatible approach
-   B) Accept the breaking change — I will note it in the plan and proceed
+---
+
+## Style References (load before first edit)
+
+Read only the instruction files whose `applyTo` glob matches files you will change. Do not load all instructions unconditionally:
+
+- `.github/instructions/go-style.instructions.md`
+- `.github/instructions/modern-go.instructions.md` + `skills/writing-modern-go/SKILL.md`
+- Any other `.github/instructions/*.instructions.md` whose `applyTo` glob matches a file you will edit
+
+---
+
+## Per Phase
+
+1. Read only the current phase section from `.github/plans/{slug}/implementation-plan.md`.
+2. Load targeted context: `graphify query "{domain}"` if available; otherwise read the `## File Map` from `research.md`.
+3. **Pre-flight**: files marked MODIFY must exist; files marked CREATE must not exist (unless plan says overwrite).
+4. **Compatibility gate** — stop and ask before modifying any existing:
+   - HTTP request/response shape visible to callers
+   - Exported interface that other packages implement
+   - Database column (drop, rename, type change)
+   - Message schema consumed by external systems
+
+   If no `## Compatibility Decision` in the plan:
    ```
-   **Do not implement until the user replies.**
-
-4. Implement following all project coding rules (see `.github/instructions/` for language/framework-specific rules)
-4. After EVERY file edit — check for compilation errors immediately and fix all issues
-5. After completing the phase — run linter and tests on modified paths. Refer to project scripts (e.g. `make lint`, `make test`, or the equivalent for this project's toolchain). Fix ALL linter and test failures before proceeding. Never skip.
-6. Update checkboxes in `implementation-plan.md`
-7. Update `.github/plans/{slug}/progress.md`
-8. **Pause** — present results to user, wait for approval before next phase. Check `/context` usage and offer compression if at 70% or more:
-
+   Potential breaking change: {description}
+   A) Backward compatible approach
+   B) Accept breaking change
    ```
-   Context is at {N}% — approaching the safe limit (70%). Compress now to avoid degradation?
-   Use /compress or reply "yes". Non-blocking — just say "continue" to skip.
+5. Implement following all project coding rules (see `.github/instructions/`).
+6. After EVERY file edit — compile-check immediately and fix all issues.
+7. **Style compliance gate** (run all before step 8):
+
+   a. File-name audit (Go):
+   ```bash
+   git diff --name-only --diff-filter=A HEAD | grep -E '\.go$' | grep -E '_.+_' | grep -v '_test\.go$'
    ```
 
-### After All Phases Complete
+   b. Comment hygiene:
+   ```bash
+   for f in $(git diff --name-only --diff-filter=AM HEAD | grep '\.go$'); do
+     awk -v f="$f" 'BEGIN{c=0;t=0} /^[[:space:]]*\/\//{c++} {t++} END{ if (t>0 && c*100/t > 15) printf "%s: %d%% comment density\n", f, c*100/t }' "$f"
+   done
+   ```
+   Forbidden: plan-reference comments in production code, godoc that restates the signature.
 
-Run the full validation sequence in order. Do not skip any step.
+   c. Modern-Go scan:
+   ```bash
+   git diff --name-only --diff-filter=AM HEAD | grep '\.go$' | xargs grep -nE \
+     'wg\.Add\(1\)|interface\{\}|errors\.As\(|sort\.Slice\(|time\.Now\(\)\.Sub\(|for [a-z]+ := 0; [a-z]+ <|context\.Background\(\) *$' 2>/dev/null
+   ```
 
-**Step 1 — Go-Style Review**
+   d. Dead-code: every newly exported symbol must have an external caller.
 
-Read `.github/instructions/go-style.instructions.md` in full.
+8. **HARD GATE: lint must pass before validate-loop.** Run and fix ALL issues:
+   ```bash
+   # Use the project's lint command scoped to changed paths
+   # e.g. golangci-lint run ./path/to/changed/... | head -50
+   ```
+   Do NOT dispatch validate-loop with known lint violations — it wastes a repair cycle. Only call validate-loop when lint returns 0 issues.
 
-For every modified `.go` file, verify each rule explicitly:
-- Package names: no `util`, `helper`, `common`, `types`, `model` — name by what it provides
-- Exported symbols do not repeat the package name (`httpjson.Write`, not `httpjson.WriteJSON`)
-- No `Get`/`Set` prefixes on methods (`Name()`, not `GetName()`)
+   Dispatch validate-loop:
+
+   | Parameter | Value |
+   |---|---|
+   | `agent_type` | `"validate-loop"` |
+   | `mode` | `"background"` |
+   | `prompt` | `slug: {slug}\nphase: implementation\nmax_iterations: 2\nplan_excerpt: {phase section}` |
+
+   > **Hard cap: max_iterations: 2.** After 2 repair cycles without HARNESS PASS, return `LOOP FAIL (escalate: true)` — never continue past 2 cycles.
+
+   - `LOOP PASS`: include `context_handoff` in phase completion report, proceed to Testing Context Handoff.
+   - `LOOP FAIL` (`escalate: true`): present violations to user, wait for direction.
+
+9. If a non-obvious domain, database, or architectural anti-pattern is discovered:
+   - Surface it in the phase summary.
+   - If `VAULT_AVAILABLE=true`, append to `$COPILOT_VAULT/{project}/architecture/anti-patterns.md`.
+
+10. Update checkboxes in `implementation-plan.md`.
+11. Update `progress.md`.
+12. **Pause** — present results, wait for approval before next phase.
+
+---
+
+## Testing Context Handoff
+
+After `LOOP PASS`, prepare this handoff for `testing-implementation`. Include in the phase completion report:
+
+- Plan slug and phase number
+- New or changed function signatures (copy verbatim)
+- Existing test file path, mock setup, and testdata factories found (read-only, do not edit)
+- Test scenarios from the plan's Success Criteria section
+- Exact paths for test files and testdata directories
+
+---
+
+## Go Code Rules
+
+- Grouped declarations: `type ( )`, `var ( )`, `const ( )`
 - No `else` — early returns only
-- Receivers: short, consistent abbreviation of the type
-- Interfaces defined at point of use, not at implementation
-- Errors compared with `errors.Is`, never `==`
-- `errors.New` used instead of `fmt.Errorf` when there is no wrapping
-- Imports grouped in 3 blocks: stdlib / third-party / internal
-- `any` instead of `interface{}`
-
-Fix ALL violations before proceeding.
-
-**Step 2 — Linter**
-
-Run the project linter scoped to modified paths (check project `Makefile`, `package.json`, or equivalent for the right command).
-
-**Step 2 — Tests**
-
-Run the project test suite (check project scripts for the right command — e.g. `make test`, `npm test`, `pytest`).
-
-Fix ALL failures before presenting results to the user. Never present partial results.
-
-### On Mismatch
-```
-MISMATCH DETECTED
-Expected: {what plan said}
-Found:    {what actually exists}
-Impact:   {how this affects the phase}
-Proposed: {updated approach}
-Proceed? [Y/N]
-```
-
-## Code Rules
-
-Read the project's coding instructions before starting any phase:
-- `.github/instructions/` — all project-specific language, style, and architecture rules
-
-Apply those rules in full. The sections below are reminders of universal principles that apply regardless of language or framework.
-
-### Universal principles
-
-- Group related declarations together (types, constants, variables)
-- No `else` — early returns only
-- Prefer value/immutable objects over mutation
-- Use typed constants over magic strings
-- Errors must be wrapped with context describing the failing operation
-- Prefer pure functions over impure ones
-- Comments only for non-obvious WHY, in the project's language
-- Propagate request context (tracing, cancellation) through all calls
+- `any` not `interface{}`
+- `errors.Is()` / `errors.As()` — never `==`
+- No `Get`/`Set` prefixes · lowercase single-word packages · no `utils`/`helpers`
+- Accept interfaces, return structs
+- Value receivers preferred — pointers only when mutation/nil/size required
+- Unused receiver → convert to package-level function
+- Pure functions over impure · inline logic when not reused
+- Comments only for non-obvious WHY
 
 ### Context & Observability
+- Propagate `ctx` through ALL calls
+- Wrap errors: `fmt.Errorf("context: %w", err)`
 
-- Propagate context through all function calls
-- Use structured logging with trace IDs on critical paths
-- Add metrics/telemetry for operations that matter in production
-
-## Testing Rules
-
-> Full reference: `.github/skills/testing-implementation/SKILL.md`
-> Full rules: `.github/instructions/` (project-specific testing conventions)
-
-### Writing tests per phase
-
-1. Write unit tests: follow the project's testing conventions (see `.github/instructions/`). Cover happy path + each error case + edge cases.
-2. Write integration tests where applicable (data layer, external integrations): follow project conventions for test tagging, fixtures, and test suites.
-3. Run **only the affected package(s)** — never the full suite unless explicitly asked. Check project scripts for the right commands (e.g. `make test`, `npm test`, `pytest path/to/module`).
-
-   > Delegate to `testing-implementation` for full test writing and execution guidance.
+---
 
 ## Quality Checklist (before presenting code)
 
-Read `.github/instructions/go-style.instructions.md` and apply every rule to each modified Go file. Do not rely on memory — read the file.
+- [ ] Declarations grouped
+- [ ] No `else` · early returns · context propagated
+- [ ] Errors wrapped with `%w`
+- [ ] No `Get`/`Set` prefixes
+- [ ] Value receivers · pure functions where possible
+- [ ] `errors.Is()` — never `==`
+- [ ] No magic strings (typed constants)
+- [ ] Backward compatibility verified
 
-Universal items that apply to any project:
+---
 
-- [ ] Go-style review completed — every modified `.go` file checked against `.github/instructions/go-style.instructions.md`
-- [ ] Declarations grouped by kind (types, constants, variables)
-- [ ] No `else` · early returns · context propagated through all calls
-- [ ] Errors wrapped with context: describe the failing operation
-- [ ] No magic strings — use typed constants
-- [ ] Immutable / value-first approach where possible
-- [ ] Comments only for non-obvious WHY
-- [ ] Backward compatibility verified — or breaking change explicitly approved by user
-- [ ] Tests cover happy path, each error case, and edge cases
+## Other Rules
 
-## Documentation Rule
+**Commits**: NEVER commit automatically. Report final state and stop.
 
-Show explanations in the response — never create `SOLUTION.md`, `TROUBLESHOOTING.md`, etc.
-Exception: `README.md`, `ARCHITECTURE.md`, `API.md`, `CONTRIBUTING.md`.
+**Docs**: show explanations in chat — never create `SOLUTION.md`, `TROUBLESHOOTING.md`, etc.
 
-## Domain & DB Anti-Patterns
-
-Read the full reference before each phase (if it exists):
-`.github/skills/implementing-feature/references/anti-patterns.md`
+---
 
 ## Progress Tracking
 
-Update `.github/plans/{slug}/progress.md` after each phase:
+Update `progress.md` after each phase. Mark only production file tasks:
 
 ```markdown
 ## Phase 1 — Domain Model
 - [x] Created domain entity
-- [x] Tests passing
-
-## Phase 2 — Use Case
-- [x] UseCase struct
-- [ ] Unit tests
+- [x] Linter: PASS
+- [x] validate-loop: LOOP PASS
 ```
 
-After **all phases are complete** and linter + tests pass, update the `## Status` line in `progress.md` to `REVIEW`:
-
-```markdown
-## Status
-REVIEW
-```
-
-Then present the summary to the user and hand off to reviewing-code.
+**Do NOT update `## Status` to `REVIEW`** — that transition is owned exclusively by `orchestrating-tasks` after all gates pass. Leave `## Status` as `IN_PROGRESS` and update only the phase checkboxes.
 

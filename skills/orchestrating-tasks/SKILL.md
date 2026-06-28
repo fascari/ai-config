@@ -5,39 +5,59 @@ description: Use when starting or resuming any AI-assisted task — feature impl
 
 # Orchestrating Tasks
 
-Single entry point for all AI-assisted tasks. Routes to the right skill chain, manages plan state, and checkpoints with the user. Never writes code or commits directly.
+Single entry point for all AI-assisted tasks. Detects task complexity, routes to the right skill chain, manages plan state, and checkpoints with the user. Never writes code, tests, or commits directly.
+
+## Sub-files (READ AS NEEDED)
+
+This skill is split into focused sub-files. Always read this SKILL.md first for Critical Rules and Pre-Dispatch Checklist. Then open the sub-file relevant to your current step:
+
+| Sub-file | When to open |
+|---|---|
+| [`dispatching.md`](dispatching.md) | Selecting model tier + agent_type for a dispatch; building the `task` tool prompt; Style Reinforcement block; Codebase Search Rules |
+| [`gates.md`](gates.md) | Running Critique Gate, Test Design Judge, or Output Judge Gate |
+| [`task-types.md`](task-types.md) | Picking the skill chain for a task type; testing dispatch order; NEVER-dispatch-agents-directly rule |
+| [`approval-and-output.md`](approval-and-output.md) | Approval checkpoints before external writes; expected artifact set in `.github/plans/{slug}/` |
 
 ---
 
-## ⚡ PRIORITY RULE — Parallel Agent Dispatch
+## Critical Rules
 
-**Whenever two or more sub-tasks are independent, dispatch them as background agents in parallel. Do not serialize work that can be parallelized. This supersedes all other execution preferences.**
+These rules always apply regardless of task type. Read them before anything else.
 
-Before each phase: identify which sub-tasks don't depend on each other's output — dispatch those in parallel; run the rest in dependency order.
+- **Never write production code, tests, or commits directly** — delegate to the appropriate skill
+- **Never propose, draft, or suggest commits** — commits and PRs are manual user commands only; report final state and stop
+- **Never transition `progress.md` to `REVIEW` from inside a skill** — only orchestrating-tasks does this after gates pass
+- **Always run Completion Gate before `reviewing-code`** — lint + tests must pass; on FAIL dispatch `implementing-feature` for up to 2 repair cycles; escalate to user if still failing
+- **Never dispatch `harness-gate` directly** — `implementing-feature` and `testing-implementation` each dispatch `validate-loop` internally; the orchestrator receives only `LOOP PASS` or `LOOP FAIL`
+- **On `LOOP FAIL` with `escalate: true`** — present the escalation to the user and wait for direction; do not dispatch a repair cycle
+- **All narrative prose passes through `sanitizing-text` before presentation**
+- **Never skip user approval checkpoints** — commits, pushes, and any external API writes require explicit approval (see `approval-and-output.md`)
+- **Never assume a plan exists** — always run plan discovery first
+- **`implementing-feature` owns production code, `testing-implementation` owns tests** — never cross-assign; each returns `LOOP PASS/FAIL`. A phase that touches both production files AND test files MUST be split into two dispatches. (See `task-types.md`)
+- **NEVER dispatch `go-implementer` or `go-tester` directly** — always dispatch the SKILLS (`implementing-feature`, `testing-implementation`). The skills are the wrappers that run `validate-loop`. Dispatching the agents directly bypasses the harness entirely. (See `task-types.md`)
+- **`write_agent` is single-skill-scoped** — switching skill type requires a fresh `task()` dispatch
+- **Dispatch model selection is mandatory** — for every task dispatch, consult `dispatching.md` Delegation Model Matrix. Run the Pre-Dispatch Checklist before every `task` invocation.
+- **Subagent prompts MUST include Codebase Search Rules** — for any subagent that needs codebase exploration, paste the verbatim block from `dispatching.md` into the dispatch prompt. Trusting global instructions alone is not enough.
+- **Judges and validators MUST use a different vendor than the producer** — see `dispatching.md` Cross-Vendor Rule. Same-vendor judging is a hard rule violation.
 
-```
-task(agent_type: "explore"|"general-purpose", mode: "background", name: "...", prompt: "full context...")
-```
+---
 
-- `explore` — read-only research (grep/glob/view)
-- `general-purpose` — writes files, runs bash, edits code
-- Prompts must be self-contained — agents are stateless
-- Use `read_agent(agent_id)` after completion notification
+## Pre-Dispatch Checklist (mandatory before every `task` invocation)
 
-| Scenario | Wrong | Right |
-|---|---|---|
-| Research 3 services | Sequential, 3 turns | 3 `explore` agents, 1 turn |
-| Write `kit/logger` + `kit/apperror` | Write one, wait, write other | 2 `general-purpose` agents in parallel |
-| Implement domain + repository (no dependency) | Domain then repository | Both in parallel |
+Answer these questions explicitly in your reasoning BEFORE dispatching any subagent. If you cannot answer all of them, do not dispatch yet.
 
-> Failing to parallelize independent tasks is a performance violation.
+1. **Complexity tier?** Simple | Standard | Complex
+2. **Model tier + agent_type?** From `dispatching.md` matrix; Deep override if Complex judge/reviewer.
+3. **Subagent needs codebase exploration?** If yes (researching, critique, reviewing), inject the verbatim Codebase Search Rules block from `dispatching.md`.
+4. **Approval needed before dispatch?** Check `approval-and-output.md` Approval Checkpoints table.
+5. **Does the phase touch both production files AND test files?** If yes, SPLIT into two dispatches.
+6. **Is this a judge/validator of another agent's output?** If yes, confirm the judge's vendor is DIFFERENT from the producer's vendor.
 
 ---
 
 ## Step 1 — Setup & Plan Discovery
 
-1. Ensure plans symlink exists — run setup from `.github/skills/plans-setup.md`
-2. Correct legacy paths: `.github/ai/skills/` → `.github/skills/`
+1. Ensure plans symlink/directory exists — run setup from `skills/plans-setup.md`
 
 When no slug is provided, scan `.github/plans/` and read each `progress.md`:
 
@@ -46,7 +66,7 @@ When no slug is provided, scan `.github/plans/` and read each `progress.md`:
 | User provided slug | Use directly |
 | 1 plan with `IN_PROGRESS` | Use automatically, inform user |
 | Multiple `IN_PROGRESS` | List and ask which to use |
-| None found | Offer to create new plan or reopen a `DONE` one |
+| None found | Offer to create a new plan or reopen a `DONE` one |
 
 ## Step 2 — Read Plan Status
 
@@ -55,82 +75,44 @@ Read `.github/plans/{slug}/progress.md` and route:
 | Status | Action |
 |--------|--------|
 | File absent or no `## Status` | Start from scratch — full workflow |
-| `IN_PROGRESS` | Find last completed phase, resume from there — skip completed phases |
-| `REVIEW` | Go directly to reviewing-code; read `implementation-plan.md` + `progress.md` |
+| `IN_PROGRESS` | Find last completed phase, resume from there. If `## Harness Gates` shows `NOT_RUN` or `FAIL`, run the gates before transitioning to `REVIEW`. |
+| `REVIEW` | Check `## Harness Gates` first. If both PASS, proceed to reviewing-code. If any is `NOT_RUN` or `FAIL`, reset to `IN_PROGRESS` and run the gates. |
 | `DONE` | Report complete. Ask "Reopen?" — do not proceed without confirmation |
 
 When reopening: update `## Status` to `IN_PROGRESS`, ask where to restart.
 
 ## Step 3 — Classify & Delegate
 
-Classify complexity, then delegate to the matching skill chain. Apply the PRIORITY RULE — dispatch independent phases in parallel before proceeding.
+Classify complexity, then delegate to the matching skill chain. See `task-types.md` for the full matrix. Apply the parallel dispatch rule — dispatch independent phases in parallel before proceeding.
 
 | Level | Criteria | Skill chain |
 |---|---|---|
 | Simple | Single file, typo, config | implementing-feature only |
-| Standard | New endpoint, bug fix (≤3 layers) | planning-implementation → **analyzing-system-design** → implementing-feature → reviewing-code |
-| Complex | New domain, cross-service, migrations | All skills — analyzing-system-design is mandatory |
+| Standard | New endpoint, bug fix (≤3 layers) | researching-codebase → planning-implementation → implementing-feature → testing-implementation → [Gates] → reviewing-code |
+| Complex | New domain, cross-service, migrations | All skills, analyzing-system-design mandatory |
 
-> `analyzing-system-design` is not optional for Standard and Complex. The Coder must not start until `system-design-analysis.md` is approved.
-
-```mermaid
-flowchart TD
-  UserRequest --> OT["orchestrating-tasks"]
-  OT --> RC["researching-codebase"]
-  RC -->|"research.md"| PI["planning-implementation"]
-  PI -->|"implementation-plan.md"| C1{"Approve plan?"}
-  C1 -->|No| PI
-  C1 -->|"Standard/Complex"| SD["analyzing-system-design"]
-  C1 -->|Simple| IF["implementing-feature"]
-  SD -->|"system-design-analysis.md"| C1b{"Approve design?"}
-  C1b -->|No| SD
-  C1b -->|Yes| IF
-  IF -->|"progress.md"| RV["reviewing-code"]
-  RV -->|"reviews/"| ST["sanitizing-text"]
-  ST --> C2{"Approve review?"}
-  C2 -->|Yes| CC["committing-changes"]
-  C2 -->|No| IF
-```
-
-> Checkpoint2 approves the review only — committing-changes still requires separate explicit user authorization.
+`analyzing-system-design` is not optional for Standard and Complex tasks. The implementer must not start until `system-design-analysis.md` is approved.
 
 ---
 
-## Approval Checkpoints
+## Complexity Classification
 
-Never bypass. Always wait for explicit approval before proceeding.
-
-| Skill | Requires approval before |
+| Level | Criteria |
 |---|---|
-| `analyzing-system-design` | Any implementation phase starts |
-| `committing-changes` | Any `git commit` or `git push` |
-| `creating-pull-request` | Any `gh pr create` |
-
-## Error Recovery
-
-- MCP tools unavailable: proceed with local context (plan files + codebase), inform user, do not block.
-- Skill fails mid-execution: update `progress.md` with failure point, present options (retry / skip / abort).
+| Simple | Single file change, typo/config fix, guard condition. Entire production change fits in ≤5 lines across 1 file AND root cause is fully documented. |
+| Standard | Bug fix touching 2-3 layers, new endpoint, new service. |
+| Complex | New domain, cross-service change, migration + multiple layers, fixture/test changes that may cascade. When in doubt between Standard and Complex, default to Standard and escalate after critique gate if needed. |
 
 ---
-
-## Output Contract
-
-For every new task, create (slug = kebab-case description, e.g. `add-user-endpoint`):
-
-```
-.github/plans/{slug}/
-├── brief.md      ← context + acceptance criteria
-└── progress.md   ← ## Status: IN_PROGRESS
-```
 
 ## State Management
 
-Only `orchestrating-tasks` and the skills below may write the `## Status` line in `progress.md`.
+Only `orchestrating-tasks` and the skills listed may write the `## Status` line in `progress.md`.
 
 | From | To | Who | When |
 |------|----|-----|------|
 | _(absent)_ | `IN_PROGRESS` | orchestrating-tasks | brief.md created |
-| `IN_PROGRESS` | `REVIEW` | implementing-feature | All phases done, lint + tests pass |
+| `IN_PROGRESS` | `REVIEW` | orchestrating-tasks | After Output Judge PASS (or skipped per skip rules) |
 | `REVIEW` | `IN_PROGRESS` | orchestrating-tasks | reviewing-code finds blockers |
 | `REVIEW` | `DONE` | reviewing-code | User explicitly approves review |
 | `DONE` | `IN_PROGRESS` | orchestrating-tasks | User explicitly asks to reopen |
@@ -139,16 +121,36 @@ Only `orchestrating-tasks` and the skills below may write the `## Status` line i
 ## Status
 IN_PROGRESS
 
-## Phase 1 — Domain Model ✅
+## Harness Gates
+Output Judge: NOT_RUN
+
+## Phase 1 — Domain Model (DONE)
 - [x] Entity created
 - [x] Tests passing
 
-## Phase 2 — Use Case ⏳
+## Phase 2 — Use Case (IN PROGRESS)
 - [x] UseCase struct
 - [ ] Unit tests
 ```
 
 Valid values: `IN_PROGRESS` | `REVIEW` | `DONE`
+
+---
+
+## Priority Rule: Parallel Agent Dispatch
+
+**Whenever two or more sub-tasks are independent, dispatch them as background agents in parallel. Do not serialize work that can be parallelized.**
+
+Before each phase: identify which sub-tasks don't depend on each other's output — dispatch those in parallel; run the rest in dependency order.
+
+| Scenario | Wrong | Right |
+|---|---|---|
+| Research 3 services | Sequential, 3 turns | 3 `explore` agents, 1 turn |
+| Implement domain + repository (no dependency) | Domain then repository | Both in parallel |
+
+Failing to parallelize independent tasks is a performance violation.
+
+---
 
 ## Context Compression
 
@@ -159,25 +161,30 @@ Context is at {N}% — compress now to resume cleanly in a new chat?
 Reply "yes" or /compress.
 ```
 
-Skill: `.github/skills/compressing-context/SKILL.md`
+Skill: `skills/compressing-context/SKILL.md`
 
 ---
 
 ## Common Mistakes
 
-- **Serializing independent phases** — always check for parallelism before delegating a phase
-- **Skipping `analyzing-system-design`** for Standard/Complex tasks — it is mandatory, not optional
-- **Treating review approval as commit authorization** — they are separate checkpoints
-- **Assuming the active plan** without reading `progress.md` — always discover first
-- **Writing code directly** — this skill only routes; implementation goes to implementing-feature
+- Serializing independent phases: always check for parallelism before delegating a phase
+- Skipping `analyzing-system-design` for Standard/Complex tasks: it is mandatory
+- Treating review approval as commit authorization: they are separate checkpoints
+- Assuming the active plan without reading `progress.md`: always discover first
+- Writing code directly: this skill only routes; implementation goes to implementing-feature
+- Reusing a live agent across skill types: each skill phase requires a fresh `task()` dispatch
+- Dispatching `go-implementer` or `go-tester` directly: always dispatch the skills
 
 ## Permissions
 
-- ✅ Invoke any skill
-- ✅ Read any file
-- ✅ Create and update `brief.md`, `progress.md`
-- ❌ Write production code or tests
-- ❌ Commit without EXPLICIT USER authorization
-- ❌ Assume "proceed with implementation" covers commit authorization — it does not
-- ❌ Skip any approval checkpoint
+- Invoke any skill
+- Read any file
+- Create and update `brief.md`, `progress.md`
+- Update `## Status` in `progress.md`
+
+Forbidden:
+- Write production code or tests
+- Commit without explicit user authorization
+- Assume "proceed with implementation" covers commit authorization
+- Skip any approval checkpoint
 
