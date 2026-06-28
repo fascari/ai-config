@@ -12,15 +12,56 @@ Shared configuration, coding instructions, and workflow skills for AI-assisted s
 - `docs/` - guides and reference documentation
 
 
-## Project setup
+## Installation
 
-Use this repo as the shared `.github/` tree for a consuming project. The exact wiring depends on the workflow. A local clone, symlink, or copy all work in practice.
+Skills are installed globally for Codex and GitHub Copilot so every project can use them without per-project setup.
 
-Copilot and other AI tools read files from `.github/instructions/` and `.github/skills/` when that tree is present.
+| Provider | Install location | Link name |
+|---|---|---|
+| Codex | `~/.codex/skills/` | `atlas-ai-config-<skill>` |
+| GitHub Copilot | `~/.copilot/skills/` | `<skill>` |
+
+```bash
+# Install for both providers
+mise run skills:install
+
+# Or target a single provider
+mise run skills:install:codex
+mise run skills:install:copilot
+```
+
+### First-time setup (per machine)
+
+```bash
+git clone git@github.com:fascari/ai-config.git ~/path/of/your/choice
+cd ~/path/of/your/choice && mise run skills:install
+```
+
+The script creates symlinks. If the machine uses a different SSH host alias, use the HTTPS URL instead.
+
+### Keeping skills up to date
+
+```bash
+cd ~/path/of/your/choice && git pull
+```
+
+Symlinks stay valid — no re-install needed after a pull.
+
+### Adding a new skill
+
+After adding a new `skills/<name>/` directory, re-run the mise task:
+
+```bash
+mise run skills:install
+```
 
 ### For Claude Projects
 
 Attach the relevant instruction files from `instructions/` as project knowledge. See [`claude/README.md`](claude/README.md) for details.
+
+### Using as a project `.github/` tree (legacy)
+
+You can still use this repo as the shared `.github/` tree for a consuming project. A local clone, symlink, or copy all work. AI tools read files from `.github/instructions/` and `.github/skills/` when that tree is present.
 
 
 ## Instructions

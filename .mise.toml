@@ -1,0 +1,15 @@
+[tasks."skills:install"]
+description = "Install this repo's skills globally for Codex and Copilot"
+run = "./install-global-skills.sh"
+
+[tasks."skills:install:all"]
+description = "Install this repo's skills globally for Codex and Copilot"
+run = "./install-global-skills.sh"
+
+[tasks."skills:install:codex"]
+description = "Install this repo's skills globally for Codex"
+run = "./install-global-skills.sh --provider codex"
+
+[tasks."skills:install:copilot"]
+description = "Install this repo's skills globally for GitHub Copilot"
+run = "./install-global-skills.sh --provider copilot"
