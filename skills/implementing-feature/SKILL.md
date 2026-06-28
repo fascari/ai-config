@@ -55,9 +55,9 @@ When dispatched by `orchestrating-tasks`, use the `task` tool. For Go file chang
 
 Read only the instruction files whose `applyTo` glob matches files you will change. Do not load all instructions unconditionally:
 
-- `.github/instructions/go-style.instructions.md`
-- `.github/instructions/modern-go.instructions.md` + `skills/writing-modern-go/SKILL.md`
-- Any other `.github/instructions/*.instructions.md` whose `applyTo` glob matches a file you will edit
+- the active provider-native project instruction files for the current repo
+- `skills/writing-modern-go/SKILL.md` when the implementation touches Go and the repo expects modern Go idioms
+- any explicitly referenced repo-local rule docs linked from those project instruction files
 
 ---
 
@@ -78,7 +78,7 @@ Read only the instruction files whose `applyTo` glob matches files you will chan
    A) Backward compatible approach
    B) Accept breaking change
    ```
-5. Implement following all project coding rules (see `.github/instructions/`).
+5. Implement following all project coding rules from the active provider-native project instruction files and any repo docs they explicitly route you to.
 6. After EVERY file edit — compile-check immediately and fix all issues.
 7. **Style compliance gate** (run all before step 8):
 

@@ -1,6 +1,6 @@
 # GitHub Copilot Instructions
 
-This file is the entry point for AI agents working in this repo. It provides project context, rule summaries, plan conventions, and skill references. Detailed rules are auto-injected via path-specific instructions in `.github/instructions/`; skills are in `.github/skills/`.
+This file is the entry point for AI agents working in this repo. It provides project context, rule summaries, plan conventions, and skill references. Detailed rules should come from the provider-native project instruction mechanism plus the shared rules library; skills are in `.github/skills/`.
 
 ---
 
@@ -110,13 +110,13 @@ Plans are never committed. They survive branch switches, stash, rebase, and `git
 /docs/                  # Documentation
 ```
 
-Detailed architecture and layer rules are in `.github/instructions/`.
+Detailed architecture and layer rules belong in the shared rules library or the provider-native project instruction files for this repo.
 
 ---
 
 ## Path-Specific Instructions
 
-Detailed coding rules are in `.github/instructions/` and are auto-injected by Copilot when editing matching files:
+Detailed coding rules come from the shared rules library plus the instruction files that the active provider loads natively:
 
 | Instruction file | Applies to | Summary |
 |-----------------|------------|---------|

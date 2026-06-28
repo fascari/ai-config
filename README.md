@@ -5,8 +5,8 @@ Shared configuration, coding instructions, and workflow skills for AI-assisted s
 
 ## What This Repo Contains
 
-- `copilot-instructions.md` - GitHub Copilot project-level instructions template
-- `instructions/` - coding standards auto-injected by file pattern
+- `providers/` - provider-native project instruction entrypoints and adapters
+- `rules/` - shared rules library reused by provider adapters
 - `skills/` - workflow skills for AI agents
 - `claude/` - Claude-specific configuration and templates
 - `docs/` - guides and reference documentation
@@ -57,16 +57,16 @@ mise run skills:install
 
 ### For Claude Projects
 
-Attach the relevant instruction files from `instructions/` as project knowledge. See [`claude/README.md`](claude/README.md) for details.
+Attach the relevant files from `rules/` as project knowledge. See [`claude/README.md`](claude/README.md) for details.
 
 ### Using as a project `.github/` tree (legacy)
 
-You can still use this repo as the shared `.github/` tree for a consuming project. A local clone, symlink, or copy all work. AI tools read files from `.github/instructions/` and `.github/skills/` when that tree is present.
+This repo separates shared rules from provider-native injection. Keep reusable rules in `rules/`, then install the right entrypoint for each AI provider into the consuming repo.
 
 
 ## Instructions
 
-Coding standards and conventions that AI tools auto-inject when editing matching files. Each file declares an `applyTo` glob pattern in its frontmatter.
+Coding rules and conventions that can be routed into different AI providers. Each file declares an `applyTo` glob pattern in its frontmatter when that metadata is useful to a provider or harness.
 
 | File | Applies to | Summary |
 |---|---|---|
@@ -119,7 +119,20 @@ See [`docs/persistent-memory.md`](docs/persistent-memory.md) for the full setup 
 
 1. Expose this repo as the project's `.github/` tree.
 2. Copy `copilot-instructions.md` to the project root and fill in the blanks.
-3. Add or update files in `instructions/` with project-specific conventions.
+3. Add or update files in `rules/` when changing shared conventions, or in the consuming repo's provider-native instruction files when the rule is project-specific.
+
+### Provider-native project setup
+
+Install the shared Codex entrypoint into a target repository:
+
+```bash
+mise run project:install:codex -- --target /path/to/repo
+```
+
+This installs:
+
+- `AGENTS.md` from `providers/codex/`
+- `.codex/rules/` linked or copied from this repo
 4. Run `graphify .` to generate the code knowledge graph.
 5. Run `checkpoint` at the end of the first session to initialize the vault folder.
 6. Skills apply the rules automatically during each phase.

@@ -35,7 +35,7 @@ When dispatched by `orchestrating-tasks`, use `agent_type: "go-tester"` if the r
 
 2. Use the `{plan_root}` provided by `orchestrating-tasks`. If running standalone, resolve `{plan_root}` with the same rule: prefer `$AI_MEMORY_HOME/{project}/plans/`; if unset, use `$COPILOT_VAULT/{project}/plans/`; then create or refresh `.plans` as a symlink to `{plan_root}`.
 3. Read `{plan_root}/{slug}/implementation-plan.md` to understand success criteria for the current phase.
-4. Read `.github/instructions/testing.instructions.md` and any other project testing conventions.
+4. Read the active provider-native project instruction files for project testing conventions and any repo-local docs they explicitly route you to.
 5. Analyze existing test files for the affected packages. Identify patterns, mock setup, factory functions, and whether the target code starts goroutines.
 6. Write unit tests: table-driven, fail-fast assertions, project's mock strategy (e.g. `EXPECT()` builder for testify/mockery). Cover happy path + each error case + edge cases. Test data via factory/fixture helpers — never inline complex structs.
 7. Write integration tests where applicable (repository layer, external integrations): follow project conventions for test tagging, suites, and fixture files.
@@ -101,9 +101,9 @@ Run `git diff HEAD -- '*_test.go' 'testdata/**'` to see all test changes.
 
 ## Documented rules (read these; do NOT rely on prior knowledge)
 
-- .github/instructions/testing.instructions.md
+- active provider-native testing rules
 - .github/skills/writing-modern-go/SKILL.md
-- .github/instructions/go-style.instructions.md (if present)
+- active provider-native Go style rules (if the repo defines them)
 
 ## Output format
 

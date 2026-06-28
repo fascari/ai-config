@@ -19,7 +19,7 @@ Also performs requirements traceability reviews when an issue tracker ticket key
 ## Steps
 
 1. Read `.github/skills/implementing-feature/SKILL.md` — apply its Quality Checklist, Testing Rules, and all anti-pattern tables verbatim.
-2. Read `.github/instructions/` — apply all project-specific coding rules, architecture rules, and anti-patterns.
+2. Read the active provider-native project instruction files — apply all project-specific coding rules, architecture rules, and anti-patterns, plus any repo docs they explicitly reference.
 3. Use the `{plan_root}` provided by `orchestrating-tasks`. If running standalone, resolve `{plan_root}` with the same rule: prefer `$AI_MEMORY_HOME/{project}/plans/`; if unset, use `$COPILOT_VAULT/{project}/plans/`; then create or refresh `.plans` as a symlink to `{plan_root}`.
 4. Read `{plan_root}/{slug}/implementation-plan.md` and `{plan_root}/{slug}/progress.md` for context.
 5. Review all changed files against the checklists below.
@@ -37,7 +37,7 @@ Write to `{plan_root}/{slug}/reviews/review-{model}.md`.
 
 Apply the **Quality Checklist** section from `.github/skills/implementing-feature/SKILL.md` in full — do not re-derive it. Every item in that checklist is a potential `BLOCKER`.
 
-Then apply all rules from `.github/instructions/` — these contain the project's specific coding and architecture standards:
+Then apply all rules from the active provider-native project instruction files — these contain the project's specific coding and architecture rules:
 
 - Language/framework style rules
 - Domain / business logic patterns

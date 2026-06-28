@@ -82,11 +82,11 @@ orchestrating-tasks → researching-codebase → analyzing-system-design → pla
 
 ## Project Customization
 
-Skills are language and framework agnostic. Project-specific rules live in `.github/instructions/` (coding style, architecture, testing conventions, anti-patterns).
+Skills are language and framework agnostic. Project-specific rules should live in the active provider's native project instruction mechanism. Shared reusable rules belong in `rules/`.
 
 To adapt to a new project:
 
-1. Add or update files in `.github/instructions/` with project-specific rules.
+1. Add or update `rules/` for shared rules, and install or update the provider-native project entrypoint for the target AI surface.
 2. Update `implementing-feature/references/anti-patterns.md` with codebase-specific patterns.
 3. Copy `agents/` templates into the project's `agents/` directory and adapt to the project's toolchain.
 4. Implement the harness shell scripts in `.github/harness/` (see `harness/README.md`).

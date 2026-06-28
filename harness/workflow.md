@@ -144,9 +144,9 @@ graph LR
     {"check": "fmt",    "result": "pass"}
   ],
   "semantic": [
-    {"instruction": "go-style.instructions.md",   "result": "pass", "violations": []},
-    {"instruction": "modern-go.instructions.md",  "result": "pass", "violations": []},
-    {"instruction": "error-handling.instructions.md", "result": "fail",
+    {"instruction": "go-style.md",   "result": "pass", "violations": []},
+    {"instruction": "writing-modern-go/SKILL.md",  "result": "pass", "violations": []},
+    {"instruction": "error-handling.md", "result": "fail",
      "violations": [{"file": "foo.go", "line": 42, "rule": "...", "severity": "high"}]}
   ],
   "overall": "fail"

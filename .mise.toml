@@ -13,3 +13,7 @@ run = "./install-global-skills.sh --provider codex"
 [tasks."skills:install:copilot"]
 description = "Install this repo's skills globally for GitHub Copilot"
 run = "./install-global-skills.sh --provider copilot"
+
+[tasks."project:install:codex"]
+description = "Install Codex-native project rules into a target repo"
+run = "./install-provider-rules.sh --provider codex"

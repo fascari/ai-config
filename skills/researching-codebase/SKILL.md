@@ -18,7 +18,7 @@ Read-only: never suggests improvements or critiques code quality.
 ## Steps
 
 1. Read architecture rules for context:
-   - `.github/instructions/` — all project-specific architecture and design rules
+   - active provider-native project instruction files — all project-specific architecture and design rules for the current repo
 2. **Query Graphify first** (primary research tool — do this before reading any source file):
    - `graphify query "concept"` — broad context about a domain or module
    - `graphify path "A" "B"` — trace connection between two nodes

@@ -132,10 +132,9 @@ When dispatching `implementing-feature`, `testing-implementation`, or `reviewing
 ## Style Reinforcement (Go — non-negotiable)
 
 Re-read these BEFORE the first edit:
-- .github/instructions/go-style.instructions.md (file naming, comment discipline)
-- .github/instructions/modern-go.instructions.md + skills/writing-modern-go/SKILL.md (modern Go idioms)
-- .github/instructions/testing.instructions.md (no-comment default, table-driven)
-- Any other .github/instructions/*.instructions.md whose applyTo matches files you will edit
+- the active provider-native project instruction files for the current working directory
+- `skills/writing-modern-go/SKILL.md` when Go edits need explicit modern idioms
+- any repo-local rule docs explicitly routed from those project instruction files
 
 Hard rules:
 - File names: NO underscores except the _test.go suffix

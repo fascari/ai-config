@@ -17,8 +17,8 @@ Before your first edit, read only the instruction files whose `applyTo` glob mat
 
 | Files you will edit | Instruction files to read |
 |---|---|
-| Any `.go` file | `go-style.instructions.md`, `modern-go.instructions.md` + `writing-modern-go/SKILL.md`, `error-handling.instructions.md` (if present) |
-| Architecture/use-case files | + `clean-architecture.instructions.md` (if present) |
+| Any `.go` file | active provider-native project instructions for Go style and error handling, plus `writing-modern-go/SKILL.md` when explicit modern Go guidance is needed |
+| Architecture/use-case files | + `clean-architecture.md` (if present) |
 | Repository/persistence files | + any persistence-layer instructions (if present) |
 
 **Skip graphify** when the prompt contains explicit `**MODIFY** path/to/file.go` or `**CREATE** path/to/file.go` references — the plan already defines scope. Use `graphify query` only when you need to discover what to change, not when the plan already tells you exactly which files.

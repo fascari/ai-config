@@ -24,13 +24,13 @@
 
 ## Conventions
 
-The coding conventions for this project follow the standards in `.github/instructions/`, when that tree is available, or in the attached Claude Project knowledge files:
+The coding conventions for this project follow the shared rules library, when attached or mirrored into the repo, or in the attached Claude Project knowledge files:
 
-- `go-style.instructions.md` — naming, formatting, control flow
-- `clean-architecture.instructions.md` — layer rules, DI, domain isolation
-- `testing.instructions.md` — table-driven tests, mocks, assertions
-- `error-handling.instructions.md` — domain errors, wrapping, HTTP mapping
-- `package-design.instructions.md` — package naming, dependency direction
+- `go-style.md` — naming, formatting, control flow
+- `clean-architecture.md` — layer rules, DI, domain isolation
+- `testing.md` — table-driven tests, mocks, assertions
+- `error-handling.md` — domain errors, wrapping, HTTP mapping
+- `package-design.md` — package naming, dependency direction
 
 ## Rules
 

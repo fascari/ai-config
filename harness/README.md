@@ -1,10 +1,10 @@
 # Quality Harness
 
-The quality harness is a two-layer, receipt-based validation system that runs after each AI-assisted phase. It enforces coding standards without duplicating rules already captured in `.github/instructions/`.
+The quality harness is a two-layer, receipt-based validation system that runs after each AI-assisted phase. It enforces coding standards without duplicating rules already captured in the shared rules library.
 
 ## Purpose
 
-AI agents operating in long contexts drift from style rules over time. The harness prevents this by validating every phase against the canonical instruction files, not against prose embedded in skill files. When a rule changes in `.github/instructions/`, the harness enforces it immediately with no script changes required.
+AI agents operating in long contexts drift from style rules over time. The harness prevents this by validating every phase against the canonical rules files, not against prose embedded in skill files. When a rule changes in `rules/`, the harness enforces it immediately with no script changes required.
 
 ## How to Run
 
@@ -77,7 +77,7 @@ Wrappers over existing project tooling. Exit-code based, zero LLM cost.
 
 ### Layer B: Semantic / LLM-as-judge
 
-Each `.github/instructions/*.instructions.md` file is the **source of truth**. The harness reads the file, reads the diff scoped to the `applyTo` glob, and dispatches an LLM with a fixed JSON schema. No rule duplication in bash scripts. When a rule changes in an `.instructions.md` file, the harness enforces it automatically on the next run.
+Each `rules/*.md` file is the **source of truth**. The harness reads the file, reads the diff scoped to the `applyTo` glob, and dispatches an LLM with a fixed JSON schema. No rule duplication in bash scripts. When a rule changes in a rules file, the harness enforces it automatically on the next run.
 
 Requires the Copilot CLI or equivalent. On machines without it, all LLM-judge checks emit `"result":"skip"`. Skips never block the gate.
 

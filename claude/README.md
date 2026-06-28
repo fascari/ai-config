@@ -6,11 +6,11 @@ This directory holds Claude-specific configuration for use with Claude Projects 
 
 ### Claude Projects
 
-When creating a Claude Project for a codebase, attach the relevant files from `../instructions/` as project knowledge. They describe coding conventions and architectural rules in plain markdown. Claude reads them directly.
+When creating a Claude Project for a codebase, attach the relevant files from `../rules/` as project knowledge. They describe coding conventions and architectural rules in plain markdown. Claude reads them directly.
 
 Suggested files to attach per project type:
-- Go projects: `go-style.instructions.md`, `clean-architecture.instructions.md`, `testing.instructions.md`, `error-handling.instructions.md`, `package-design.instructions.md`
-- Writing/articles: `sanitizing-text.instructions.md`
+- Go projects: `go-style.md`, `clean-architecture.md`, `testing.md`, `error-handling.md`, `package-design.md`
+- Writing/articles: `sanitizing-text.md`
 
 ### CLAUDE.md
 
