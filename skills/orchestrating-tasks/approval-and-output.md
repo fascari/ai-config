@@ -31,7 +31,7 @@ Approval rules:
 For every new task, create:
 
 ```
-.github/plans/{slug}/
+{plan_root}/{slug}/
 ├── brief.md          ← orchestrating-tasks creates (raw request context)
 ├── requirements.md   ← optional, from requirements extraction (testable ACs)
 └── progress.md       ← orchestrating-tasks creates with ## Status: IN_PROGRESS
@@ -40,7 +40,7 @@ For every new task, create:
 For Standard/Complex tasks the typical artifact set grows to:
 
 ```
-.github/plans/{slug}/
+{plan_root}/{slug}/
 ├── brief.md
 ├── requirements.md
 ├── research.md             ← researching-codebase creates

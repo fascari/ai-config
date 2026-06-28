@@ -28,11 +28,11 @@ Read-only: never suggests improvements or critiques code quality.
 3. **Locate**: if graphify is unavailable or does not have the answer, use `file_search` to find where things live. Group by layer according to the project's architecture (e.g. `domain/`, `service/`, `handler/`, `repository/`, `lib/`, tests, migrations). Do not read file contents in this step.
 4. **Analyze**: use `read_file` to trace data flow through layers — only after graphify query. Document with exact `file:line` references: domain types, service interfaces and implementations, data access methods, API/handler registration.
 5. **Pattern Extract**: find actual code snippets that can be modeled: route/handler registration, service constructors, data access patterns, test factories, test patterns, mock usage.
-6. Write results to `.github/plans/{slug}/research.md`.
+6. Write results to `{plan_root}/{slug}/research.md` in the external vault. Do not create `.github/` or repo-local plan folders.
 
 ## Output
 
-Write to `.github/plans/{slug}/research.md`:
+Write to `{plan_root}/{slug}/research.md`:
 
 ```markdown
 # Research: {slug}
@@ -76,4 +76,3 @@ Write to `.github/plans/{slug}/research.md`:
 - If a file from the plan is not found, document it as `NOT FOUND: {path}` in the file map and continue
 - If `grep_search` or `semantic_search` returns no results, try alternative query terms before concluding the pattern does not exist
 - If a domain directory does not exist, report it to the user and ask whether to proceed with partial analysis
-

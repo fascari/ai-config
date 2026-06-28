@@ -16,7 +16,7 @@ This skill is split into focused sub-files. Always read this SKILL.md first for 
 | [`dispatching.md`](dispatching.md) | Selecting model tier + agent_type for a dispatch; building the `task` tool prompt; Style Reinforcement block; Codebase Search Rules |
 | [`gates.md`](gates.md) | Running Critique Gate, Test Design Judge, or Output Judge Gate |
 | [`task-types.md`](task-types.md) | Picking the skill chain for a task type; testing dispatch order; NEVER-dispatch-agents-directly rule |
-| [`approval-and-output.md`](approval-and-output.md) | Approval checkpoints before external writes; expected artifact set in `.github/plans/{slug}/` |
+| [`approval-and-output.md`](approval-and-output.md) | Approval checkpoints before external writes; expected artifact set in the external vault plan directory |
 
 ---
 
@@ -57,9 +57,11 @@ Answer these questions explicitly in your reasoning BEFORE dispatching any subag
 
 ## Step 1 — Setup & Plan Discovery
 
-1. Ensure plans symlink/directory exists — run setup from `skills/plans-setup.md`
+1. Resolve the external plan root. Prefer `$AI_MEMORY_HOME/{project}/plans/`; if unset, use `$COPILOT_VAULT/{project}/plans/`. If neither is set, stop and ask the user to configure the Obsidian vault path.
+2. Run `skills/plans-setup.md`: ensure `{plan_root}` exists and create or refresh the repo-local `.plans` symlink pointing to `{plan_root}`.
+3. Do not create real repo-local plan folders, provider-specific AI configuration inside the project repository, or `.github/plans`.
 
-When no slug is provided, scan `.github/plans/` and read each `progress.md`:
+When no slug is provided, scan the external plan root and read each `progress.md`:
 
 | Situation | Action |
 |-----------|--------|
@@ -70,7 +72,7 @@ When no slug is provided, scan `.github/plans/` and read each `progress.md`:
 
 ## Step 2 — Read Plan Status
 
-Read `.github/plans/{slug}/progress.md` and route:
+Read `{plan_root}/{slug}/progress.md` and route:
 
 | Status | Action |
 |--------|--------|
@@ -187,4 +189,3 @@ Forbidden:
 - Commit without explicit user authorization
 - Assume "proceed with implementation" covers commit authorization
 - Skip any approval checkpoint
-

@@ -17,25 +17,26 @@ a new chat session to resume exactly where this one left off.
 
 ## Steps
 
-1. Ensure the plans symlink exists — run setup from `.github/skills/plans-setup.md`
+1. Run `skills/plans-setup.md` to resolve `{plan_root}` and create or refresh the repo-local `.plans` symlink.
 2. Scan the conversation from the beginning. Collect: current state, completed work, key decisions, discoveries, open blockers, next steps.
 3. **Resolve the plan slug**:
-   a. Scan `.github/plans/` for a directory containing a `progress.md` with status `IN_PROGRESS`. Use that slug.
-   b. If no `IN_PROGRESS` plan exists, derive a slug from the session topic (kebab-case, max 4 words, e.g. `cv-job-applications`, `api-auth-refactor`).
-   c. Create the directory `.github/plans/{slug}/` if it does not exist.
-   d. If creating a new plan directory, also create a minimal `progress.md`:
+   a. Resolve the external `{plan_root}` with the same rule as `orchestrating-tasks`: prefer `$AI_MEMORY_HOME/{project}/plans/`; if unset, use `$COPILOT_VAULT/{project}/plans/`. If neither is set, stop and ask the user to configure an external plan root.
+   b. Scan `.plans/` for a directory containing a `progress.md` with status `IN_PROGRESS`. Use that slug.
+   c. If no `IN_PROGRESS` plan exists, derive a slug from the session topic (kebab-case, max 4 words, e.g. `cv-job-applications`, `api-auth-refactor`).
+   d. Create the directory `{plan_root}/{slug}/` if it does not exist.
+   e. If creating a new plan directory, also create a minimal `progress.md`:
       ```markdown
       # {slug}
       **Status**: IN_PROGRESS
       **Type**: {session type — e.g. CV tailoring, research, implementation}
       ```
-4. Read `.github/plans/{slug}/progress.md` and `.github/plans/{slug}/implementation-plan.md` if they exist, for accurate phase state.
-5. Write `.github/plans/{slug}/session-summary.md` using the format below.
+4. Read `{plan_root}/{slug}/progress.md` and `{plan_root}/{slug}/implementation-plan.md` if they exist, for accurate phase state.
+5. Write `{plan_root}/{slug}/session-summary.md` using the format below.
 6. Confirm to the user with the path and the re-attach instruction.
 
 ## Output
 
-Write to `.github/plans/{slug}/session-summary.md`. If the file already exists, replace it (each compression is a fresh snapshot). The slug comes from Step 3 above — either an existing IN_PROGRESS plan or a newly created one.
+Write to `{plan_root}/{slug}/session-summary.md`. If the file already exists, replace it (each compression is a fresh snapshot). The slug comes from Step 3 above — either an existing IN_PROGRESS plan or a newly created one.
 
 ```markdown
 # Session Summary — {slug}
@@ -77,9 +78,9 @@ Write to `.github/plans/{slug}/session-summary.md`. If the file already exists, 
 Read and follow .github/skills/orchestrating-tasks/SKILL.md, then resume plan {slug}.
 
 Before doing anything, read these files for full context:
-- .github/plans/{slug}/session-summary.md
-- .github/plans/{slug}/progress.md
-- .github/plans/{slug}/implementation-plan.md
+- {plan_root}/{slug}/session-summary.md
+- {plan_root}/{slug}/progress.md
+- {plan_root}/{slug}/implementation-plan.md
 
 Resume from: Phase {N} — {phase name}, sub-task: "{exact next task}".
 ```

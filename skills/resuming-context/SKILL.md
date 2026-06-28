@@ -19,7 +19,7 @@ Never starts implementation before presenting the restored state to the user.
 
 ### Step 0 — Setup
 
-1. Ensure the plans symlink exists — run setup from `.github/skills/plans-setup.md`
+1. Run `skills/plans-setup.md` to resolve `{plan_root}` and create or refresh the repo-local `.plans` symlink.
 
 ### Step 1 — Discover the Plan
 
@@ -27,10 +27,11 @@ Before matching against any user-provided input, **always** run these two comman
 
 ```bash
 git rev-parse --abbrev-ref HEAD
-ls .github/plans/
 ```
 
-> **Always use `ls .github/plans/`** (the symlink set up in Step 0). Never construct the raw path manually (e.g. `~/ai-plans/...`) — that risks typos and path mismatches.
+Resolve the external `{plan_root}` with the same rule as `orchestrating-tasks`: prefer `$AI_MEMORY_HOME/{project}/plans/`; if unset, use `$COPILOT_VAULT/{project}/plans/`. If neither is set, stop and ask the user to configure an external plan root.
+
+List `.plans/` to find available plan slugs. `.plans` must be a symlink to `{plan_root}`. Never create real repo-local plan folders, provider-specific AI configuration inside the project repository, or `.github/plans`.
 
 Extract the identifier from the branch name using the following rules:
 
@@ -54,9 +55,9 @@ Then apply the discovery rules:
 
 Read **all three** files via `read_file` before doing anything else:
 
-- `.github/plans/{slug}/session-summary.md`
-- `.github/plans/{slug}/progress.md`
-- `.github/plans/{slug}/implementation-plan.md`
+- `{plan_root}/{slug}/session-summary.md`
+- `{plan_root}/{slug}/progress.md`
+- `{plan_root}/{slug}/implementation-plan.md`
 
 If `session-summary.md` does not exist, stop and inform the user:
 

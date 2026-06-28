@@ -20,15 +20,16 @@ Also performs requirements traceability reviews when an issue tracker ticket key
 
 1. Read `.github/skills/implementing-feature/SKILL.md` — apply its Quality Checklist, Testing Rules, and all anti-pattern tables verbatim.
 2. Read `.github/instructions/` — apply all project-specific coding rules, architecture rules, and anti-patterns.
-3. Read `.github/plans/{slug}/implementation-plan.md` and `.github/plans/{slug}/progress.md` for context.
-4. Review all changed files against the checklists below.
-5. If an issue tracker ticket key is provided, run the Requirements Traceability Review.
-6. Write results to `.github/plans/{slug}/reviews/review-{model}.md`.
-7. If verdict is APPROVED and user confirms, update `## Status` in `progress.md` to `DONE`.
+3. Run `skills/plans-setup.md` to resolve `{plan_root}` and create or refresh the repo-local `.plans` symlink.
+4. Read `{plan_root}/{slug}/implementation-plan.md` and `{plan_root}/{slug}/progress.md` for context.
+5. Review all changed files against the checklists below.
+6. If an issue tracker ticket key is provided, run the Requirements Traceability Review.
+7. Write results to `{plan_root}/{slug}/reviews/review-{model}.md`.
+8. If verdict is APPROVED and user confirms, update `## Status` in `progress.md` to `DONE`.
 
 ## Output
 
-Write to `.github/plans/{slug}/reviews/review-{model}.md`.
+Write to `{plan_root}/{slug}/reviews/review-{model}.md`.
 
 ## Review Checklist
 
@@ -61,7 +62,7 @@ This section defines how to verify that the implementation satisfies the origina
 
 ### Step 1 — Load the Brief
 
-Read `.github/plans/{slug}/brief.md` via `read_file`.
+Read `{plan_root}/{slug}/brief.md` via `read_file`.
 
 Extract:
 - `## Source Requirements` → the requirements page URL (Notion, GitHub Wiki, etc.)
@@ -123,7 +124,7 @@ For each `Missing` or `Partial` item, raise a `BLOCKER` in the review file using
 
 ## Output Contract
 
-Write to `.github/plans/{slug}/reviews/review-{model}.md`:
+Write to `{plan_root}/{slug}/reviews/review-{model}.md`:
 
 ```markdown
 # Review: {slug} — {model} — {date}

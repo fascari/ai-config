@@ -36,7 +36,7 @@ When dispatched by `orchestrating-tasks`, use the `task` tool. For Go file chang
 
 ## Setup
 
-1. Run the plans symlink/directory setup from `skills/plans-setup.md`
+1. Run `skills/plans-setup.md` to resolve `{plan_root}` and create or refresh the repo-local `.plans` symlink.
 2. **Context Bootstrap** — skip entirely if the prompt contains `Violations:` (repair cycle):
    ```bash
    GRAPHIFY_AVAILABLE=false
@@ -44,6 +44,7 @@ When dispatched by `orchestrating-tasks`, use the `task` tool. For Go file chang
    VAULT_AVAILABLE=false
    [ -n "${COPILOT_VAULT:-${AI_MEMORY_HOME:-}}" ] && VAULT_AVAILABLE=true
    ```
+   Resolve `{plan_root}` with the same rule as `orchestrating-tasks`: prefer `$AI_MEMORY_HOME/{project}/plans/`; if unset, use `$COPILOT_VAULT/{project}/plans/`. If neither is set, stop and ask the user to configure an external plan root.
    - If `GRAPHIFY_AVAILABLE=true` **and** the plan_excerpt does NOT contain explicit file paths: use `graphify query` for domains/packages in the plan.
    - If `GRAPHIFY_AVAILABLE=true` **and** the plan already specifies exact files to edit: **skip graphify** — scope is known.
    - If `VAULT_AVAILABLE=true`: read architecture decisions relevant to the target area.
@@ -62,7 +63,7 @@ Read only the instruction files whose `applyTo` glob matches files you will chan
 
 ## Per Phase
 
-1. Read only the current phase section from `.github/plans/{slug}/implementation-plan.md`.
+1. Read only the current phase section from `{plan_root}/{slug}/implementation-plan.md`.
 2. Load targeted context: `graphify query "{domain}"` if available; otherwise read the `## File Map` from `research.md`.
 3. **Pre-flight**: files marked MODIFY must exist; files marked CREATE must not exist (unless plan says overwrite).
 4. **Compatibility gate** — stop and ask before modifying any existing:
@@ -196,4 +197,3 @@ Update `progress.md` after each phase. Mark only production file tasks:
 ```
 
 **Do NOT update `## Status` to `REVIEW`** — that transition is owned exclusively by `orchestrating-tasks` after all gates pass. Leave `## Status` as `IN_PROGRESS` and update only the phase checkboxes.
-

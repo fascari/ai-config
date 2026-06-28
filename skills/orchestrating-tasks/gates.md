@@ -25,7 +25,7 @@ Read and follow the project instructions. Apply adversarial review only.
 
 ## Context
 slug: {slug}
-plan dir: .github/plans/{slug}/
+plan dir: {plan_root}/{slug}/
 
 ## Review scope
 1. Do all file paths in implementation-plan.md exist when marked MODIFY?
@@ -93,11 +93,11 @@ Your sole job: verify that every AC in requirements.md has explicit evidence in 
 
 ## Context
 slug: {slug}
-plan dir: .github/plans/{slug}/
+plan dir: {plan_root}/{slug}/
 retry count: {N} (0-indexed; max 2 before escalation)
 
 ## Required steps
-1. Read .github/plans/{slug}/requirements.md — extract all acceptance criteria (ACs)
+1. Read {plan_root}/{slug}/requirements.md — extract all acceptance criteria (ACs)
 2. Run: git --no-pager diff HEAD~1 --stat
 3. Run: git --no-pager diff HEAD~1 (read actual changes)
 4. For each AC, find EXPLICIT evidence in the diff: specific file path, function name, or test

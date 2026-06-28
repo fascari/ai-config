@@ -1,14 +1,48 @@
 # Plans Directory Setup
 
-Run before any skill that reads or writes plan files. Idempotent — safe to run multiple times.
+Create a repo-local symlink for inspection, but keep the real plan artifacts in the external vault.
+
+Resolve the external `{plan_root}` with the same rule as `orchestrating-tasks`:
+
+1. Prefer `$AI_MEMORY_HOME/{project}/plans/`.
+2. If unset, use `$COPILOT_VAULT/{project}/plans/`.
+3. If neither is set, stop and ask the user to configure an external plan root.
+
+Then ensure `{plan_root}` exists and create or refresh `.plans` in the current repo root:
 
 ```bash
-PLANS_DIR=~/ai-plans/$(git rev-parse --show-toplevel | xargs basename)
-[ -d "$PLANS_DIR" ] || mkdir -p "$PLANS_DIR"
-[ -L .github/plans ] || ln -s "$PLANS_DIR" .github/plans
+REPO_ROOT="$(rtk git rev-parse --show-toplevel)"
+PROJECT="$(basename "$REPO_ROOT")"
+
+if [ -n "${AI_MEMORY_HOME:-}" ]; then
+  PLAN_ROOT="$AI_MEMORY_HOME/$PROJECT/plans"
+elif [ -n "${COPILOT_VAULT:-}" ]; then
+  PLAN_ROOT="$COPILOT_VAULT/$PROJECT/plans"
+else
+  echo "No external plan root configured; set AI_MEMORY_HOME or COPILOT_VAULT"
+  exit 1
+fi
+
+rtk mkdir -p "$PLAN_ROOT"
+cd "$REPO_ROOT"
+
+if [ -e .plans ] && [ ! -L .plans ]; then
+  echo ".plans exists and is not a symlink; stop and ask before changing it"
+  exit 1
+fi
+
+rtk ln -sfn "$PLAN_ROOT" .plans
+
+EXCLUDE_HAS_PLANS=false
+while IFS= read -r line; do
+  [ "$line" = ".plans" ] && EXCLUDE_HAS_PLANS=true && break
+done < .git/info/exclude
+[ "$EXCLUDE_HAS_PLANS" = true ] || printf "\n.plans\n" >> .git/info/exclude
 ```
 
-**What it does:**
-- Plans live outside the repo at `~/ai-plans/{repo-name}/` — they survive `git clean`, stash, and branch switches
-- `.github/plans` is a symlink for IDE visibility — never committed
-- Always use `ls .github/plans/` (via the symlink), never construct the raw path manually
+Rules:
+
+- `{plan_root}/{slug}/` is the authoritative location for plan artifacts.
+- `.plans` is only a convenience symlink inside the repo where the orchestrator runs.
+- Never create real plan directories inside the repo.
+- Never create or use `.github/plans` for implementation plans.

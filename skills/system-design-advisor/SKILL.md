@@ -29,12 +29,12 @@ the Coder starts.
 
 ## Steps
 
-1. Read `~/ai-plans/{repo-name}/{slug}/implementation-plan*.md`
-2. Read `~/ai-plans/{repo-name}/{slug}/research.md` for codebase context
+1. Read `{plan_root}/{slug}/implementation-plan*.md`
+2. Read `{plan_root}/{slug}/research.md` for codebase context
 3. Run all seven lenses for each phase (see Analysis Protocol below)
 4. For each finding that involves data flow or state transitions, offer a Mermaid diagram
    (see Diagram Protocol below)
-5. Write `~/ai-plans/{repo-name}/{slug}/system-design-analysis.md`
+5. Write `{plan_root}/{slug}/system-design-analysis.md`
 6. Present the summary to the developer and wait for approval
 7. Record decisions in `system-design-analysis.md` under `## Approved Decisions`
 
@@ -388,7 +388,7 @@ sequenceDiagram
 
 ## Output Contract
 
-Write to `~/ai-plans/{repo-name}/{slug}/system-design-analysis.md`.
+Write to `{plan_root}/{slug}/system-design-analysis.md`.
 
 ### File Format
 
@@ -465,7 +465,7 @@ System Design Analysis complete — {N} phase(s) analysed.
 
 Diagrams available: {list titles} — generate any? [Y/N per item]
 
-Full analysis: ~/ai-plans/{repo-name}/{slug}/system-design-analysis.md
+Full analysis: {plan_root}/{slug}/system-design-analysis.md
 
 Approve all / reject individual items / request changes before Coder starts.
 ```
@@ -487,9 +487,9 @@ Approve all / reject individual items / request changes before Coder starts.
 ## Permissions
 
 - ✅ Read any file in the repository
-- ✅ Read `~/ai-plans/{repo-name}/{slug}/implementation-plan*.md`
-- ✅ Read `~/ai-plans/{repo-name}/{slug}/research.md`
-- ✅ Write `~/ai-plans/{repo-name}/{slug}/system-design-analysis.md`
+- ✅ Read `{plan_root}/{slug}/implementation-plan*.md`
+- ✅ Read `{plan_root}/{slug}/research.md`
+- ✅ Write `{plan_root}/{slug}/system-design-analysis.md`
 - ❌ Write production code
 - ❌ Run terminal commands
 - ❌ Mark proposals as approved without developer response

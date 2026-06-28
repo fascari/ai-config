@@ -33,12 +33,13 @@ When dispatched by `orchestrating-tasks`, use `agent_type: "go-tester"` if the r
    - If `VAULT_AVAILABLE=true`: read domain notes for prior decisions on testing patterns.
    - If neither exists, proceed directly.
 
-2. Read `.github/plans/{slug}/implementation-plan.md` to understand success criteria for the current phase.
-3. Read `.github/instructions/testing.instructions.md` and any other project testing conventions.
-4. Analyze existing test files for the affected packages. Identify patterns, mock setup, factory functions, and whether the target code starts goroutines.
-5. Write unit tests: table-driven, fail-fast assertions, project's mock strategy (e.g. `EXPECT()` builder for testify/mockery). Cover happy path + each error case + edge cases. Test data via factory/fixture helpers — never inline complex structs.
-6. Write integration tests where applicable (repository layer, external integrations): follow project conventions for test tagging, suites, and fixture files.
-7. Run **only the affected tests** — never the full suite:
+2. Run `skills/plans-setup.md` to resolve `{plan_root}` and create or refresh the repo-local `.plans` symlink.
+3. Read `{plan_root}/{slug}/implementation-plan.md` to understand success criteria for the current phase.
+4. Read `.github/instructions/testing.instructions.md` and any other project testing conventions.
+5. Analyze existing test files for the affected packages. Identify patterns, mock setup, factory functions, and whether the target code starts goroutines.
+6. Write unit tests: table-driven, fail-fast assertions, project's mock strategy (e.g. `EXPECT()` builder for testify/mockery). Cover happy path + each error case + edge cases. Test data via factory/fixture helpers — never inline complex structs.
+7. Write integration tests where applicable (repository layer, external integrations): follow project conventions for test tagging, suites, and fixture files.
+8. Run **only the affected tests** — never the full suite:
 
    ```bash
    # Unit tests: target the specific package(s) changed
@@ -55,7 +56,7 @@ When dispatched by `orchestrating-tasks`, use `agent_type: "go-tester"` if the r
    > **Never run the full suite.** Target only the affected paths.
    > For goroutine-based code, use the project's async synchronization pattern (`synctest.Test` + `synctest.Wait()` when available). Never use `sync.WaitGroup`, ad-hoc channels, or `time.Sleep` for test synchronization.
 
-8. Update `.github/plans/{slug}/progress.md` with test results.
+9. Update `{plan_root}/{slug}/progress.md` with test results.
 
 ### Step 2 — Dispatch validate-loop
 
@@ -138,7 +139,7 @@ BLOCKED
 
 ## Output
 
-Update `.github/plans/{slug}/progress.md`:
+Update `{plan_root}/{slug}/progress.md`:
 
 ```markdown
 ## Test Results — Phase {N}
@@ -203,4 +204,3 @@ time.Sleep(10 * time.Millisecond)
 - [ ] No testing-oriented production code (hooks, flags, branches) added solely for tests
 - [ ] Integration tests tagged appropriately (`//go:build integration` or project standard)
 - [ ] All fixtures in `testdata/` or equivalent project fixture directory
-

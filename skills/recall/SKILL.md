@@ -41,7 +41,7 @@ If the file does not exist: skip silently.
 
 ### 4. Read active plans
 
-All devs — read from `.github/plans/`:
+All devs: resolve the external `{plan_root}` with the same rule as `orchestrating-tasks`, then read from `{plan_root}/`:
 - Scan all subdirectories
 - For each, read `progress.md` if it exists
 - Identify plans with status `IN_PROGRESS`

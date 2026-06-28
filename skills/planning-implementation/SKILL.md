@@ -17,8 +17,8 @@ Does not write code. Produces the plan that implementing-feature will follow.
 ## Steps
 
 1. Read inputs:
-   - `.github/plans/{slug}/brief.md` (context and acceptance criteria)
-   - `.github/plans/{slug}/research.md` (existing codebase analysis)
+   - `{plan_root}/{slug}/brief.md` (context and acceptance criteria)
+   - `{plan_root}/{slug}/research.md` (existing codebase analysis)
 2. Read architecture rules for structural guidance:
    - `.github/instructions/` — all project-specific architecture and design rules
 3. **Compatibility Analysis** — before designing phases, check whether any proposed change will:
@@ -47,7 +47,7 @@ Does not write code. Produces the plan that implementing-feature will follow.
 
 4. Design phases respecting the project's architecture dependency order (read `.github/instructions/` for project-specific layer ordering).
 5. Each phase must be independently testable. Each task must reference exact file paths.
-6. Write to `.github/plans/{slug}/implementation-plan.md`.
+6. Write to `{plan_root}/{slug}/implementation-plan.md` in the external vault. Do not create `.github/` or repo-local plan folders.
 7. Summarize the plan to the user (phases + file count). Ask for approval before proceeding.
 8. Revise if requested. Iterate until approved.
 
@@ -58,7 +58,7 @@ Does not write code. Produces the plan that implementing-feature will follow.
 
 ## Output
 
-Write to `.github/plans/{slug}/implementation-plan.md`:
+Write to `{plan_root}/{slug}/implementation-plan.md`:
 
 ```markdown
 # Implementation Plan: {slug}

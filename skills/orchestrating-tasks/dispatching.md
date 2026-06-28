@@ -109,7 +109,7 @@ task(
 
     ## Context
     slug: {slug}
-    plan dir: .github/plans/{slug}/
+    plan dir: {plan_root}/{slug}/
     graphify-out/: available only if graphify-out/GRAPH_REPORT.md exists
     $COPILOT_VAULT / $AI_MEMORY_HOME: available only if set
     current phase: {phase name and number, if applicable}
