@@ -65,3 +65,21 @@ Dispatch order:
 
 - If a tool (MCP, CLI, etc.) is unavailable: inform the user and proceed with local-only context (plan files, codebase). Do not block the workflow.
 - If a skill fails mid-execution: capture the error, update `progress.md` with the failure point, and present options to the user (retry, skip, abort).
+
+## Provider Runtime Override
+
+Native harness mode remains the preferred path for Copilot-style runtimes:
+
+```unknown
+task(skill: "implementing-feature", agent_type: "go-implementer", ...)
+task(skill: "testing-implementation", agent_type: "go-tester", ...)
+```
+
+Codex managed mode is different:
+
+```unknown
+spawn_agent(...)                          <- generic worker only, no native harness
+orchestrator manual acceptance checklist  <- required before accepting output
+```
+
+If only `spawn_agent` or another generic worker tool is available, read `codex-runtime.md`. Do not call the workflow phase complete until the orchestrator has run the manual acceptance checklist and reported `ACCEPTED`.

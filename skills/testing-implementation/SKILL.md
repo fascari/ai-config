@@ -204,3 +204,16 @@ time.Sleep(10 * time.Millisecond)
 - [ ] No testing-oriented production code (hooks, flags, branches) added solely for tests
 - [ ] Integration tests tagged appropriately (`//go:build integration` or project standard)
 - [ ] All fixtures in `testdata/` or equivalent project fixture directory
+
+## Codex Runtime Override
+
+When dispatched by `orchestrating-tasks` in Codex managed mode, a generic worker is not the testing harness. The worker may write tests, but its success is only `WORKER PASS`; the orchestrator must audit the diff with `orchestrating-tasks/codex-runtime.md` before accepting the phase.
+
+Hard testing conventions that must be checked manually in Codex managed mode:
+
+- Reusable fixtures, representative JSON payloads, and domain objects live under `testdata/` or the project fixture directory.
+- Inline test values are limited to scalar inputs, expected constants, and trivial one-off assertions.
+- Tests do not call external services unless the phase is explicitly an integration or smoke phase.
+- Test workers do not edit production files unless a repair cycle is explicitly approved.
+
+If any of these fail, report `BLOCKED` or dispatch a repair cycle. Do not report the phase as accepted.

@@ -197,3 +197,16 @@ Update `progress.md` after each phase. Mark only production file tasks:
 ```
 
 **Do NOT update `## Status` to `REVIEW`** — that transition is owned exclusively by `orchestrating-tasks` after all gates pass. Leave `## Status` as `IN_PROGRESS` and update only the phase checkboxes.
+
+## Codex Runtime Override
+
+When dispatched by `orchestrating-tasks` in Codex managed mode, a generic worker is not the implementation harness. The worker may produce a bounded production patch, but its success is only `WORKER PASS`; the orchestrator must audit the diff with `orchestrating-tasks/codex-runtime.md` before accepting the phase.
+
+Hard implementation conventions that must be checked manually in Codex managed mode:
+
+- Changed files stay within the approved production write scope.
+- Production workers do not edit test files.
+- Naming and public API surface follow `writing-modern-go` and project standards.
+- Scoped format, lint, and tests pass before the phase is accepted.
+
+If any of these fail, report `BLOCKED` or dispatch a repair cycle. Do not report the phase as accepted.

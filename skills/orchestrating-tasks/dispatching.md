@@ -163,3 +163,23 @@ If Graphify is not available, use targeted file reads. Read source files only wh
 ```
 
 Without this explicit instruction in the prompt, subagents fall back to grep even when Graphify is available.
+
+## Provider Runtime Override
+
+These skills support multiple runtimes. Select behavior by capability, not by provider name alone.
+
+| Capability | Mode | Dispatch rule |
+|---|---|---|
+| Native `task(skill: "...")` or equivalent skill dispatch exists | Native harness | Use the existing skill dispatch rules. The skill wrapper owns `validate-loop`. |
+| Only generic worker agents exist, such as Codex `spawn_agent` | Codex managed | Workers may produce bounded patches, but the orchestrator must run `codex-runtime.md` manual acceptance before accepting output. |
+| No agent dispatch exists | Local manual | Stop and ask the user to approve degraded local execution. |
+
+`spawn_agent`, `general-purpose`, or any generic worker prompt is not equivalent to native `task(skill: "...")`. In Codex managed mode, worker success is only `WORKER PASS`; the orchestrator must load the phase rule bundle from `codex-runtime.md`, audit the diff, run gates, and report `ACCEPTED` before the phase is complete.
+
+When using Codex managed mode, every worker prompt must include:
+
+```unknown
+Runtime: Codex managed.
+This worker output is untrusted until the orchestrator runs the manual acceptance checklist in codex-runtime.md.
+Return WORKER PASS/FAIL, not final ACCEPTED.
+```

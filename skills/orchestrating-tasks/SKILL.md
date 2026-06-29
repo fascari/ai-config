@@ -18,6 +18,7 @@ This skill is split into focused sub-files. Always read this SKILL.md first for 
 | [`task-types.md`](task-types.md) | Picking the skill chain for a task type; testing dispatch order; NEVER-dispatch-agents-directly rule |
 | [`approval-and-output.md`](approval-and-output.md) | Approval checkpoints before external writes; expected artifact set in the external vault plan directory |
 | [`plans-setup.md`](plans-setup.md) | Resolve `{plan_root}` and create the repo-local `.plans` symlink |
+| [`codex-runtime.md`](codex-runtime.md) | Required when running these Copilot-origin skills inside Codex; defines native, managed, and manual modes |
 
 ---
 
@@ -34,6 +35,7 @@ These rules always apply regardless of task type. Read them before anything else
 - **All narrative prose passes through `sanitizing-text` before presentation**
 - **Never skip user approval checkpoints** — commits, pushes, and any external API writes require explicit approval (see `approval-and-output.md`)
 - **Never assume a plan exists** — always run plan discovery first
+- **Codex compatibility is explicit** — when native `task(skill: "...")` dispatch is unavailable, read `codex-runtime.md`; generic `spawn_agent` workers are untrusted until the orchestrator loads the phase rule bundle and runs the manual acceptance checklist
 - **`implementing-feature` owns production code, `testing-implementation` owns tests** — never cross-assign; each returns `LOOP PASS/FAIL`. A phase that touches both production files AND test files MUST be split into two dispatches. (See `task-types.md`)
 - **NEVER dispatch `go-implementer` or `go-tester` directly** — always dispatch the SKILLS (`implementing-feature`, `testing-implementation`). The skills are the wrappers that run `validate-loop`. Dispatching the agents directly bypasses the harness entirely. (See `task-types.md`)
 - **`write_agent` is single-skill-scoped** — switching skill type requires a fresh `task()` dispatch
@@ -53,6 +55,7 @@ Answer these questions explicitly in your reasoning BEFORE dispatching any subag
 4. **Approval needed before dispatch?** Check `approval-and-output.md` Approval Checkpoints table.
 5. **Does the phase touch both production files AND test files?** If yes, SPLIT into two dispatches.
 6. **Is this a judge/validator of another agent's output?** If yes, confirm the judge's vendor is DIFFERENT from the producer's vendor.
+7. **Runtime mode?** Native harness | Codex managed | Local manual. If Codex managed, confirm the phase rule bundle and manual acceptance checklist from `codex-runtime.md` will run before accepting worker output.
 
 ---
 
@@ -177,6 +180,7 @@ Skill: `skills/compressing-context/SKILL.md`
 - Writing code directly: this skill only routes; implementation goes to implementing-feature
 - Reusing a live agent across skill types: each skill phase requires a fresh `task()` dispatch
 - Dispatching `go-implementer` or `go-tester` directly: always dispatch the skills
+- Treating `spawn_agent` as equivalent to native `task(skill: ...)`: in Codex managed mode it is only a worker, and the orchestrator must run the manual acceptance checklist
 
 ## Permissions
 

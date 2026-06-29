@@ -193,6 +193,46 @@ func (r Repository) Save(ctx context.Context, entity domain.Entity) error {
 - Register endpoints via `RegisterEndpoints(r *web.RouteGroup, h Handler)`
 - Use `logger.WithTraceID(ctx)` for structured logging
 
+### One operation, one handler package
+
+HTTP handlers are organized by operation. Do not put multiple endpoints in a
+single generic `handler` package file just because the scaffold example does
+that.
+
+Default shape:
+
+```
+internal/app/{domain}/
+├── domain/
+│   ├── {entity}.go
+│   └── errors.go
+├── usecase/
+│   └── {operation}/
+│       ├── usecase.go
+│       ├── types.go
+│       └── errors.go
+└── handler/
+    └── {operation}/
+        ├── dto.go
+        ├── handler.go
+        ├── error_mapping.go
+        └── testdata/
+```
+
+Rules:
+
+- Each endpoint gets its own `handler/{operation}` package.
+- Each handler package owns its DTOs in `dto.go`.
+- Handler packages adapt HTTP only: parse request, validate DTOs, call the
+  operation use case, and encode the response.
+- Domain definitions stay in `domain/`, with no `json`, `gorm`, or framework
+  tags.
+- Use case input/output types stay in the operation package when they are not
+  domain concepts.
+- A shared `internal/app/{domain}/handler/handler.go` with multiple endpoint
+  methods is only acceptable for a tiny spike or generated scaffold example,
+  not for implementation work.
+
 ### Handler must use the concrete use case type — never define a UseCase interface
 
 Handlers hold the concrete `usecase.UseCase` struct directly. **Never** define a `UseCase` interface inside the handler package.
