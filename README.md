@@ -33,11 +33,20 @@ mise run skills:install:copilot
 ### First-time setup (per machine)
 
 ```bash
-git clone git@github.com:fascari/ai-config.git ~/path/of/your/choice
+git clone git@github.com:{user}/ai-config.git ~/path/of/your/choice
 cd ~/path/of/your/choice && mise run skills:install
 ```
 
 The script creates symlinks. If the machine uses a different SSH host alias, use the HTTPS URL instead.
+
+**For machine portability** — set `AI_CONFIG_HOME` in your shell rc file to make installed project files reference this path instead of a relative one:
+
+```bash
+# ~/.zshrc or ~/.bashrc
+export AI_CONFIG_HOME="$HOME/path/of/your/choice"
+```
+
+Then reinstall project rules so generated `AGENTS.md` files reference `$AI_CONFIG_HOME/rules/` instead of relative paths. This makes `AGENTS.md` portable across teams and machines.
 
 ### Keeping skills up to date
 
@@ -93,7 +102,7 @@ See [`skills/README.md`](skills/README.md) for the full catalog organized by cat
 
 ## Copilot Instructions Template
 
-`copilot-instructions.md` is a project-level template for GitHub Copilot. Copy it to the target project and fill in the project-specific sections (language, entrypoints, architecture). It includes plan conventions, terminal safety rules, commit standards, and skill references.
+`copilot-instructions.md` is a template source for GitHub Copilot. Copy it to `.github/copilot-instructions.md` in the target project and fill in the project-specific sections (language, entrypoints, architecture). It includes plan conventions, terminal safety rules, commit standards, and skill references.
 
 
 ## Claude Configuration
@@ -117,9 +126,11 @@ See [`docs/persistent-memory.md`](docs/persistent-memory.md) for the full setup 
 
 ## Adapting to a New Project
 
-1. Expose this repo as the project's `.github/` tree.
-2. Copy `copilot-instructions.md` to the project root and fill in the blanks.
-3. Add or update files in `rules/` when changing shared conventions, or in the consuming repo's provider-native instruction files when the rule is project-specific.
+1. Scaffold or clone the target project.
+2. Install the provider-native entrypoint for the AI surface you will use.
+3. Run `graphify .` to generate the code knowledge graph.
+4. Run `checkpoint` at the end of the first session to initialize the vault folder.
+5. Add or update files in `rules/` when changing shared conventions, or in the consuming repo's provider-native instruction files when the rule is project-specific.
 
 ### Provider-native project setup
 
@@ -132,9 +143,39 @@ mise run project:install:codex -- --target /path/to/repo
 This installs:
 
 - `AGENTS.md` from `providers/codex/`
-- `.codex/rules/` linked or copied from this repo
-4. Run `graphify .` to generate the code knowledge graph.
-5. Run `checkpoint` at the end of the first session to initialize the vault folder.
-6. Skills apply the rules automatically during each phase.
+- references to this repo's global `rules/` directory inside `AGENTS.md`
+
+Codex does not support Copilot-style `NAME.instructions.md` files with
+`applyTo` globs. Keep `AGENTS.md` as a short index and keep reusable rules in
+this repo's global `rules/` directory.
+
+Install the shared Copilot entrypoint into a target repository:
+
+```bash
+mise run project:install:copilot -- --target /path/to/repo
+```
+
+This installs:
+
+- `.github/copilot-instructions.md` from `providers/copilot/`
+- `.github/instructions/*.instructions.md` copied from `rules/`
+- `AGENTS.md` when it does not already exist, so Copilot CLI and Codex can share the same repo-wide agent guidance
+
+Install the shared Claude entrypoint into a target repository:
+
+```bash
+mise run project:install:claude -- --target /path/to/repo
+```
+
+This installs:
+
+- `CLAUDE.md` from `providers/claude/`
+- references to this repo's global `rules/` directory inside `CLAUDE.md`
+
+Install every supported provider entrypoint:
+
+```bash
+mise run project:install:all -- --target /path/to/repo
+```
 
 For projects that do not use Go, remove the Go-specific instruction files and add equivalents for the target language.

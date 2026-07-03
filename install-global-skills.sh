@@ -3,10 +3,10 @@ set -euo pipefail
 
 usage() {
   cat <<'EOF'
-Usage: install-global-skills.sh [--provider codex|copilot|all]
+Usage: install-global-skills.sh [--provider codex|copilot|claude|all]
 
 Install this repo's skills as global symlinks for the selected provider target(s).
-The default installs for both Codex and Copilot.
+The default installs for Codex, Copilot, and Claude.
 EOF
 }
 
@@ -51,8 +51,11 @@ case "$provider" in
   copilot)
     targets+=("copilot:$HOME/.copilot/skills")
     ;;
+  claude)
+    targets+=("claude:$HOME/.claude/skills")
+    ;;
   all)
-    targets+=("codex:$HOME/.codex/skills" "copilot:$HOME/.copilot/skills")
+    targets+=("codex:$HOME/.codex/skills" "copilot:$HOME/.copilot/skills" "claude:$HOME/.claude/skills")
     ;;
   *)
     echo "Unknown provider: $provider" >&2

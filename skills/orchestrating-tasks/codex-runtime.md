@@ -37,17 +37,18 @@ In Codex managed mode, the orchestrator must load the relevant bundle before dis
 
 | Phase | Project-local files | Source files in ai-config |
 |---|---|---|
-| Go production | `AGENTS.md`, `.codex/rules/go-style.md`, `.codex/rules/package-design.md`, `.codex/rules/error-handling.md`, `.codex/rules/clean-architecture.md` | `providers/codex/AGENTS.md`, `rules/go-style.md`, `rules/package-design.md`, `rules/error-handling.md`, `rules/clean-architecture.md`, `agents/go-implementer.md`, `skills/implementing-feature/SKILL.md`, `skills/writing-modern-go/SKILL.md` |
-| Go tests | `AGENTS.md`, `.codex/rules/testing.md`, `.codex/rules/go-style.md`, `.codex/rules/error-handling.md` | `providers/codex/AGENTS.md`, `rules/testing.md`, `rules/go-style.md`, `rules/error-handling.md`, `agents/go-tester.md`, `skills/testing-implementation/SKILL.md`, `skills/writing-modern-go/SKILL.md` |
-| Review/gates | `AGENTS.md`, all relevant `.codex/rules/*.md` for changed file types | `agents/harness-gate.md`, `agents/validate-loop.md`, `skills/reviewing-code/SKILL.md`, `skills/orchestrating-tasks/gates.md`, all relevant `rules/*.md` |
-| Narrative/docs | `.codex/rules/sanitizing-text.md` when installed | `rules/sanitizing-text.md`, `skills/sanitizing-text/SKILL.md` |
+| Go production | `AGENTS.md`, global `rules/go-style.md`, global `rules/package-design.md`, global `rules/error-handling.md`, global `rules/clean-architecture.md` | `providers/codex/AGENTS.md`, `rules/go-style.md`, `rules/package-design.md`, `rules/error-handling.md`, `rules/clean-architecture.md`, `agents/go-implementer.md`, `skills/implementing-feature/SKILL.md`, `skills/writing-modern-go/SKILL.md` |
+| Go tests | `AGENTS.md`, global `rules/testing.md`, global `rules/go-style.md`, global `rules/error-handling.md` | `providers/codex/AGENTS.md`, `rules/testing.md`, `rules/go-style.md`, `rules/error-handling.md`, `agents/go-tester.md`, `skills/testing-implementation/SKILL.md`, `skills/writing-modern-go/SKILL.md` |
+| Review/gates | `AGENTS.md`, all relevant global `rules/*.md` for changed file types | `agents/harness-gate.md`, `agents/validate-loop.md`, `skills/reviewing-code/SKILL.md`, `skills/orchestrating-tasks/gates.md`, all relevant `rules/*.md` |
+| Narrative/docs | global `rules/sanitizing-text.md` when relevant | `rules/sanitizing-text.md`, `skills/sanitizing-text/SKILL.md` |
 
 The orchestrator must not rely on the worker to discover these files. Missing files are reported explicitly in the dispatch summary:
 
 ```unknown
 Runtime: Codex managed
 Rule bundle: Go tests
-Loaded project-local: AGENTS.md, .codex/rules/testing.md, .codex/rules/go-style.md
+Loaded project-local: AGENTS.md
+Loaded global rules: /path/to/ai-config/rules/testing.md, /path/to/ai-config/rules/go-style.md
 Loaded source fallback: agents/go-tester.md, skills/testing-implementation/SKILL.md, skills/writing-modern-go/SKILL.md
 Missing: none
 ```

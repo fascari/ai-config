@@ -1,12 +1,2 @@
-plans/
-plans
-skills/writing-cv
-skills/writing-article
-skills/writing-tools
-skills/validating-resume-ats
-skills/generating-carousel
-skills/publishing-to-devto
-/.idea/ai-config.iml
-/.idea/modules.xml
-/.idea/vcs.xml
-/.idea/workspace.xml
+.plans/*
+/.idea/*

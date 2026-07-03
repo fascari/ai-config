@@ -1,10 +1,10 @@
-# AGENTS.md - token-swap-workbench
+# CLAUDE.md
 
-This is a Go 1.26 service. Keep this file short and use it as the index for
-repo-specific rules. Before editing code, read only the rule files and docs
-relevant to the area you will change.
+Keep this file short and use it as the index for repo-specific rules. Before
+editing code, read only the rule files and docs relevant to the area you will
+change.
 
-## Shared rules
+## Shared Rules
 
 Read the relevant files under `__AI_CONFIG_RULES_DIR__/` before making code
 changes:
@@ -15,11 +15,11 @@ changes:
 - Error handling: `__AI_CONFIG_RULES_DIR__/error-handling.md`
 - Clean architecture and dependency direction: `__AI_CONFIG_RULES_DIR__/clean-architecture.md`
 
-## Repo architecture
+## Repo Architecture
 
 Before changing package boundaries or adding a new module, read `docs/architecture.md`.
 
-Working shape of this repo:
+Working shape for generated Go services:
 
 - `cmd/api/` wires the application and HTTP modules.
 - `internal/app/{domain}/` contains domain-specific code.
@@ -40,7 +40,8 @@ Before changing tests or adding coverage, read `docs/testing.md` and
 
 - Use case tests must stay isolated and use mocks.
 - Regenerate mocks with `mise run mocks` when interfaces change.
-- Integration tests live under `internal/testing/` and use the `integration` build tag.
+- Integration tests live under `internal/testing/` and use the `integration`
+  build tag.
 
 ## Commands
 

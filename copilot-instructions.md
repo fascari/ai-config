@@ -2,6 +2,8 @@
 
 This file is the entry point for AI agents working in this repo. It provides project context, rule summaries, plan conventions, and skill references. Detailed rules should come from the provider-native project instruction mechanism plus the shared rules library; skills are in `.github/skills/`.
 
+> Copy this file to `.github/copilot-instructions.md` in the target repository and fill in the project-specific sections.
+
 ---
 
 ## Persistent Memory
