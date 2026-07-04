@@ -14,20 +14,23 @@ Shared configuration, coding instructions, and workflow skills for AI-assisted s
 
 ## Installation
 
-Skills are installed globally for Codex and GitHub Copilot so every project can use them without per-project setup.
+Skills are installed globally for Codex, GitHub Copilot, and Claude so every project can use them without per-project setup.
 
 | Provider | Install location | Link name |
 |---|---|---|
-| Codex | `~/.codex/skills/` | `atlas-ai-config-<skill>` |
+| Codex skills | `~/.agents/skills/` | `atlas-ai-config-<skill>` |
+| Codex custom agents | `~/.codex/agents/` | `atlas-ai-config-<agent>.toml` |
 | GitHub Copilot | `~/.copilot/skills/` | `<skill>` |
+| Claude | `~/.claude/skills/` | `<skill>` |
 
 ```bash
-# Install for both providers
+# Install for all supported providers
 mise run skills:install
 
 # Or target a single provider
 mise run skills:install:codex
 mise run skills:install:copilot
+mise run skills:install:claude
 ```
 
 ### First-time setup (per machine)
@@ -54,7 +57,7 @@ Then reinstall project rules so generated `AGENTS.md` files reference `$AI_CONFI
 cd ~/path/of/your/choice && git pull
 ```
 
-Symlinks stay valid — no re-install needed after a pull.
+Symlinks stay valid - no re-install needed after a pull.
 
 ### Adding a new skill
 
@@ -145,9 +148,17 @@ This installs:
 - `AGENTS.md` from `providers/codex/`
 - references to this repo's global `rules/` directory inside `AGENTS.md`
 
+Codex-native custom agents are installed globally with:
+
+```bash
+mise run skills:install:codex
+```
+
+That installs TOML agent definitions under `~/.codex/agents/`, which matches the current Codex custom-agent format. The project repo itself stays free of `.codex/rules` and does not need a repo-local `.codex/agents/` folder unless a team explicitly wants project-scoped agents.
+
 Codex does not support Copilot-style `NAME.instructions.md` files with
-`applyTo` globs. Keep `AGENTS.md` as a short index and keep reusable rules in
-this repo's global `rules/` directory.
+`applyTo` globs. Keep `AGENTS.md` as a short index, keep reusable rules in
+this repo's global `rules/` directory, and keep Codex custom agents in TOML.
 
 Install the shared Copilot entrypoint into a target repository:
 

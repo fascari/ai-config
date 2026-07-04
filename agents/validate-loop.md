@@ -57,7 +57,7 @@ Store the baseline violation set for comparison. Violations present in the basel
 
 For Cycle 2+, dispatch to fix violations:
 
-> **Model note**: use `model: "claude-sonnet-4.6"` for repair cycles. Haiku must not edit source files — it truncates `old_str` blocks silently and corrupts files. Sonnet is the minimum safe model for code edits.
+> **Runtime note**: the concrete dispatch shape is provider-specific. Copilot-native runtimes may use literal `task(... agent_type ...)`. Codex should prefer matching custom agents from `.codex/agents/` or `~/.codex/agents/`, and only fall back to a generic worker prompt when named-agent dispatch is unavailable.
 
 ```bash
 task(

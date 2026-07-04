@@ -63,7 +63,12 @@ Use **orchestrating-tasks** as the single entry point for any task involving cod
 
 ## Custom Agents
 
-Projects can define custom agent types in an `agents/` directory. This repo ships templates for Go projects:
+This repo keeps provider-neutral agent guidance in `agents/` and Codex-native custom agent TOML files in `providers/codex/agents/`.
+
+- Copilot/Claude-style workflows may still reuse the markdown agent templates below.
+- Codex custom agents must be installed as TOML files under `~/.codex/agents/` or checked into `.codex/agents/`.
+
+Provider-neutral templates for Go projects:
 
 | Agent | Purpose |
 |---|---|
@@ -88,6 +93,7 @@ To adapt to a new project:
 
 1. Add or update `rules/` for shared rules, and install or update the provider-native project entrypoint for the target AI surface.
 2. Update `implementing-feature/references/anti-patterns.md` with codebase-specific patterns.
-3. Copy `agents/` templates into the project's `agents/` directory and adapt to the project's toolchain.
-4. Implement the harness shell scripts in `.github/harness/` (see `harness/README.md`).
-5. Skills apply your rules automatically during each phase.
+3. Copy `agents/` templates into the project's provider-specific location and adapt to the project's toolchain.
+4. For Codex, install or check in the TOML files from `providers/codex/agents/`.
+5. Implement the harness shell scripts in `.github/harness/` (see `harness/README.md`).
+6. Skills apply your rules automatically during each phase.

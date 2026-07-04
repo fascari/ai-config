@@ -16,6 +16,24 @@ Before dispatching any implementation or testing phase, identify the runtime mod
 
 If the user requested the full orchestrator workflow and native skill dispatch is unavailable, say so before continuing. Do not imply that `spawn_agent` provides the same harness guarantees.
 
+## Call-shape fallback
+
+Codex managed mode must be conservative about transport fields.
+
+Rules:
+
+- Prefer the smallest accepted worker call shape.
+- If the runtime rejects a call because of extra fields such as `agent_type`,
+  `mode`, or full-fork transport options, retry once with fewer fields.
+- Do not retry with a broader or more complex call shape after a schema failure.
+- Bind the intended role in the prompt: `Logical role: go-implementer`,
+  `Logical role: go-tester`, or `Logical role: general-purpose`.
+- Inline the necessary role guidance from `agents/` and the rule bundle in the prompt.
+
+The runtime error in this mode is transport-specific, not workflow-specific.
+Treat schema rejection as a signal to simplify the call shape, not to abandon
+the phase logic.
+
 ## Codex Managed Mode
 
 Generic Codex workers can help produce patches, but their `LOOP PASS` is only a worker claim. It is not accepted until the orchestrator validates it.
@@ -67,6 +85,7 @@ Every Codex managed worker prompt must include:
 - Reminder that the worker must not claim final acceptance.
 - The full Codebase Search Rules from `dispatching.md`.
 - The relevant style/rule excerpts or attached skill/rule files.
+- The intended logical role when no `agent_type` field is available.
 
 Workers that edit production and tests in the same dispatch are invalid unless the phase is explicitly approved as a repair cycle. Split normal phases.
 

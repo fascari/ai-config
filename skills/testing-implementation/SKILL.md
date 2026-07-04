@@ -9,7 +9,12 @@ Writes and executes tests, validates coverage, and ensures the implementation me
 
 ## Execution Model
 
-When dispatched by `orchestrating-tasks`, use `agent_type: "go-tester"` if the repo defines that agent at `agents/go-tester.md`. Its system prompt front-loads all testing conventions at the system level, keeping testing rules at high attention. For non-Go work, use `agent_type: "general-purpose"`.
+When dispatched by `orchestrating-tasks`, choose the logical role first, then render the actual call using `skills/orchestrating-tasks/provider-dispatch.md`.
+
+- Go test work -> logical role `go-tester`
+- Non-Go test work -> logical role `general-purpose`
+
+In Copilot native mode this may map to `agent_type`. In Codex managed mode prefer a matching custom agent from `~/.codex/agents/` or `.codex/agents/`; otherwise bind the logical role in the prompt and treat the worker output as untrusted until the orchestrator accepts it.
 
 ## When to use
 
@@ -64,8 +69,7 @@ After tests pass locally, dispatch validate-loop for the testing phase:
 
 | Parameter | Value |
 |---|---|
-| `agent_type` | `"validate-loop"` |
-| `mode` | `"background"` |
+| Logical role | `validate-loop` |
 | `prompt` | `slug: {slug}\nphase: testing\nmax_iterations: 2\nplan_excerpt: {current phase section}` |
 
 > **Hard cap: max_iterations: 2.** After 2 repair cycles without HARNESS PASS, the loop returns `LOOP FAIL (escalate: true)` — never continue past 2 cycles.
@@ -81,13 +85,12 @@ After tests pass locally, dispatch validate-loop for the testing phase:
 - Comments inside test files
 - Pre-existing modern-Go violations the Boy Scout rule requires fixing
 
-Dispatch a semantic judge using a **different vendor** from the test author (cross-vendor rule — see `orchestrating-tasks/dispatching.md`):
+Dispatch a semantic judge using a **different vendor** from the test author (cross-vendor rule - see `orchestrating-tasks/dispatching.md`) and use the provider-specific shape from `orchestrating-tasks/provider-dispatch.md`:
 
 | Parameter | Value |
 |---|---|
-| `agent_type` | `"general-purpose"` |
+| Logical role | `general-purpose` |
 | `model` | Cross-vendor, Balanced tier |
-| `mode` | `"background"` |
 
 Prompt template:
 ```

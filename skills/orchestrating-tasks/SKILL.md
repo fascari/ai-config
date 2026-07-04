@@ -13,7 +13,8 @@ This skill is split into focused sub-files. Always read this SKILL.md first for 
 
 | Sub-file | When to open |
 |---|---|
-| [`dispatching.md`](dispatching.md) | Selecting model tier + agent_type for a dispatch; building the `task` tool prompt; Style Reinforcement block; Codebase Search Rules |
+| [`dispatching.md`](dispatching.md) | Selecting model tier + logical role for a dispatch; building the prompt payload; Style Reinforcement block; Codebase Search Rules |
+| [`provider-dispatch.md`](provider-dispatch.md) | Mapping logical skill roles to provider/runtime-specific dispatch shapes for Copilot, Codex, and Claude |
 | [`gates.md`](gates.md) | Running Critique Gate, Test Design Judge, or Output Judge Gate |
 | [`task-types.md`](task-types.md) | Picking the skill chain for a task type; testing dispatch order; NEVER-dispatch-agents-directly rule |
 | [`approval-and-output.md`](approval-and-output.md) | Approval checkpoints before external writes; expected artifact set in the external vault plan directory |
@@ -40,6 +41,7 @@ These rules always apply regardless of task type. Read them before anything else
 - **NEVER dispatch `go-implementer` or `go-tester` directly** — always dispatch the SKILLS (`implementing-feature`, `testing-implementation`). The skills are the wrappers that run `validate-loop`. Dispatching the agents directly bypasses the harness entirely. (See `task-types.md`)
 - **`write_agent` is single-skill-scoped** — switching skill type requires a fresh `task()` dispatch
 - **Dispatch model selection is mandatory** — for every task dispatch, consult `dispatching.md` Delegation Model Matrix. Run the Pre-Dispatch Checklist before every `task` invocation.
+- **Dispatch syntax is provider-specific** — select the logical role in `dispatching.md`, then render the actual worker or task call using `provider-dispatch.md`
 - **Subagent prompts MUST include Codebase Search Rules** — for any subagent that needs codebase exploration, paste the verbatim block from `dispatching.md` into the dispatch prompt. Trusting global instructions alone is not enough.
 - **Judges and validators MUST use a different vendor than the producer** — see `dispatching.md` Cross-Vendor Rule. Same-vendor judging is a hard rule violation.
 
@@ -50,12 +52,12 @@ These rules always apply regardless of task type. Read them before anything else
 Answer these questions explicitly in your reasoning BEFORE dispatching any subagent. If you cannot answer all of them, do not dispatch yet.
 
 1. **Complexity tier?** Simple | Standard | Complex
-2. **Model tier + agent_type?** From `dispatching.md` matrix; Deep override if Complex judge/reviewer.
+2. **Model tier + logical role?** From `dispatching.md` matrix; Deep override if Complex judge/reviewer.
 3. **Subagent needs codebase exploration?** If yes (researching, critique, reviewing), inject the verbatim Codebase Search Rules block from `dispatching.md`.
 4. **Approval needed before dispatch?** Check `approval-and-output.md` Approval Checkpoints table.
 5. **Does the phase touch both production files AND test files?** If yes, SPLIT into two dispatches.
 6. **Is this a judge/validator of another agent's output?** If yes, confirm the judge's vendor is DIFFERENT from the producer's vendor.
-7. **Runtime mode?** Native harness | Codex managed | Local manual. If Codex managed, confirm the phase rule bundle and manual acceptance checklist from `codex-runtime.md` will run before accepting worker output.
+7. **Runtime mode?** Copilot native | Codex managed | Claude managed | Local manual. Confirm the concrete call shape from `provider-dispatch.md` before dispatching.
 
 ---
 

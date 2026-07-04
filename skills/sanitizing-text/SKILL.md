@@ -1,7 +1,6 @@
 ---
 name: sanitizing-text
 description: Use when text produced by other skills is about to be written to a file or sent to an issue tracker, wiki, or GitHub
-model: claude-haiku-4.5
 ---
 
 # Sanitizing Text
@@ -17,9 +16,9 @@ If the personal `humanizer` skill is available in the session, prefer it for the
 
 ## Execution Model
 
-**Required model**: `claude-haiku-4.5` · **Agent type**: `general-purpose`
+**Preferred tier**: Fast · **Logical role**: `general-purpose`
 
-When dispatched by `orchestrating-tasks`, this skill MUST run as an isolated task agent. The caller must use the `task` tool with `model: "claude-haiku-4.5"` and `agent_type: "general-purpose"`. Rationale: rule-based text transformation requires no deep reasoning — Haiku is fast and sufficient.
+When dispatched by `orchestrating-tasks`, this skill should run in an isolated worker or task context using the provider-specific shape from `orchestrating-tasks/provider-dispatch.md`. Use the provider's Fast-tier model. Rationale: rule-based text transformation requires no deep reasoning.
 
 ## When to use
 

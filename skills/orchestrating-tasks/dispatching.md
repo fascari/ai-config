@@ -2,7 +2,9 @@
 
 > Sub-file of `skills/orchestrating-tasks/SKILL.md`. Read SKILL.md first for Critical Rules and Pre-Dispatch Checklist.
 
-This file covers model/agent selection, the dispatch template, style reinforcement, and codebase search rules for subagents.
+This file covers model and logical-role selection, plus the style reinforcement
+and codebase search rules for subagents. Concrete dispatch syntax lives in
+`provider-dispatch.md`.
 
 ---
 
@@ -30,13 +32,17 @@ Use these tier names when selecting models. The exact model depends on your AI p
 
 ## Delegation Model Matrix
 
-Always use the `task` tool when dispatching a skill. Never invoke a skill inline in a multi-skill workflow.
+Select a logical role here. Render the actual call shape using
+`provider-dispatch.md`. Never invoke a skill inline in a multi-skill workflow.
 
 **Source of truth**: each skill's frontmatter in `skills/{name}/SKILL.md` defines the intended behavior. The matrix below mirrors that. On any divergence, the frontmatter wins.
 
-> **Note on agent_type**: values like `go-implementer`, `go-tester`, `validate-loop` refer to custom agents defined in the project's `agents/` directory (Copilot CLI). Adapt to your provider's equivalent mechanism. If no custom agents are available, use `general-purpose` and paste the agent's instructions into the prompt.
+> **Note on logical role**: values like `go-implementer`, `go-tester`, and
+> `validate-loop` are logical roles. In Copilot native mode they often map to
+> literal `agent_type` values. In Codex or Claude managed mode they belong in
+> the worker prompt unless the runtime explicitly supports an equivalent field.
 
-| Skill | Agent type | Tier | Rationale |
+| Skill | Logical role | Tier | Rationale |
 |---|---|---|---|
 | `validate-loop` | `validate-loop` | Balanced | Loop agent: runs code agent + harness-gate cycles in isolated context. Caller receives only LOOP PASS/FAIL |
 | `researching-codebase` | `general-purpose` | Deep | Search-heavy reasoning; needs to correctly map impact across layered architectures |
@@ -95,32 +101,29 @@ For Complex tasks, override certain skills from Balanced to Deep. This is the em
 
 ---
 
-## Task Dispatch Template
+## Dispatch contract
 
-```
-task(
-  name: "{skill-name}",
-  description: "{3-5 word description}",
-  agent_type: "{agent_type from matrix}",
-  model: "{model at appropriate tier for your provider}",
-  mode: "background",
-  prompt: """
-    Read and follow: skills/{skill}/SKILL.md
+Build the prompt payload here, then render the actual provider-specific call
+using `provider-dispatch.md`.
 
-    ## Context
-    slug: {slug}
-    plan dir: {plan_root}/{slug}/
-    graphify-out/: available only if graphify-out/GRAPH_REPORT.md exists
-    $COPILOT_VAULT / $AI_MEMORY_HOME: available only if set
-    current phase: {phase name and number, if applicable}
+Required prompt payload:
 
-    ## Task
-    {Specific instructions: which phase, what to do, constraints or overrides}
-  """
-)
+```unknown
+Read and follow: skills/{skill}/SKILL.md
+
+## Context
+slug: {slug}
+plan dir: {plan_root}/{slug}/
+graphify-out/: available only if graphify-out/GRAPH_REPORT.md exists
+$COPILOT_VAULT / $AI_MEMORY_HOME: available only if set
+current phase: {phase name and number, if applicable}
+
+## Task
+{Specific instructions: which phase, what to do, constraints or overrides}
 ```
 
-Wait for each background task to complete before dispatching the next dependent skill. Never dispatch two dependent skills simultaneously.
+Wait for each background task or worker to complete before dispatching the next
+dependent skill. Never dispatch two dependent skills simultaneously.
 
 ---
 
@@ -170,7 +173,7 @@ These skills support multiple runtimes. Select behavior by capability, not by pr
 
 | Capability | Mode | Dispatch rule |
 |---|---|---|
-| Native `task(skill: "...")` or equivalent skill dispatch exists | Native harness | Use the existing skill dispatch rules. The skill wrapper owns `validate-loop`. |
+| Native `task(skill: "...")` or equivalent skill dispatch exists | Native harness | Use the native harness shape from `provider-dispatch.md`. The skill wrapper owns `validate-loop`. |
 | Only generic worker agents exist, such as Codex `spawn_agent` | Codex managed | Workers may produce bounded patches, but the orchestrator must run `codex-runtime.md` manual acceptance before accepting output. |
 | No agent dispatch exists | Local manual | Stop and ask the user to approve degraded local execution. |
 

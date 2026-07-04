@@ -23,19 +23,28 @@ This file covers task type classification, the skill chain for each task type, a
 `implementing-feature` and `testing-implementation` each run `validate-loop` internally. The orchestrator dispatches only the skills — never `harness-gate` or the code agents directly.
 
 **CRITICAL: NEVER dispatch `go-implementer` or `go-tester` directly for implementation work.**
-These are the underlying agent types. The orchestrator MUST always dispatch the SKILLS
-(`implementing-feature` → `go-implementer`, `testing-implementation` → `go-tester`).
+These are underlying logical roles. The orchestrator MUST always dispatch the SKILLS
+(`implementing-feature` -> `go-implementer`, `testing-implementation` -> `go-tester`).
 The skills are the wrappers that integrate `validate-loop`. Bypassing the skills bypasses
-the harness entirely — no receipt is written, no LLM-judge runs, no quality gate fires.
+the harness entirely - no receipt is written, no LLM-judge runs, no quality gate fires.
 
-```
-# WRONG — bypasses harness
-task(agent_type: "go-implementer", ...)  ← direct agent, no validate-loop
-task(agent_type: "go-tester", ...)       ← direct agent, no validate-loop
+```unknown
+# WRONG - bypasses harness
+task(agent_type: "go-implementer", ...)     <- direct agent, no validate-loop
+task(agent_type: "go-tester", ...)          <- direct agent, no validate-loop
+spawn_worker(prompt: "act like go-implementer", ...) <- managed worker accepted as final without orchestrator review
 
-# CORRECT — goes through skill → validate-loop
+# CORRECT - choose by runtime
+Copilot native:
 task(skill: "implementing-feature", agent_type: "go-implementer", ...)
 task(skill: "testing-implementation", agent_type: "go-tester", ...)
+
+Codex/Claude managed:
+spawn_agent(agent: "go-implementer", prompt: "...")  <- when a matching Codex custom agent exists
+spawn_agent(agent: "go-tester", prompt: "...")       <- when a matching Codex custom agent exists
+spawn_worker(prompt: "Logical role: go-implementer ...", ...) <- fallback
+spawn_worker(prompt: "Logical role: go-tester ...", ...)      <- fallback
+orchestrator manual acceptance checklist
 ```
 
 Dispatch order:
@@ -43,11 +52,11 @@ Dispatch order:
 1. Orchestrator dispatches `implementing-feature`:
    - Skill runs its phases, then dispatches `validate-loop` with `phase: implementation` internally
    - Returns `LOOP PASS` (with `context_handoff`) or `LOOP FAIL` (with `escalate: true`)
-   - If `LOOP FAIL`: present the escalation to the user and wait for direction. Do not dispatch a repair cycle — the loop already exhausted its retry budget.
+   - If `LOOP FAIL`: present the escalation to the user and wait for direction. Do not dispatch a repair cycle - the loop already exhausted its retry budget.
 
 2. After implementing-feature returns `LOOP PASS`:
    - Dispatch `testing-implementation` using the `context_handoff` from the LOOP PASS result
-   - testing-implementation runs internally: Style Compliance Gate → `validate-loop` (lint + test) → **`test-design-judge`** (semantic judge — see `gates.md`)
+   - testing-implementation runs internally: Style Compliance Gate -> `validate-loop` (lint + test) -> **`test-design-judge`** (semantic judge - see `gates.md`)
    - Returns `LOOP PASS` only after BOTH validate-loop AND test-design-judge pass
    - If `LOOP FAIL`: present the escalation to the user and wait for direction.
 

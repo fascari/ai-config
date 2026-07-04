@@ -22,7 +22,12 @@ Implements **production code only**, phase by phase, validates with linter and s
 
 ## Execution Model
 
-When dispatched by `orchestrating-tasks`, use the `task` tool. For Go file changes, use `agent_type: "go-implementer"` if the repo defines that agent at `agents/go-implementer.md` — its system prompt front-loads project Go conventions. For non-Go work, use `agent_type: "general-purpose"`.
+When dispatched by `orchestrating-tasks`, choose the logical role first, then render the actual call using `skills/orchestrating-tasks/provider-dispatch.md`.
+
+- Go production work -> logical role `go-implementer`
+- Non-Go production work -> logical role `general-purpose`
+
+In Copilot native mode this may map to `agent_type`. In Codex managed mode prefer a matching custom agent from `~/.codex/agents/` or `.codex/agents/`; otherwise bind the logical role in the prompt and treat the worker output as untrusted until the orchestrator accepts it.
 
 ---
 
@@ -110,12 +115,11 @@ Read only the instruction files whose `applyTo` glob matches files you will chan
    ```
    Do NOT dispatch validate-loop with known lint violations — it wastes a repair cycle. Only call validate-loop when lint returns 0 issues.
 
-   Dispatch validate-loop:
+   Dispatch validate-loop using the provider-specific shape from `skills/orchestrating-tasks/provider-dispatch.md`:
 
    | Parameter | Value |
    |---|---|
-   | `agent_type` | `"validate-loop"` |
-   | `mode` | `"background"` |
+   | Logical role | `validate-loop` |
    | `prompt` | `slug: {slug}\nphase: implementation\nmax_iterations: 2\nplan_excerpt: {phase section}` |
 
    > **Hard cap: max_iterations: 2.** After 2 repair cycles without HARNESS PASS, return `LOOP FAIL (escalate: true)` — never continue past 2 cycles.
