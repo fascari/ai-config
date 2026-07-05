@@ -3,11 +3,11 @@ set -euo pipefail
 
 usage() {
   cat <<'EOF'
-Usage: install-global-skills.sh [--provider codex|copilot|claude|all]
+Usage: install-global-skills.sh [--provider codex|copilot|claude|opencode|all]
 
 Install this repo's skills as global symlinks for the selected provider target(s).
 For Codex, this also installs the repo's custom subagents as global TOML files.
-The default installs for Codex, Copilot, and Claude.
+Default: all providers.
 EOF
 }
 
@@ -45,26 +45,39 @@ if [[ ! -d "$skills_dir" ]]; then
   exit 1
 fi
 
-targets=()
+# Map: provider -> target_dir -> prefix
+declare -A TARGETS
+declare -A PREFIXES
+
 case "$provider" in
-  codex)
-    targets+=("codex:$HOME/.agents/skills")
-    ;;
-  copilot)
-    targets+=("copilot:$HOME/.copilot/skills")
-    ;;
-  claude)
-    targets+=("claude:$HOME/.claude/skills")
+  codex|opencode|copilot|claude)
     ;;
   all)
-    targets+=("codex:$HOME/.agents/skills" "copilot:$HOME/.copilot/skills" "claude:$HOME/.claude/skills")
+    provider="all"
     ;;
   *)
     echo "Unknown provider: $provider" >&2
-    usage >&2
+    echo "Supported: codex, copilot, claude, opencode, all" >&2
     exit 1
     ;;
 esac
+
+if [[ "$provider" == "all" || "$provider" == "codex" ]]; then
+  TARGETS["codex"]="$HOME/.agents/skills"
+  PREFIXES["codex"]="atlas-${repo_name}-"
+fi
+if [[ "$provider" == "all" || "$provider" == "copilot" ]]; then
+  TARGETS["copilot"]="$HOME/.copilot/skills"
+  PREFIXES["copilot"]=""
+fi
+if [[ "$provider" == "all" || "$provider" == "claude" ]]; then
+  TARGETS["claude"]="$HOME/.claude/skills"
+  PREFIXES["claude"]=""
+fi
+if [[ "$provider" == "all" || "$provider" == "opencode" ]]; then
+  TARGETS["opencode"]="$HOME/.config/opencode/skills"
+  PREFIXES["opencode"]=""
+fi
 
 shopt -s nullglob
 skill_paths=("$skills_dir"/*/)
@@ -74,23 +87,18 @@ if (( ${#skill_paths[@]} == 0 )); then
 fi
 
 link_count=0
-for target in "${targets[@]}"; do
-  target_provider="${target%%:*}"
-  target_dir="${target#*:}"
+for provider_key in "${!TARGETS[@]}"; do
+  target_dir="${TARGETS[$provider_key]}"
+  prefix="${PREFIXES[$provider_key]}"
   mkdir -p "$target_dir"
   for skill_path in "${skill_paths[@]}"; do
     skill_name="$(basename "$skill_path")"
-    link_name="$skill_name"
-    if [[ "$target_provider" == "codex" ]]; then
-      link_name="atlas-${repo_name}-${skill_name}"
-    fi
-
+    link_name="${prefix}${skill_name}"
     link_path="$target_dir/$link_name"
     if [[ -e "$link_path" && ! -L "$link_path" ]]; then
       echo "Skipping $link_path because it exists and is not a symlink." >&2
       continue
     fi
-
     ln -sfn "$skill_path" "$link_path"
     ((link_count += 1))
   done
@@ -98,7 +106,8 @@ done
 
 echo "Installed $link_count skill link(s) from $repo_name for $provider."
 
-if [[ "$provider" == "codex" || "$provider" == "all" ]]; then
+# Install Codex custom agents as TOML files (when codex is included)
+if [[ "$provider" == "all" || "$provider" == "codex" ]]; then
   shopt -s nullglob
   agent_paths=("$codex_agents_dir"/*.toml)
   if (( ${#agent_paths[@]} == 0 )); then
@@ -112,12 +121,11 @@ if [[ "$provider" == "codex" || "$provider" == "all" ]]; then
   agent_link_count=0
   for agent_path in "${agent_paths[@]}"; do
     agent_name="$(basename "$agent_path")"
-    link_path="$codex_target_dir/atlas-${repo_name}-${agent_name}"
+    link_path="$codex_target_dir/${PREFIXES[codex]}${agent_name}"
     if [[ -e "$link_path" && ! -L "$link_path" ]]; then
       echo "Skipping $link_path because it exists and is not a symlink." >&2
       continue
     fi
-
     ln -sfn "$agent_path" "$link_path"
     ((agent_link_count += 1))
   done
