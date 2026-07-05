@@ -2,10 +2,6 @@
 
 Shared AI coding rules, workflow skills, and provider configurations for AI-assisted development.
 
-## Session Bootstrap
-
-On the first message of every new session, load the **recall** skill (`skills/recall/SKILL.md`) before responding. Skip if the user invokes `recall` or `resuming-context` manually.
-
 ## Rules
 
 Before editing code, read the relevant files from `rules/`:
@@ -19,7 +15,7 @@ Before editing code, read the relevant files from `rules/`:
 
 ## Skills
 
-Workflow skills are in `skills/`. Use `orchestrating-tasks` as the entry point for any codebase change or feature implementation.
+Workflow skills are in `skills/`. Use `orchestrating-tasks` as the entry point for any codebase change.
 
 ## Agents
 
@@ -27,11 +23,11 @@ Provider-agnostic agent definitions in `agents/`:
 - `agents/go-implementer.md`, `agents/go-tester.md`
 - `agents/harness-gate.md`, `agents/validate-loop.md`
 
-## Vault
+## Quick Start (new machine)
 
-Session persistence uses `$AI_MEMORY_HOME` or `$COPILOT_VAULT`. When unset, vault steps are skipped.
+```bash
+git clone git@github.com:user/ai-config.git ~/.ai-config
+~/.ai-config/install.sh
+```
 
-## Commands
-
-- `./install-global-skills.sh` — symlink skills for all providers
-- `./install-provider-rules.sh` — install entrypoints into a target project
+See `README.md` for full setup guide.

@@ -1,0 +1,12 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "instructions": [
+    "AGENTS.md",
+    "rules/go-style.md",
+    "rules/testing.md",
+    "rules/error-handling.md",
+    "rules/package-design.md",
+    "rules/clean-architecture.md",
+    "rules/sanitizing-text.md"
+  ]
+}

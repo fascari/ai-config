@@ -1,19 +1,20 @@
-# AGENTS.md - token-swap-workbench
+# AGENTS.md
 
-This is a Go 1.26 service. Keep this file short and use it as the index for
-repo-specific rules. Before editing code, read only the rule files and docs
-relevant to the area you will change.
+> Template for `AGENTS.md` in target repositories.
+> Fill in project-specific sections and install via `install-provider-rules.sh`.
+
+Keep this file short and use it as the index for repo-specific rules.
 
 ## Shared rules
 
-Read the relevant files under `__AI_CONFIG_RULES_DIR__/` before making code
+Read the relevant files under `~/.ai-config/rules/` before making code
 changes:
 
-- Go production code: `__AI_CONFIG_RULES_DIR__/go-style.md`
-- Go tests: `__AI_CONFIG_RULES_DIR__/testing.md`
-- Package boundaries and naming: `__AI_CONFIG_RULES_DIR__/package-design.md`
-- Error handling: `__AI_CONFIG_RULES_DIR__/error-handling.md`
-- Clean architecture and dependency direction: `__AI_CONFIG_RULES_DIR__/clean-architecture.md`
+- Go production code: `~/.ai-config/rules/go-style.md`
+- Go tests: `~/.ai-config/rules/testing.md`
+- Package boundaries and naming: `~/.ai-config/rules/package-design.md`
+- Error handling: `~/.ai-config/rules/error-handling.md`
+- Clean architecture and dependency direction: `~/.ai-config/rules/clean-architecture.md`
 
 ## Repo architecture
 
@@ -36,7 +37,7 @@ new top-level patterns.
 ## Testing
 
 Before changing tests or adding coverage, read `docs/testing.md` and
-`__AI_CONFIG_RULES_DIR__/testing.md`.
+`~/.ai-config/rules/testing.md`.
 
 - Use case tests must stay isolated and use mocks.
 - Regenerate mocks with `mise run mocks` when interfaces change.

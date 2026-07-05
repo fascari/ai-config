@@ -1,13 +1,88 @@
-# GitHub Copilot Instructions - token-swap-workbench
+# GitHub Copilot Instructions
 
-Use `AGENTS.md` at the repository root as the primary repo-wide instructions for this repository.
+> Template for `.github/copilot-instructions.md` in target repositories.
+> Fill in project-specific sections and install via `install-provider-rules.sh`.
 
-Path-specific rules under `.github/instructions/*.instructions.md` are loaded automatically by Copilot for matching files. Treat those files as the authoritative source for Go style, testing conventions, package design, error handling, and clean architecture rules.
+---
 
-Repository docs that matter for most work:
+## Global Skills & Rules
 
-- `docs/architecture.md` for package boundaries and module layout
-- `docs/testing.md` for test structure and integration conventions
-- `docs/development.md` for setup and day-to-day commands
+Skills, rules, and agents live in `~/.ai-config/` — installed globally by `install-global-skills.sh`.
 
-If both `AGENTS.md` and a path-specific instruction apply, follow the more specific path-based rule and surface any conflict instead of guessing.
+| What | Where | Purpose |
+|------|-------|---------|
+| Rules | `~/.ai-config/rules/*.md` | Go style, testing, error handling, clean architecture |
+| Skills | `~/.ai-config/skills/*/SKILL.md` | Workflow skills (orchestrating, implementing, testing, etc.) |
+| Agents | `~/.ai-config/agents/*.md` | Provider-agnostic agent definitions |
+
+Path-specific rules under `.github/instructions/*.instructions.md` are symlinks to `~/.ai-config/rules/`:
+
+| Instruction file | Applies to |
+|-----------------|------------|
+| `go-style.instructions.md` | `**/*.go` |
+| `clean-architecture.instructions.md` | `internal/app/**/*.go` |
+| `testing.instructions.md` | `**/*_test.go` |
+| `error-handling.instructions.md` | `**/*.go` |
+| `package-design.instructions.md` | `**/*.go` |
+
+---
+
+## Project Basics
+
+> Fill in for each project.
+
+- **Language / Stack**: {e.g. Go 1.26, Node.js 22, Python 3.12}
+- **Entrypoints**: {e.g. `cmd/server/main.go`, `src/index.ts`}
+- **Local Environment**: {e.g. `.env`, `mise`}
+
+### Essential Commands
+
+```sh
+# mise run dev          # Start locally
+# mise run test         # Run all tests
+# mise run lint         # Lint the codebase
+# mise run build        # Build artifacts
+```
+
+---
+
+## Project Architecture
+
+> Fill in for each project. Replace with actual directory layout.
+
+```
+/src/                   # Application source
+/tests/                 # Test files
+/docs/                  # Documentation
+```
+
+---
+
+## Session Bootstrap
+
+On first message of each session, load the **recall** skill from `~/.ai-config/skills/recall/SKILL.md`. It loads vault context, recent logs, architecture decisions, and active plans.
+
+---
+
+## Skill Invocation
+
+Use `orchestrating-tasks` as the single entry point for any codebase change. Invoke via `/skill:name` in Copilot chat.
+
+| Task | Skill |
+|------|-------|
+| Codebase research | `/skill:researching-codebase` |
+| Implementation | `/skill:implementing-feature` |
+| Testing | `/skill:testing-implementation` |
+| Code review | `/skill:reviewing-code` |
+| Commit | `/skill:committing-changes` |
+| Pull request | `/skill:creating-pull-request` |
+
+---
+
+## Hard Rules
+
+- **Never log and return the same error** — choose one
+- **Never commit or push without explicit user authorization**
+- **No `else` blocks** — use early returns
+- **No `assert` in tests** — use `require` (stops on failure)
+- **No `interface{}`** — use `any`
