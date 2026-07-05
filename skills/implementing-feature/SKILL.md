@@ -14,7 +14,6 @@ Implements **production code only**, phase by phase, validates with linter and s
 | Production source files | Test files (`*_test.go`, `*.test.*`, etc.) |
 | Linter, static analysis, fmt | Running tests |
 | Style compliance gate | Writing or modifying testdata/fixtures |
-| validate-loop (phase: implementation) | validate-loop (phase: testing) |
 
 **If a plan phase lists test files:** skip them, note them in the Testing Context Handoff, and proceed with production files only.
 
@@ -108,24 +107,14 @@ Read only the instruction files whose `applyTo` glob matches files you will chan
 
    d. Dead-code: every newly exported symbol must have an external caller.
 
-8. **HARD GATE: lint must pass before validate-loop.** Run and fix ALL issues:
+8. **HARD GATE: lint must pass before handoff.** Run and fix ALL issues:
    ```bash
    # Use the project's lint command scoped to changed paths
    # e.g. golangci-lint run ./path/to/changed/... | head -50
    ```
-   Do NOT dispatch validate-loop with known lint violations — it wastes a repair cycle. Only call validate-loop when lint returns 0 issues.
+   Only proceed when lint returns 0 issues.
 
-   Dispatch validate-loop using the provider-specific shape from `skills/orchestrating-tasks/provider-dispatch.md`:
-
-   | Parameter | Value |
-   |---|---|
-   | Logical role | `validate-loop` |
-   | `prompt` | `slug: {slug}\nphase: implementation\nmax_iterations: 2\nplan_excerpt: {phase section}` |
-
-   > **Hard cap: max_iterations: 2.** After 2 repair cycles without HARNESS PASS, return `LOOP FAIL (escalate: true)` — never continue past 2 cycles.
-
-   - `LOOP PASS`: include `context_handoff` in phase completion report, proceed to Testing Context Handoff.
-   - `LOOP FAIL` (`escalate: true`): present violations to user, wait for direction.
+   > **Note:** Semantic validation (rules compliance, architecture, error handling) happens in `reviewing-code`, not here. This phase focuses on deterministic gates only (lint + style greps).
 
 9. If a non-obvious domain, database, or architectural anti-pattern is discovered:
    - Surface it in the phase summary.
@@ -139,7 +128,7 @@ Read only the instruction files whose `applyTo` glob matches files you will chan
 
 ## Testing Context Handoff
 
-After `LOOP PASS`, prepare this handoff for `testing-implementation`. Include in the phase completion report:
+After lint and style gate pass, prepare this handoff for `testing-implementation`. Include in the phase completion report:
 
 - Plan slug and phase number
 - New or changed function signatures (copy verbatim)
@@ -197,7 +186,7 @@ Update `progress.md` after each phase. Mark only production file tasks:
 ## Phase 1 — Domain Model
 - [x] Created domain entity
 - [x] Linter: PASS
-- [x] validate-loop: LOOP PASS
+- [x] Style gate: PASS
 ```
 
 **Do NOT update `## Status` to `REVIEW`** — that transition is owned exclusively by `orchestrating-tasks` after all gates pass. Leave `## Status` as `IN_PROGRESS` and update only the phase checkboxes.

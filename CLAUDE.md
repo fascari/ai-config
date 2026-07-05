@@ -21,7 +21,6 @@ Workflow skills are in `skills/`. Use `orchestrating-tasks` as the entry point f
 
 Provider-agnostic agent definitions in `agents/`:
 - `agents/go-implementer.md`, `agents/go-tester.md`
-- `agents/harness-gate.md`, `agents/validate-loop.md`
 
 ## Quick Start (new machine)
 

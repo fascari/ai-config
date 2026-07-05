@@ -31,14 +31,13 @@ These rules always apply regardless of task type. Read them before anything else
 - **Never propose, draft, or suggest commits** — commits and PRs are manual user commands only; report final state and stop
 - **Never transition `progress.md` to `REVIEW` from inside a skill** — only orchestrating-tasks does this after gates pass
 - **Always run Completion Gate before `reviewing-code`** — lint + tests must pass; on FAIL dispatch `implementing-feature` for up to 2 repair cycles; escalate to user if still failing
-- **Never dispatch `harness-gate` directly** — `implementing-feature` and `testing-implementation` each dispatch `validate-loop` internally; the orchestrator receives only `LOOP PASS` or `LOOP FAIL`
-- **On `LOOP FAIL` with `escalate: true`** — present the escalation to the user and wait for direction; do not dispatch a repair cycle
+- **On gate failure** — present the failure to the user and wait for direction; do not dispatch a repair cycle
 - **All narrative prose passes through `sanitizing-text` before presentation**
 - **Never skip user approval checkpoints** — commits, pushes, and any external API writes require explicit approval (see `approval-and-output.md`)
 - **Never assume a plan exists** — always run plan discovery first
 - **Codex compatibility is explicit** — when native `task(skill: "...")` dispatch is unavailable, read `codex-runtime.md`; generic `spawn_agent` workers are untrusted until the orchestrator loads the phase rule bundle and runs the manual acceptance checklist
-- **`implementing-feature` owns production code, `testing-implementation` owns tests** — never cross-assign; each returns `LOOP PASS/FAIL`. A phase that touches both production files AND test files MUST be split into two dispatches. (See `task-types.md`)
-- **NEVER dispatch `go-implementer` or `go-tester` directly** — always dispatch the SKILLS (`implementing-feature`, `testing-implementation`). The skills are the wrappers that run `validate-loop`. Dispatching the agents directly bypasses the harness entirely. (See `task-types.md`)
+- **`implementing-feature` owns production code, `testing-implementation` owns tests** — never cross-assign; each returns completion report. A phase that touches both production files AND test files MUST be split into two dispatches. (See `task-types.md`)
+- **NEVER dispatch `go-implementer` or `go-tester` directly** — always dispatch the SKILLS (`implementing-feature`, `testing-implementation`). The skills are the wrappers that enforce quality gates. Dispatching the agents directly bypasses the quality checks entirely. (See `task-types.md`)
 - **`write_agent` is single-skill-scoped** — switching skill type requires a fresh `task()` dispatch
 - **Dispatch model selection is mandatory** — for every task dispatch, consult `dispatching.md` Delegation Model Matrix. Run the Pre-Dispatch Checklist before every `task` invocation.
 - **Dispatch syntax is provider-specific** — select the logical role in `dispatching.md`, then render the actual worker or task call using `provider-dispatch.md`

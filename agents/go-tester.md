@@ -53,13 +53,9 @@ If a rule is ambiguous after reading these files, ask the user. Do not guess.
 - Never use `sync.WaitGroup`, ad-hoc channels, or `time.Sleep` as test synchronization.
 - Never introduce testing-oriented production code (hooks, flags, branches, or extra APIs created only for tests).
 
-## Do NOT dispatch validate-loop
-
-`go-tester` must never dispatch `validate-loop`. The caller (`testing-implementation` skill or orchestrator) owns the validate-loop dispatch. Dispatching it from here creates a recursive loop: validate-loop → go-tester → validate-loop → go-tester…
-
 ## Implementation Workflow
 
-Follow `~/.ai-config/skills/testing-implementation/SKILL.md` steps 1–4 only (write tests, run scoped tests, lint). Do NOT execute the validate-loop dispatch step — that is the caller's responsibility.
+Follow `~/.ai-config/skills/testing-implementation/SKILL.md` (write tests, run scoped tests, lint).
 
 Before declaring a phase done, run:
 1. Scoped test command — all tests must pass

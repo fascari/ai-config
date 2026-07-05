@@ -36,7 +36,7 @@ the phase logic.
 
 ## Codex Managed Mode
 
-Generic Codex workers can help produce patches, but their `LOOP PASS` is only a worker claim. It is not accepted until the orchestrator validates it.
+Generic Codex workers can help produce patches, but their completion report is only a worker claim. It is not accepted until the orchestrator validates it.
 
 For every phase in Codex managed mode:
 
@@ -47,7 +47,7 @@ For every phase in Codex managed mode:
 5. Run the manual acceptance checklist for the skill scope.
 6. Update `progress.md` only after the manual checklist passes.
 
-Do not advance from production to tests, or from one phase to the next, just because a generic worker returned `LOOP PASS`.
+Do not advance from production to tests, or from one phase to the next, just because a generic worker returned a completion report.
 
 ## Rule Bundles
 
@@ -57,7 +57,7 @@ In Codex managed mode, the orchestrator must load the relevant bundle before dis
 |---|---|---|
 | Go production | `AGENTS.md`, global `rules/go-style.md`, global `rules/package-design.md`, global `rules/error-handling.md`, global `rules/clean-architecture.md` | `providers/codex/AGENTS.md`, `rules/go-style.md`, `rules/package-design.md`, `rules/error-handling.md`, `rules/clean-architecture.md`, `agents/go-implementer.md`, `skills/implementing-feature/SKILL.md`, `skills/writing-modern-go/SKILL.md` |
 | Go tests | `AGENTS.md`, global `rules/testing.md`, global `rules/go-style.md`, global `rules/error-handling.md` | `providers/codex/AGENTS.md`, `rules/testing.md`, `rules/go-style.md`, `rules/error-handling.md`, `agents/go-tester.md`, `skills/testing-implementation/SKILL.md`, `skills/writing-modern-go/SKILL.md` |
-| Review/gates | `AGENTS.md`, all relevant global `rules/*.md` for changed file types | `agents/harness-gate.md`, `agents/validate-loop.md`, `skills/reviewing-code/SKILL.md`, `skills/orchestrating-tasks/gates.md`, all relevant `rules/*.md` |
+| Review/gates | `AGENTS.md`, all relevant global `rules/*.md` for changed file types | `skills/reviewing-code/SKILL.md`, `skills/orchestrating-tasks/gates.md`, all relevant `rules/*.md` |
 | Narrative/docs | global `rules/sanitizing-text.md` when relevant | `rules/sanitizing-text.md`, `skills/sanitizing-text/SKILL.md` |
 
 The orchestrator must not rely on the worker to discover these files. Missing files are reported explicitly in the dispatch summary:
@@ -129,4 +129,4 @@ When reporting Codex managed work, distinguish these states:
 - `ACCEPTED`: the orchestrator audited the output and all manual gates passed.
 - `BLOCKED`: a gate failed or the runtime cannot provide the requested workflow.
 
-Never report `LOOP PASS` to the user as final in Codex managed mode unless it is paired with an orchestrator `ACCEPTED` statement.
+Never report `WORKER PASS` to the user as final in Codex managed mode unless it is paired with an orchestrator `ACCEPTED` statement.

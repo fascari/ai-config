@@ -63,80 +63,7 @@ In Copilot native mode this may map to `agent_type`. In Codex managed mode prefe
 
 9. Update `{plan_root}/{slug}/progress.md` with test results.
 
-### Step 2 — Dispatch validate-loop
-
-After tests pass locally, dispatch validate-loop for the testing phase:
-
-| Parameter | Value |
-|---|---|
-| Logical role | `validate-loop` |
-| `prompt` | `slug: {slug}\nphase: testing\nmax_iterations: 2\nplan_excerpt: {current phase section}` |
-
-> **Hard cap: max_iterations: 2.** After 2 repair cycles without HARNESS PASS, the loop returns `LOOP FAIL (escalate: true)` — never continue past 2 cycles.
-
-- If `LOOP PASS`: proceed to Step 3 (test-design-judge).
-- If `LOOP FAIL` (`escalate: true`): present failures and iteration count to the user and wait for direction.
-
-### Step 3 — test-design-judge (mandatory after LOOP PASS)
-
-`validate-loop` enforces structural quality (compile, lint, test pass). It cannot enforce semantic design rules:
-- Test name predicates that don't hold for all table rows
-- Magic literal values in ID fields
-- Comments inside test files
-- Pre-existing modern-Go violations the Boy Scout rule requires fixing
-
-Dispatch a semantic judge using a **different vendor** from the test author (cross-vendor rule - see `orchestrating-tasks/dispatching.md`) and use the provider-specific shape from `orchestrating-tasks/provider-dispatch.md`:
-
-| Parameter | Value |
-|---|---|
-| Logical role | `general-purpose` |
-| `model` | Cross-vendor, Balanced tier |
-
-Prompt template:
-```
-You are a strict reviewer of test code design. Your only job is to score the
-diff against documented project rules and output APPROVED or BLOCKED with
-specific reasons. You do not propose fixes, you do not write code.
-
-## Diff to review
-
-Run `git diff HEAD -- '*_test.go' 'testdata/**'` to see all test changes.
-
-## Documented rules (read these; do NOT rely on prior knowledge)
-
-- active provider-native testing rules
-- .github/skills/writing-modern-go/SKILL.md
-- active provider-native Go style rules (if the repo defines them)
-
-## Output format
-
-Output EXACTLY one of:
-
-APPROVED
-
-or
-
-BLOCKED
-- {rule violated} ({doc path:section}) at {file:line}: {what is wrong, 1 sentence}
-- ...
-
-## Rules to enforce
-
-1. Test names: TestX_ShouldY predicate must hold for ALL rows when table-driven.
-   If subtests assert opposite outcomes, the parent predicate is invalid.
-2. No magic literal primary keys or ID values — must derive from named constants or factory output.
-3. No bare placeholders for fields with known production formats.
-4. No comments anywhere in test files or testdata/ packages — no // Arrange/Act/Assert,
-   no doc comments on exported symbols in testdata/. The linter does not catch this.
-5. No ticket IDs anywhere in test code.
-6. Boy Scout for modern-go: any pre-existing legacy pattern (interface{}, errors.As non-typed,
-   context.Background() in tests, for i:=0; i<n) in a touched file must be replaced.
-7. Fail-fast assertions (require, not assert); project mock builder (EXPECT(), not mock.On()).
-8. t.Context() not context.Background() in tests.
-```
-
-- If judge returns `APPROVED`: proceed to Output.
-- If judge returns `BLOCKED`: do ONE repair cycle — re-dispatch go-tester with the BLOCKED reasons as the only instructions, then re-run Step 3. If the second judge run is still BLOCKED, report `LOOP FAIL` to the orchestrator with the judge findings and stop.
+> **Note:** Semantic validation (rules compliance, architecture, error handling) happens in `reviewing-code`, not here. This phase focuses on deterministic gates only (tests + lint).
 
 ---
 
@@ -149,8 +76,6 @@ Update `{plan_root}/{slug}/progress.md`:
 - Unit tests: PASS ({N} tests)
 - Integration tests: PASS / SKIPPED (no local env) / FAIL
 - Lint: PASS / {issues}
-- validate-loop: LOOP PASS
-- test-design-judge: APPROVED
 ```
 
 ---

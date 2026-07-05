@@ -139,8 +139,6 @@ These names are **logical roles**, not guaranteed transport fields:
 |---|---|
 | `go-implementer` | Production code worker |
 | `go-tester` | Test-only worker |
-| `validate-loop` | Native harness loop wrapper |
-| `harness-gate` | Native harness judge |
 | `general-purpose` | Planning, review, research, and text work |
 
 For managed workers, put the logical role in the prompt and attach the matching

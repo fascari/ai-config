@@ -20,12 +20,14 @@ Also performs requirements traceability reviews when an issue tracker ticket key
 
 1. Read `.github/skills/implementing-feature/SKILL.md` — apply its Quality Checklist, Testing Rules, and all anti-pattern tables verbatim.
 2. Read the active provider-native project instruction files — apply all project-specific coding rules, architecture rules, and anti-patterns, plus any repo docs they explicitly reference.
-3. Use the `{plan_root}` provided by `orchestrating-tasks`. If running standalone, resolve `{plan_root}` with the same rule: prefer `$AI_MEMORY_HOME/{project}/plans/`; if unset, use `$COPILOT_VAULT/{project}/plans/`; then create or refresh `.plans` as a symlink to `{plan_root}`.
-4. Read `{plan_root}/{slug}/implementation-plan.md` and `{plan_root}/{slug}/progress.md` for context.
-5. Review all changed files against the checklists below.
-6. If an issue tracker ticket key is provided, run the Requirements Traceability Review.
-7. Write results to `{plan_root}/{slug}/reviews/review-{model}.md`.
-8. If verdict is APPROVED and user confirms, update `## Status` in `progress.md` to `DONE`.
+3. **Load Cognition Lessons** — if `~/.ai-config/cognition-lessons/{project}.md` exists, read it and include high-priority lessons in the review prompt. See "Cognition Lessons Integration" below.
+4. Use the `{plan_root}` provided by `orchestrating-tasks`. If running standalone, resolve `{plan_root}` with the same rule: prefer `$AI_MEMORY_HOME/{project}/plans/`; if unset, use `$COPILOT_VAULT/{project}/plans/`; then create or refresh `.plans` as a symlink to `{plan_root}`.
+5. Read `{plan_root}/{slug}/implementation-plan.md` and `{plan_root}/{slug}/progress.md` for context.
+6. Review all changed files against the checklists below.
+7. If an issue tracker ticket key is provided, run the Requirements Traceability Review.
+8. Write results to `{plan_root}/{slug}/reviews/review-{model}.md`.
+9. **Extract Cognition Lessons** — if verdict is BLOCKED, extract lessons from blockers. See "Cognition Lessons Integration" below.
+10. If verdict is APPROVED and user confirms, update `## Status` in `progress.md` to `DONE`.
 
 ## Output
 
@@ -163,6 +165,75 @@ Write to `{plan_root}/{slug}/reviews/review-{model}.md`:
 - [ ] CHANGES REQUESTED — {N} blockers must be resolved
 ```
 
+
+## Cognition Lessons Integration
+
+### Loading Lessons (Step 3)
+
+At the start of review, check for project-specific lessons:
+
+```bash
+PROJECT_NAME=$(basename "$(git rev-parse --show-toplevel)")
+LESSONS_FILE="$HOME/.ai-config/cognition-lessons/$PROJECT_NAME.md"
+
+if [ -f "$LESSONS_FILE" ]; then
+  cat "$LESSONS_FILE"
+fi
+```
+
+If lessons exist, include them in the review context:
+
+```markdown
+## Prior Lessons (check these first)
+
+{lessons from file}
+
+## Standard Rules
+
+{normal rules from rules/*.md}
+```
+
+### Extracting Lessons (Step 9)
+
+When verdict is BLOCKED, extract lessons from each blocker:
+
+1. Parse blockers from the review output
+2. For each blocker, create a lesson entry:
+
+```markdown
+### {rule or pattern violated}
+- **Anti-pattern**: {what was done wrong}
+- **Preferred pattern**: {what the rule requires}
+- **Priority**: high (if BLOCKER) | medium (if SUGGESTION)
+- **Occurrences**: 1
+- **Last seen**: {YYYY-MM-DD}
+```
+
+3. Check if lesson already exists in `{project}.md`:
+   - If yes: increment `Occurrences`, update `Last seen`
+   - If no: append new lesson at end of file
+
+4. Save updated file:
+
+```bash
+PROJECT_NAME=$(basename "$(git rev-parse --show-toplevel)")
+LESSONS_FILE="$HOME/.ai-config/cognition-lessons/$PROJECT_NAME.md"
+
+# Append or update lesson
+```
+
+### Example Lesson
+
+```markdown
+### Using interface{} instead of any
+- **Anti-pattern**: `func Process(data interface{}) error`
+- **Preferred pattern**: `func Process(data any) error`
+- **Priority**: high
+- **Occurrences**: 3
+- **Last seen**: 2026-07-05
+```
+
+---
 
 ## Multi-Model Note
 

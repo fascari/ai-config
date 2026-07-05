@@ -37,20 +37,15 @@ Select a logical role here. Render the actual call shape using
 
 **Source of truth**: each skill's frontmatter in `skills/{name}/SKILL.md` defines the intended behavior. The matrix below mirrors that. On any divergence, the frontmatter wins.
 
-> **Note on logical role**: values like `go-implementer`, `go-tester`, and
-> `validate-loop` are logical roles. In Copilot native mode they often map to
-> literal `agent_type` values. In Codex or Claude managed mode they belong in
-> the worker prompt unless the runtime explicitly supports an equivalent field.
+> **Note on logical role**: values like `go-implementer` and `go-tester` are logical roles. In Copilot native mode they often map to literal `agent_type` values. In Codex or Claude managed mode they belong in the worker prompt unless the runtime explicitly supports an equivalent field.
 
 | Skill | Logical role | Tier | Rationale |
 |---|---|---|---|
-| `validate-loop` | `validate-loop` | Balanced | Loop agent: runs code agent + harness-gate cycles in isolated context. Caller receives only LOOP PASS/FAIL |
 | `researching-codebase` | `general-purpose` | Deep | Search-heavy reasoning; needs to correctly map impact across layered architectures |
 | `planning-implementation` | `general-purpose` | Deep | Plan quality directly determines implementation quality; deep reasoning reduces critique-gate cycles |
 | `implementing-feature` | `go-implementer` | Balanced | Custom agent front-loads Go conventions in the system prompt |
 | `testing-implementation` | `go-tester` | Balanced | Dedicated test agent — explicitly forbidden from touching production files |
 | `reviewing-code` | `general-purpose` | Deep (**cross-vendor**) | Reviewer must use a different vendor than the implementer — see Cross-Vendor Rule |
-| `test-design-judge` | `general-purpose` | Balanced (**cross-vendor**) | Internal dispatch by `testing-implementation` only. Never dispatched by orchestrator |
 | `sanitizing-text` | `general-purpose` | Fast | Rule-based text transformation; no reasoning needed |
 | `committing-changes` | `general-purpose` | Fast | Structured, rule-based task |
 | `creating-pull-request` | `general-purpose` | Fast | Templated, structured task |
@@ -78,8 +73,8 @@ Rationale: same-vendor judges share blind spots — they accept patterns their s
 | Producer (skill) | Suggested judge vendor | Example pairing |
 |---|---|---|
 | planning-implementation (Anthropic) | OpenAI or Google | critique-gate |
-| implementing-feature (Anthropic) | OpenAI or Google | reviewing-code, harness LLM-judge |
-| testing-implementation (Anthropic) | OpenAI or Google | test-design-judge |
+| implementing-feature (Anthropic) | OpenAI or Google | reviewing-code |
+| testing-implementation (Anthropic) | OpenAI or Google | reviewing-code |
 
 **If you change a producer's vendor, every downstream judge for that skill MUST be re-checked.** Verify the pairing whenever the model matrix changes.
 
@@ -173,7 +168,7 @@ These skills support multiple runtimes. Select behavior by capability, not by pr
 
 | Capability | Mode | Dispatch rule |
 |---|---|---|
-| Native `task(skill: "...")` or equivalent skill dispatch exists | Native harness | Use the native harness shape from `provider-dispatch.md`. The skill wrapper owns `validate-loop`. |
+| Native `task(skill: "...")` or equivalent skill dispatch exists | Native harness | Use the native harness shape from `provider-dispatch.md`. The skill wrapper enforces quality gates. |
 | Only generic worker agents exist, such as Codex `spawn_agent` | Codex managed | Workers may produce bounded patches, but the orchestrator must run `codex-runtime.md` manual acceptance before accepting output. |
 | No agent dispatch exists | Local manual | Stop and ask the user to approve degraded local execution. |
 

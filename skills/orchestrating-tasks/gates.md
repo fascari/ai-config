@@ -2,7 +2,7 @@
 
 > Sub-file of `skills/orchestrating-tasks/SKILL.md`. Read SKILL.md first for Critical Rules and Pre-Dispatch Checklist.
 
-This file covers the three quality gates the orchestrator runs at specific points in the workflow: Critique Gate, Test Design Judge, and Output Judge Gate.
+This file covers the two quality gates the orchestrator runs at specific points in the workflow: Critique Gate and Output Judge Gate.
 
 ---
 
@@ -41,38 +41,9 @@ If BLOCKED, present the issues to the user and send the plan back to `planning-i
 
 ---
 
-## Test Design Judge (internal — not orchestrator-dispatched)
-
-`testing-implementation` runs an internal `test-design-judge` after `validate-loop` returns LOOP PASS, before reporting back to the orchestrator. The orchestrator does NOT dispatch this judge directly — same encapsulation as `validate-loop`.
-
-**Why it exists**: `validate-loop` enforces structural quality (compile, lint, test pass). It cannot enforce semantic design rules:
-- Test name predicates that don't hold for all table rows
-- Magic literal values in ID fields (no named constants)
-- Pre-existing modern-Go violations the Boy Scout rule requires fixing
-- Comments inside test functions
-- Ticket IDs or internal references leaked into test code
-
-**Tier**: Balanced, **cross-vendor** (producer is Balanced/Anthropic → judge uses OpenAI/Google). Rule-checking is deterministic — diff in, APPROVED|BLOCKED out.
-
-**Flow inside `testing-implementation`**:
-
-```
-Step 1-2  Write tests + Style Compliance Gate (greps)
-Step 2    validate-loop (testing) → LOOP PASS
-Step 3    test-design-judge → APPROVED|BLOCKED
-            APPROVED → Step 5
-            BLOCKED  → 1 repair cycle → re-judge
-                       still BLOCKED → report LOOP FAIL to orchestrator
-Step 5    Report to orchestrator: LOOP PASS + context_handoff
-```
-
-The orchestrator sees only the final result. All judge detail stays encapsulated in the skill's context. See `testing-implementation/SKILL.md` Step 3 for the full prompt template.
-
----
-
 ## Output Judge Gate
 
-After both `implementing-feature` and `testing-implementation` return `LOOP PASS`, run an adversarial LLM judge using a **different vendor** from the implementing agent. See `dispatching.md` Cross-Vendor Rule.
+After both `implementing-feature` and `testing-implementation` complete, run an adversarial LLM judge using a **different vendor** from the implementing agent. See `dispatching.md` Cross-Vendor Rule.
 
 **Skip rules:**
 

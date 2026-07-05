@@ -95,6 +95,16 @@ Two skills manage session persistence across AI providers:
 
 See [`docs/persistent-memory.md`](docs/persistent-memory.md).
 
+## Quality Harness
+
+Deterministic gates (zero tokens) + single LLM review (one call per cycle). Inspired by [copilot-tdd-harness](https://github.com/mrlarson2007/copilot-tdd-harness) and the 7 pillars of Harness Engineering.
+
+- **style-gate** — lint, format, typecheck, tests, style greps (deterministic)
+- **reviewing-code** — single LLM review of rules + diff
+- **cognition-lessons** — extract lessons from failures, load in future sessions
+
+See [`docs/harness-reformulation.md`](.plans/harness-reformulation/harness-reformulation.md) for the full architecture.
+
 ## Updating
 
 ```bash

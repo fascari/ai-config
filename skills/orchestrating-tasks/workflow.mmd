@@ -2,12 +2,44 @@ flowchart TD
   UserRequest --> Orchestrator
   Orchestrator --> Researcher
   Researcher -->|writes research.md| Planner
-  Planner -->|writes implementation-plan.md| Checkpoint1{Approve plan?}
-  Checkpoint1 -->|Yes| Coder
-  Checkpoint1 -->|No| Planner
-  Coder -->|"updates progress.md"| Reviewer
-  Reviewer -->|"writes reviews/"| Sanitizer["Text Sanitizer"]
-  Sanitizer -->|"sanitized output"| Checkpoint2{"Approve changes?"}
-  Checkpoint2 -->|Yes| GitCommitter["Git Committer"]
-  Checkpoint2 -->|No| Coder
+  Planner -->|writes implementation-plan.md| CritiqueGate{"Critique Gate\n(LLM, cross-vendor)"}
+  CritiqueGate -->|APPROVED| Implementer
+  CritiqueGate -->|BLOCKED| Planner
 
+  subgraph IMPL[implementing-feature]
+    Code[Write production code] --> StyleGate1["style-gate\nlint + greps\n(deterministic, ZERO tokens)"]
+    StyleGate1 -->|FAIL| UserFix1{"User decides:\nfix or skip?"}
+    UserFix1 -->|fix| Code
+    StyleGate1 -->|PASS| UserApprove1{"User approves?"}
+    UserApprove1 -->|no| Code
+  end
+
+  UserApprove1 -->|yes| Tester
+
+  subgraph TEST[testing-implementation]
+    Tests[Write tests] --> StyleGate2["style-gate\ntests + lint\n(deterministic, ZERO tokens)"]
+    StyleGate2 -->|FAIL| UserFix2{"User decides:\nfix or skip?"}
+    UserFix2 -->|fix| Tests
+    StyleGate2 -->|PASS| UserApprove2{"User approves?"}
+    UserApprove2 -->|no| Tests
+  end
+
+  UserApprove2 -->|yes| Reviewer
+
+  subgraph REVIEW[reviewing-code]
+    LoadRules[Load rules/*.md + cognition lessons] --> LoadDiff[Read git diff]
+    LoadDiff --> LLMJudge["Single LLM review\n(UNIQUE semantic call)"]
+    LLMJudge -->|APPROVED| ExtractLesson{"Extract cognition\nlesson if applicable"}
+    LLMJudge -->|BLOCKED| ExtractLesson2["Extract cognition lesson\ngatilho + anti-padrao + padrao"]
+    ExtractLesson2 --> UserFix3{"User decides:\nfix, skip, or abort?"}
+    UserFix3 -->|fix| Implementer
+  end
+
+  ExtractLesson --> Sanitizer["sanitizing-text"]
+  Sanitizer --> UserApprove3{"User approves?"}
+  UserApprove3 -->|yes| GitCommitter["committing-changes"]
+  UserApprove3 -->|no| Implementer
+
+  style StyleGate1 fill:#4caf50,color:#fff
+  style StyleGate2 fill:#4caf50,color:#fff
+  style LLMJudge fill:#2196f3,color:#fff

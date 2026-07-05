@@ -40,9 +40,11 @@ Use **orchestrating-tasks** as the single entry point for any task involving cod
 
 | Skill | Purpose |
 |---|---|
-| [implementing-feature](implementing-feature/) | Implements production code only, phase by phase, with linter + style gate + validate-loop. Never commits. Hands off to testing-implementation after each phase. |
-| [testing-implementation](testing-implementation/) | Writes and executes tests, runs validate-loop (testing phase), and dispatches a cross-vendor test-design-judge before reporting back to the orchestrator. |
+| [implementing-feature](implementing-feature/) | Implements production code only, phase by phase, with linter + style gate. Never commits. Hands off to testing-implementation after each phase. |
+| [testing-implementation](testing-implementation/) | Writes and executes tests, runs scoped tests and lint. Reports back to the orchestrator. |
 | [writing-modern-go](writing-modern-go/) | Enforces modern Go idioms (Go 1.18 through 1.26+) instead of legacy patterns. Covers generics, `slices`, `maps`, `cmp`, `errors.AsType`, `wg.Go`, and more. |
+| [style-gate](style-gate/) | Deterministic quality gates (lint, format, typecheck, tests, style greps). Zero LLM tokens. Called by implementing-feature and testing-implementation. |
+| [cognition-lessons](cognition-lessons/) | Extracts lessons from review failures and loads them in future sessions. Harness learns from mistakes. |
 
 ### Review, Quality, and Publishing
 
@@ -74,15 +76,11 @@ Provider-neutral templates for Go projects:
 |---|---|
 | [`go-implementer`](../agents/go-implementer.md) | Go production code agent. Front-loads Go style rules, modern-go idioms, and architecture conventions. Never touches test files. |
 | [`go-tester`](../agents/go-tester.md) | Go test agent. Front-loads testing conventions, fixture lifecycle rules, and assertion patterns. Never touches production files. |
-| [`harness-gate`](../agents/harness-gate.md) | Runs `harness-validate.sh` for one phase and reports HARNESS PASS or FAIL. No implementation work. |
-| [`validate-loop`](../agents/validate-loop.md) | Evaluator-optimizer loop. Runs code agent + harness-gate cycles until HARNESS PASS or max iterations. Returns only `LOOP PASS` or `LOOP FAIL` to the caller (~100 tokens). |
-
-See [`../harness/README.md`](../harness/README.md) for the harness architecture and [`../harness/workflow.md`](../harness/workflow.md) for the enforcement flow diagram.
 
 
 ## Standard Workflow
 
-orchestrating-tasks → researching-codebase → analyzing-system-design → planning-implementation → implementing-feature → validate-loop (implementation) → testing-implementation → validate-loop (testing) → test-design-judge → output-judge → reviewing-code → sanitizing-text → committing-changes → creating-pull-request
+orchestrating-tasks → researching-codebase → analyzing-system-design → planning-implementation → implementing-feature → testing-implementation → reviewing-code → sanitizing-text → committing-changes → creating-pull-request
 
 
 ## Project Customization
@@ -95,5 +93,4 @@ To adapt to a new project:
 2. Update `implementing-feature/references/anti-patterns.md` with codebase-specific patterns.
 3. Copy `agents/` templates into the project's provider-specific location and adapt to the project's toolchain.
 4. For Codex, install or check in the TOML files from `providers/codex/agents/`.
-5. Implement the harness shell scripts in `.github/harness/` (see `harness/README.md`).
-6. Skills apply your rules automatically during each phase.
+5. Skills apply your rules automatically during each phase.
