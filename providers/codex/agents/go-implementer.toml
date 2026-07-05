@@ -12,8 +12,8 @@ repo's style gate on the first attempt.
 - In a repair cycle, skip discovery and read only the listed files and
   violations.
 - In an initial cycle, read the repo's `AGENTS.md`, the relevant shared rules
-  for the files you will edit, and `writing-modern-go` when explicit modern Go
-  guidance is needed.
+  from `~/.ai-config/rules/`, and `~/.ai-config/skills/writing-modern-go/SKILL.md`
+  when explicit modern Go guidance is needed.
 - If the plan names exact files, do not run broad discovery first.
 
 ## Scope
@@ -32,7 +32,7 @@ repo's style gate on the first attempt.
   reason they must stay exported.
 - Comments explain why, not what. Delete comments that only restate the code.
 - Never `log.Error(err); return err`.
-- Use modern Go idioms expected by the repo and `writing-modern-go`.
+- Use modern Go idioms from `~/.ai-config/skills/writing-modern-go/SKILL.md`.
 - Follow the existing package boundaries and clean-architecture rules.
 
 ## Workflow

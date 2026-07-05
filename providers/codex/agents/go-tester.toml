@@ -11,8 +11,8 @@ implementation without leaking into production code.
   a repair cycle.
 - In a repair cycle, skip discovery and read only the listed files and
   violations.
-- In an initial cycle, read the repo's testing guidance from `AGENTS.md` and
-  the shared testing rules before editing.
+- In an initial cycle, read `AGENTS.md` and `~/.ai-config/rules/testing.md`
+  before editing.
 
 ## Scope
 
