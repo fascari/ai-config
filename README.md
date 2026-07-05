@@ -1,192 +1,104 @@
 # ai-config
 
-Shared configuration, coding instructions, and workflow skills for AI-assisted software development. It is meant to provide a project's shared `.github/` tree.
+Shared AI coding rules, workflow skills, and provider configurations for AI-assisted development. Portable across opencode, Codex CLI, Claude Code, and GitHub Copilot.
 
+## Architecture
 
-## What This Repo Contains
+```
+~/.ai-config/                     ← clone location (universal, Linux and macOS)
+├── rules/                        ← SSOT coding rules (Go style, testing, etc.)
+├── skills/                       ← SSOT workflow skills (SKILL.md per skill)
+├── agents/                       ← provider-agnostic agent definitions
+├── providers/                    ← thin entrypoint templates for each provider
+├── .opencode/                    ← opencode config for working ON this repo
+├── AGENTS.md                     ← codex entrypoint for working ON this repo
+├── CLAUDE.md                     ← claude entrypoint for working ON this repo
+└── install*.sh                   ← setup scripts
+```
 
-- `providers/` - provider-native project instruction entrypoints and adapters
-- `rules/` - shared rules library reused by provider adapters
-- `skills/` - workflow skills for AI agents
-- `claude/` - Claude-specific configuration and templates
-- `docs/` - guides and reference documentation
+Each provider's entrypoint is a thin index that references `~/.ai-config/rules/` and `~/.ai-config/skills/`. No rules are duplicated inline.
 
+## Fresh Machine Setup
 
-## Installation
+```bash
+# 1. Clone to fixed location
+git clone git@github.com:user/ai-config.git ~/.ai-config
 
-Skills are installed globally for Codex, GitHub Copilot, and Claude so every project can use them without per-project setup.
+# 2. Run setup (symlinks skills globally, exports AI_CONFIG_HOME)
+~/.ai-config/install.sh
 
-| Provider | Install location | Link name |
-|---|---|---|
-| Codex skills | `~/.agents/skills/` | `atlas-ai-config-<skill>` |
-| Codex custom agents | `~/.codex/agents/` | `atlas-ai-config-<agent>.toml` |
+# 3. Restart shell, then per project:
+~/.ai-config/install-provider-rules.sh --provider all --target /path/to/project
+```
+
+## Per-Project Install
+
+Each provider installs thin entrypoint files into the target repository:
+
+| Provider | Entrypoint created | Rules |
+|----------|-------------------|-------|
+| Codex CLI | `AGENTS.md` | Referenced from `~/.ai-config/rules/` |
+| Claude Code | `CLAUDE.md` | Referenced from `~/.ai-config/rules/` |
+| Opencode | `AGENTS.md` + `.opencode/opencode.jsonc` | Referenced via `instructions` field |
+| GitHub Copilot | `AGENTS.md` + `.github/copilot-instructions.md` + `.github/instructions/*.instructions.md` | Symlinked from `~/.ai-config/rules/` |
+
+```bash
+# Install all providers for a project
+~/.ai-config/install-provider-rules.sh --provider all --target /path/to/project
+
+# Or a single provider
+~/.ai-config/install-provider-rules.sh --provider codex --target /path/to/project
+```
+
+## Global Skill Installation
+
+Skills are symlinked globally so every project can use them without per-project setup:
+
+```bash
+~/.ai-config/install-global-skills.sh --provider all
+```
+
+| Provider | Location | Link name |
+|----------|----------|-----------|
+| Codex CLI | `~/.agents/skills/` | `atlas-ai-config-<skill>` |
+| Codex agents | `~/.codex/agents/` | `atlas-ai-config-<agent>.toml` |
 | GitHub Copilot | `~/.copilot/skills/` | `<skill>` |
-| Claude | `~/.claude/skills/` | `<skill>` |
+| Claude Code | `~/.claude/skills/` | `<skill>` |
+| Opencode | `~/.config/opencode/skills/` | `<skill>` |
 
-```bash
-# Install for all supported providers
-mise run skills:install
+Opencode also discovers skills from `~/.agents/skills/` and `~/.claude/skills/`.
 
-# Or target a single provider
-mise run skills:install:codex
-mise run skills:install:copilot
-mise run skills:install:claude
-```
-
-### First-time setup (per machine)
-
-```bash
-git clone git@github.com:{user}/ai-config.git ~/path/of/your/choice
-cd ~/path/of/your/choice && mise run skills:install
-```
-
-The script creates symlinks. If the machine uses a different SSH host alias, use the HTTPS URL instead.
-
-**For machine portability** — set `AI_CONFIG_HOME` in your shell rc file to make installed project files reference this path instead of a relative one:
-
-```bash
-# ~/.zshrc or ~/.bashrc
-export AI_CONFIG_HOME="$HOME/path/of/your/choice"
-```
-
-Then reinstall project rules so generated `AGENTS.md` files reference `$AI_CONFIG_HOME/rules/` instead of relative paths. This makes `AGENTS.md` portable across teams and machines.
-
-### Keeping skills up to date
-
-```bash
-cd ~/path/of/your/choice && git pull
-```
-
-Symlinks stay valid - no re-install needed after a pull.
-
-### Adding a new skill
-
-After adding a new `skills/<name>/` directory, re-run the mise task:
-
-```bash
-mise run skills:install
-```
-
-### For Claude Projects
-
-Attach the relevant files from `rules/` as project knowledge. See [`claude/README.md`](claude/README.md) for details.
-
-### Using as a project `.github/` tree (legacy)
-
-This repo separates shared rules from provider-native injection. Keep reusable rules in `rules/`, then install the right entrypoint for each AI provider into the consuming repo.
-
-
-## Instructions
-
-Coding rules and conventions that can be routed into different AI providers. Each file declares an `applyTo` glob pattern in its frontmatter when that metadata is useful to a provider or harness.
+## Rules
 
 | File | Applies to | Summary |
-|---|---|---|
-| `go-style` | `**/*.go` | Google Go Style Guide + project-specific naming, formatting, and control flow rules |
-| `clean-architecture` | `internal/app/**/*.go` | Layer rules, DI, domain isolation, and bounded context boundaries |
-| `testing` | `**/*_test.go` | Table-driven tests, mockery, integration suites, naming conventions |
-| `error-handling` | `**/*.go` | Domain error codes, wrapping strategy, no log-and-return |
-| `package-design` | `**/*.go` | Package philosophy based on Bill Kennedy's guidelines |
-| `sanitizing-text` | `**/*.md`, `**/*.txt` | Remove AI-sounding language and normalize formatting before saving |
-
-These files are language-agnostic in structure. Add new instruction files for other languages or frameworks as needed.
-
+|------|-----------|---------|
+| `rules/go-style.md` | `**/*.go` | Google Go Style Guide + project conventions |
+| `rules/clean-architecture.md` | `internal/app/**/*.go` | Layer rules, DI, domain isolation |
+| `rules/testing.md` | `**/*_test.go` | Table-driven tests, mockery, integration |
+| `rules/error-handling.md` | `**/*.go` | Domain errors, wrapping, no log-and-return |
+| `rules/package-design.md` | `**/*.go` | Package boundaries, dependency direction |
+| `rules/sanitizing-text.md` | `**/*.md, **/*.txt` | Remove AI-sounding language before save |
 
 ## Skills
 
-Workflow skills that guide AI agents through multi-step software engineering tasks. Each skill lives in `skills/{name}/SKILL.md`.
+Workflow skills in `skills/{name}/SKILL.md`. Entry point: **orchestrating-tasks**.
 
-**Entry point:** Use **orchestrating-tasks** to start any task involving codebase analysis or changes. It detects complexity and delegates to the right skill chain.
+Standard workflow: orchestrating-tasks → researching-codebase → planning-implementation → implementing-feature → testing-implementation → reviewing-code → committing-changes → creating-pull-request.
 
-Standard workflow: orchestrating-tasks -> researching-codebase -> analyzing-system-design -> planning-implementation -> implementing-feature -> testing-implementation -> reviewing-code -> sanitizing-text -> committing-changes -> creating-pull-request.
+See [`skills/README.md`](skills/README.md) for the full catalog.
 
-See [`skills/README.md`](skills/README.md) for the full catalog organized by category.
+## Persistent Memory
 
+Two skills manage session persistence across AI providers:
+- **recall** — loads vault context at session start
+- **checkpoint** — saves decisions and progress at session end
 
-## Copilot Instructions Template
+See [`docs/persistent-memory.md`](docs/persistent-memory.md).
 
-`copilot-instructions.md` is a template source for GitHub Copilot. Copy it to `.github/copilot-instructions.md` in the target project and fill in the project-specific sections (language, entrypoints, architecture). It includes plan conventions, terminal safety rules, commit standards, and skill references.
-
-
-## Claude Configuration
-
-The `claude/` directory contains:
-
-- **`project-instructions-template.md`** - Starting point for `CLAUDE.md` in any project. Claude reads this file automatically when it exists in the working directory.
-- **`README.md`** - Setup guide for Claude Projects and `CLAUDE.md` usage.
-
-
-## Persistent Memory (Obsidian + Graphify)
-
-AI agents lose all context when a session ends. This setup adds two persistence layers: an Obsidian vault for knowledge and session history, and Graphify for codebase understanding.
-
-Two global skills manage the lifecycle:
-- **recall** runs at session start, loading recent logs, decisions, and the code graph
-- **checkpoint** runs at session end, saving what was done, decided, and left pending
-
-See [`docs/persistent-memory.md`](docs/persistent-memory.md) for the full setup guide.
-
-
-## Adapting to a New Project
-
-1. Scaffold or clone the target project.
-2. Install the provider-native entrypoint for the AI surface you will use.
-3. Run `graphify .` to generate the code knowledge graph.
-4. Run `checkpoint` at the end of the first session to initialize the vault folder.
-5. Add or update files in `rules/` when changing shared conventions, or in the consuming repo's provider-native instruction files when the rule is project-specific.
-
-### Provider-native project setup
-
-Install the shared Codex entrypoint into a target repository:
+## Updating
 
 ```bash
-mise run project:install:codex -- --target /path/to/repo
+cd ~/.ai-config && git pull
 ```
 
-This installs:
-
-- `AGENTS.md` from `providers/codex/`
-- references to this repo's global `rules/` directory inside `AGENTS.md`
-
-Codex-native custom agents are installed globally with:
-
-```bash
-mise run skills:install:codex
-```
-
-That installs TOML agent definitions under `~/.codex/agents/`, which matches the current Codex custom-agent format. The project repo itself stays free of `.codex/rules` and does not need a repo-local `.codex/agents/` folder unless a team explicitly wants project-scoped agents.
-
-Codex does not support Copilot-style `NAME.instructions.md` files with
-`applyTo` globs. Keep `AGENTS.md` as a short index, keep reusable rules in
-this repo's global `rules/` directory, and keep Codex custom agents in TOML.
-
-Install the shared Copilot entrypoint into a target repository:
-
-```bash
-mise run project:install:copilot -- --target /path/to/repo
-```
-
-This installs:
-
-- `.github/copilot-instructions.md` from `providers/copilot/`
-- `.github/instructions/*.instructions.md` copied from `rules/`
-- `AGENTS.md` when it does not already exist, so Copilot CLI and Codex can share the same repo-wide agent guidance
-
-Install the shared Claude entrypoint into a target repository:
-
-```bash
-mise run project:install:claude -- --target /path/to/repo
-```
-
-This installs:
-
-- `CLAUDE.md` from `providers/claude/`
-- references to this repo's global `rules/` directory inside `CLAUDE.md`
-
-Install every supported provider entrypoint:
-
-```bash
-mise run project:install:all -- --target /path/to/repo
-```
-
-For projects that do not use Go, remove the Go-specific instruction files and add equivalents for the target language.
+Symlinks stay valid — no re-install needed after a pull. Re-run `install-global-skills.sh` only when new skills are added.
