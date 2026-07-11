@@ -44,4 +44,4 @@ pkg/                     # Shared utilities
 
 - Never log and return the same error — choose one
 - No cross-domain imports inside `internal/app/`
-- Never commit or push without explicit user confirmation
+- **Never commit directly.** Always invoke `committing-changes` skill (`~/.ai-config/skills/committing-changes/SKILL.md`). The skill requires explicit user approval before any `git commit` or `git push`.

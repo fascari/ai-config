@@ -34,3 +34,7 @@ Session persistence uses `$AI_MEMORY_HOME` or `$COPILOT_VAULT`. When unset, vaul
 
 - `./install-global-skills.sh` — symlink skills for all providers
 - `./install-provider-rules.sh` — install entrypoints into a target project
+
+## Hard Rules
+
+- **Never commit directly.** Always invoke `committing-changes` skill. The skill requires explicit user approval before any `git commit` or `git push`.

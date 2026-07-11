@@ -82,7 +82,7 @@ Use `orchestrating-tasks` as the single entry point for any codebase change. Inv
 ## Hard Rules
 
 - **Never log and return the same error** — choose one
-- **Never commit or push without explicit user authorization**
+- **Never commit directly.** Always invoke `/skill:committing-changes`. The skill requires explicit user approval before any `git commit` or `git push`.
 - **No `else` blocks** — use early returns
 - **No `assert` in tests** — use `require` (stops on failure)
 - **No `interface{}`** — use `any`

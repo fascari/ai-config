@@ -33,14 +33,14 @@ git clone git@github.com:user/ai-config.git ~/.ai-config
 
 ## Per-Project Install
 
-Each provider installs thin entrypoint files into the target repository:
+Installs entrypoints into a target repository. Auto-detects project language, commands (from `mise.toml`), and architecture (from directory layout).
 
-| Provider | Entrypoint created | Rules |
-|----------|-------------------|-------|
-| Codex CLI | `AGENTS.md` | Referenced from `~/.ai-config/rules/` |
-| Claude Code | `CLAUDE.md` | Referenced from `~/.ai-config/rules/` |
+| Provider | Files created | Rules |
+|----------|-------------|-------|
+| Codex CLI | `AGENTS.md` (preenchido) | Referenced from `~/.ai-config/rules/` |
+| Claude Code | `CLAUDE.md` (preenchido) | Referenced from `~/.ai-config/rules/` |
 | Opencode | `AGENTS.md` + `.opencode/opencode.jsonc` | Referenced via `instructions` field |
-| GitHub Copilot | `AGENTS.md` + `.github/copilot-instructions.md` + `.github/instructions/*.instructions.md` | Symlinked from `~/.ai-config/rules/` |
+| GitHub Copilot | `.github/copilot-instructions.md` + `.github/instructions/*.instructions.md` | Symlinked from `~/.ai-config/rules/` |
 
 ```bash
 # Install all providers for a project
@@ -102,8 +102,6 @@ Deterministic gates (zero tokens) + single LLM review (one call per cycle). Insp
 - **style-gate** — lint, format, typecheck, tests, style greps (deterministic)
 - **reviewing-code** — single LLM review of rules + diff
 - **cognition-lessons** — extract lessons from failures, load in future sessions
-
-See [`docs/harness-reformulation.md`](.plans/harness-reformulation/harness-reformulation.md) for the full architecture.
 
 ## Updating
 

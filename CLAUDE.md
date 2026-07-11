@@ -30,3 +30,7 @@ git clone git@github.com:user/ai-config.git ~/.ai-config
 ```
 
 See `README.md` for full setup guide.
+
+## Hard Rules
+
+- **Never commit directly.** Always invoke `committing-changes` skill. The skill requires explicit user approval before any `git commit` or `git push`.
