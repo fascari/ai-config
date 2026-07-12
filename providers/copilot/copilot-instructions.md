@@ -6,7 +6,7 @@ Skills, rules, and agents live in `~/.ai-config/` — installed globally by `ins
 
 | What | Where | Purpose |
 |------|-------|---------|
-| Rules | `~/.ai-config/rules/*.md` | Go style, testing, error handling, clean architecture |
+| Rules | `~/.ai-config/rules/*.md` | Go style, design principles, testing, error handling, clean architecture |
 | Skills | `~/.ai-config/skills/*/SKILL.md` | Workflow skills (orchestrating, implementing, testing, etc.) |
 | Agents | `~/.ai-config/agents/*.md` | Provider-agnostic agent definitions |
 
@@ -15,6 +15,7 @@ Path-specific rules under `.github/instructions/*.instructions.md` are symlinks 
 | Instruction file | Applies to |
 |-----------------|------------|
 | `go-style.instructions.md` | `**/*.go` |
+| `design-principles.instructions.md` | `**/*.go` |
 | `clean-architecture.instructions.md` | `internal/app/**/*.go` |
 | `testing.instructions.md` | `**/*_test.go` |
 | `error-handling.instructions.md` | `**/*.go` |
