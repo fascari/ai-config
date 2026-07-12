@@ -27,27 +27,42 @@ git clone git@github.com:user/ai-config.git ~/.ai-config
 # 2. Run setup (symlinks skills globally, exports AI_CONFIG_HOME)
 ~/.ai-config/install.sh
 
-# 3. Restart shell, then per project:
-~/.ai-config/install-provider-rules.sh --provider all --target /path/to/project
+# 3. Restart shell
 ```
 
 ## Per-Project Install
 
-Installs entrypoints into a target repository. Auto-detects project language, commands (from `mise.toml`), and architecture (from directory layout).
+Copy the appropriate entrypoint template from `~/.ai-config/providers/` to your project root:
 
-| Provider | Files created | Rules |
+| Provider | Files to copy | Rules |
 |----------|-------------|-------|
-| Codex CLI | `AGENTS.md` (preenchido) | Referenced from `~/.ai-config/rules/` |
-| Claude Code | `CLAUDE.md` (preenchido) | Referenced from `~/.ai-config/rules/` |
-| Opencode | `AGENTS.md` + `.opencode/opencode.jsonc` | Referenced via `instructions` field |
-| GitHub Copilot | `.github/copilot-instructions.md` + `.github/instructions/*.instructions.md` | Symlinked from `~/.ai-config/rules/` |
+| Codex CLI | `providers/codex/AGENTS.md` → `AGENTS.md` | Referenced from `~/.ai-config/rules/` |
+| Claude Code | `providers/claude/CLAUDE.md` → `CLAUDE.md` | Referenced from `~/.ai-config/rules/` |
+| Opencode | `providers/codex/AGENTS.md` → `AGENTS.md` + `providers/opencode/opencode.jsonc` → `.opencode/opencode.jsonc` | Referenced via `instructions` field |
+| GitHub Copilot | `providers/copilot/copilot-instructions.md` → `.github/copilot-instructions.md` + symlink `rules/` to `.github/instructions/` | Symlinked from `~/.ai-config/rules/` |
+
+### Example: Codex CLI
 
 ```bash
-# Install all providers for a project
-~/.ai-config/install-provider-rules.sh --provider all --target /path/to/project
+cp ~/.ai-config/providers/codex/AGENTS.md /path/to/project/AGENTS.md
+```
 
-# Or a single provider
-~/.ai-config/install-provider-rules.sh --provider codex --target /path/to/project
+### Example: Opencode
+
+```bash
+cp ~/.ai-config/providers/codex/AGENTS.md /path/to/project/AGENTS.md
+mkdir -p /path/to/project/.opencode
+cp ~/.ai-config/providers/opencode/opencode.jsonc /path/to/project/.opencode/opencode.jsonc
+```
+
+Opencode agents are installed globally in `~/.config/opencode/agents/` via `install-global-skills.sh` and discovered automatically. No per-project duplication needed.
+
+### Example: GitHub Copilot
+
+```bash
+mkdir -p /path/to/project/.github/instructions
+cp ~/.ai-config/providers/copilot/copilot-instructions.md /path/to/project/.github/copilot-instructions.md
+ln -s ~/.ai-config/rules/*.md /path/to/project/.github/instructions/
 ```
 
 ## Global Skill Installation
@@ -67,6 +82,20 @@ Skills are symlinked globally so every project can use them without per-project 
 | Opencode | `~/.config/opencode/skills/` | `<skill>` |
 
 Opencode also discovers skills from `~/.agents/skills/` and `~/.claude/skills/`.
+
+## Global Agent Installation
+
+Opencode agents are symlinked globally via `install-global-skills.sh` so every project can use them without per-project setup:
+
+```bash
+~/.ai-config/install-global-skills.sh --provider opencode
+```
+
+| Provider | Location |
+|----------|----------|
+| Opencode | `~/.config/opencode/agents/` |
+
+Opencode discovers agents from `~/.config/opencode/agents/` automatically. No per-project duplication needed.
 
 ## Rules
 

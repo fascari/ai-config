@@ -12,7 +12,14 @@ echo "--- Installing global skills ---"
 "$AI_CONFIG_HOME/install-global-skills.sh" --provider all
 echo ""
 
-# Step 2: Add AI_CONFIG_HOME to shell rc if not present
+# Step 2: Symlink opencode agents globally
+echo "--- Installing global opencode agents ---"
+mkdir -p ~/.config/opencode/agents
+ln -sf "$AI_CONFIG_HOME/providers/opencode/agents/"*.md ~/.config/opencode/agents/
+echo "Symlinked opencode agents to ~/.config/opencode/agents/"
+echo ""
+
+# Step 3: Add AI_CONFIG_HOME to shell rc if not present
 shell_rc=""
 if [[ -n "$BASH_VERSION" && -f "$HOME/.bashrc" ]]; then
   shell_rc="$HOME/.bashrc"
@@ -35,8 +42,14 @@ echo "=== Setup complete ==="
 echo ""
 echo "Rules:  $AI_CONFIG_HOME/rules/"
 echo "Skills: $(find "$AI_CONFIG_HOME/skills" -maxdepth 1 -type d | wc -l) skills available"
+echo "Agents: $(find "$AI_CONFIG_HOME/providers/opencode/agents" -maxdepth 1 -type f | wc -l) opencode agents available"
 echo ""
 echo "Next steps:"
 echo "  1. Restart your shell or run: export AI_CONFIG_HOME=\"$AI_CONFIG_HOME\""
-echo "  2. For each project: mise run project:install:all --target /path/to/project"
-echo "     Or: $AI_CONFIG_HOME/install-provider-rules.sh --provider all --target /path/to/project"
+echo "  2. For each project, copy the appropriate entrypoint template:"
+echo "     Codex:    cp \$AI_CONFIG_HOME/providers/codex/AGENTS.md /path/to/project/"
+echo "     Claude:   cp \$AI_CONFIG_HOME/providers/claude/CLAUDE.md /path/to/project/"
+echo "     Opencode: cp \$AI_CONFIG_HOME/providers/codex/AGENTS.md /path/to/project/"
+echo "               mkdir -p /path/to/project/.opencode"
+echo "               cp \$AI_CONFIG_HOME/providers/opencode/opencode.jsonc /path/to/project/.opencode/"
+echo "     Copilot:  See README.md for instructions"

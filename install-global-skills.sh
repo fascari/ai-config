@@ -132,3 +132,31 @@ if [[ "$provider" == "all" || "$provider" == "codex" ]]; then
 
   echo "Installed $agent_link_count Codex custom agent link(s) into $codex_target_dir."
 fi
+
+# Install Opencode custom agents as markdown files (when opencode is included)
+if [[ "$provider" == "all" || "$provider" == "opencode" ]]; then
+  opencode_agents_dir="$repo_root/providers/opencode/agents"
+  opencode_target_dir="$HOME/.config/opencode/agents"
+  
+  if [[ -d "$opencode_agents_dir" ]]; then
+    shopt -s nullglob
+    opencode_agent_paths=("$opencode_agents_dir"/*.md)
+    if (( ${#opencode_agent_paths[@]} > 0 )); then
+      mkdir -p "$opencode_target_dir"
+      
+      opencode_link_count=0
+      for agent_path in "${opencode_agent_paths[@]}"; do
+        agent_name="$(basename "$agent_path")"
+        link_path="$opencode_target_dir/$agent_name"
+        if [[ -e "$link_path" && ! -L "$link_path" ]]; then
+          echo "Skipping $link_path because it exists and is not a symlink." >&2
+          continue
+        fi
+        ln -sfn "$agent_path" "$link_path"
+        ((opencode_link_count += 1))
+      done
+      
+      echo "Installed $opencode_link_count Opencode custom agent link(s) into $opencode_target_dir."
+    fi
+  fi
+fi

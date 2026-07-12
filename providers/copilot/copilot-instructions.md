@@ -1,10 +1,5 @@
 # GitHub Copilot Instructions
 
-> Template for `.github/copilot-instructions.md` in target repositories.
-> Fill in project-specific sections and install via `install-provider-rules.sh`.
-
----
-
 ## Global Skills & Rules
 
 Skills, rules, and agents live in `~/.ai-config/` — installed globally by `install-global-skills.sh`.
@@ -24,37 +19,6 @@ Path-specific rules under `.github/instructions/*.instructions.md` are symlinks 
 | `testing.instructions.md` | `**/*_test.go` |
 | `error-handling.instructions.md` | `**/*.go` |
 | `package-design.instructions.md` | `**/*.go` |
-
----
-
-## Project Basics
-
-> Fill in for each project.
-
-- **Language / Stack**: {e.g. Go 1.26, Node.js 22, Python 3.12}
-- **Entrypoints**: {e.g. `cmd/server/main.go`, `src/index.ts`}
-- **Local Environment**: {e.g. `.env`, `mise`}
-
-### Essential Commands
-
-```sh
-# mise run dev          # Start locally
-# mise run test         # Run all tests
-# mise run lint         # Lint the codebase
-# mise run build        # Build artifacts
-```
-
----
-
-## Project Architecture
-
-> Fill in for each project. Replace with actual directory layout.
-
-```
-/src/                   # Application source
-/tests/                 # Test files
-/docs/                  # Documentation
-```
 
 ---
 

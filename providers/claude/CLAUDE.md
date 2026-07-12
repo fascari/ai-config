@@ -1,47 +1,14 @@
 # CLAUDE.md
 
-> Template for `CLAUDE.md` in target repositories.
-> Fill in project-specific sections and install via `install-provider-rules.sh`.
+## Rules
 
----
+Read relevant files from `~/.ai-config/rules/` before making changes:
+- `go-style.md` — naming, formatting, control flow
+- `testing.md` — table-driven tests, mocks, assertions
+- `error-handling.md` — domain errors, wrapping, HTTP mapping
+- `package-design.md` — package naming, dependency direction
+- `clean-architecture.md` — layer rules, DI, domain isolation
 
-## Project
+## Hard Rule
 
-- **Language / Stack**: {e.g. Go 1.26, Node.js 22}
-- **Entrypoints**: {e.g. `cmd/server/main.go`}
-- **Local Environment**: {e.g. `.env`, `mise`}
-
-## Commands
-
-```sh
-# mise run test   # Run all tests
-# mise run lint   # Lint
-# mise run dev    # Start locally
-```
-
-## Shared Rules
-
-Read the relevant files under `~/.ai-config/rules/` before making code changes:
-
-- `~/.ai-config/rules/go-style.md` — naming, formatting, control flow
-- `~/.ai-config/rules/clean-architecture.md` — layer rules, DI, domain isolation
-- `~/.ai-config/rules/testing.md` — table-driven tests, mocks, assertions
-- `~/.ai-config/rules/error-handling.md` — domain errors, wrapping, HTTP mapping
-- `~/.ai-config/rules/package-design.md` — package naming, dependency direction
-
-## Architecture
-
-> Fill in with the actual project layout.
-
-```
-cmd/                     # Entrypoints
-internal/app/{domain}/   # Business domains
-internal/                # Infrastructure
-pkg/                     # Shared utilities
-```
-
-## Hard Rules
-
-- Never log and return the same error — choose one
-- No cross-domain imports inside `internal/app/`
 - **Never commit directly.** Always invoke `committing-changes` skill (`~/.ai-config/skills/committing-changes/SKILL.md`). The skill requires explicit user approval before any `git commit` or `git push`.
