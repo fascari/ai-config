@@ -18,15 +18,15 @@ Also performs requirements traceability reviews when an issue tracker ticket key
 
 ## Steps
 
-1. Read `.github/skills/implementing-feature/SKILL.md` — apply its Quality Checklist, Testing Rules, and all anti-pattern tables verbatim.
-2. Read the active provider-native project instruction files — apply all project-specific coding rules, architecture rules, and anti-patterns, plus any repo docs they explicitly reference.
-3. **Load Cognition Lessons** — if `~/.ai-config/cognition-lessons/{project}.md` exists, read it and include high-priority lessons in the review prompt. See "Cognition Lessons Integration" below.
-4. Use the `{plan_root}` provided by `orchestrating-tasks`. If running standalone, resolve `{plan_root}` with the same rule: prefer `$AI_MEMORY_HOME/{project}/plans/`; if unset, use `$COPILOT_VAULT/{project}/plans/`; then create or refresh `.plans` as a symlink to `{plan_root}`.
+1. Read `.github/skills/implementing-feature/SKILL.md`: apply its Quality Checklist, Testing Rules, and all anti-pattern tables verbatim.
+2. Read the active provider-native project instruction files: apply all project-specific coding rules, architecture rules, and anti-patterns, plus any repo docs they explicitly reference.
+3. **Load Cognition Lessons**: if `~/.ai-config/cognition-lessons/{project}.md` exists, read it and include high-priority lessons in the review prompt. See "Cognition Lessons Integration" below.
+4. Use the `{plan_root}` provided by `orchestrating-tasks`. If running standalone, resolve `{plan_root}` with the same rule: use `$AI_MEMORY_HOME/{project}/plans/`; then create or refresh `.plans` as a symlink to `{plan_root}`.
 5. Read `{plan_root}/{slug}/implementation-plan.md` and `{plan_root}/{slug}/progress.md` for context.
 6. Review all changed files against the checklists below.
 7. If an issue tracker ticket key is provided, run the Requirements Traceability Review.
 8. Write results to `{plan_root}/{slug}/reviews/review-{model}.md`.
-9. **Extract Cognition Lessons** — if verdict is BLOCKED, extract lessons from blockers. See "Cognition Lessons Integration" below.
+9. **Extract Cognition Lessons**: if verdict is BLOCKED, extract lessons from blockers. See "Cognition Lessons Integration" below.
 10. If verdict is APPROVED and user confirms, update `## Status` in `progress.md` to `DONE`.
 
 ## Output
@@ -37,9 +37,9 @@ Write to `{plan_root}/{slug}/reviews/review-{model}.md`.
 
 ### implementing-feature Quality Checklist
 
-Apply the **Quality Checklist** section from `.github/skills/implementing-feature/SKILL.md` in full — do not re-derive it. Every item in that checklist is a potential `BLOCKER`.
+Apply the **Quality Checklist** section from `.github/skills/implementing-feature/SKILL.md` in full: do not re-derive it. Every item in that checklist is a potential `BLOCKER`.
 
-Then apply all rules from the active provider-native project instruction files — these contain the project's specific coding and architecture rules:
+Then apply all rules from the active provider-native project instruction files: these contain the project's specific coding and architecture rules:
 
 - Language/framework style rules
 - Domain / business logic patterns
@@ -62,7 +62,7 @@ Then apply all rules from the active provider-native project instruction files �
 
 This section defines how to verify that the implementation satisfies the original ticket requirements. It is **mandatory** when an issue tracker ticket key is provided.
 
-### Step 1 — Load the Brief
+### Step 1: Load the Brief
 
 Read `{plan_root}/{slug}/brief.md` via `read_file`.
 
@@ -72,16 +72,16 @@ Extract:
 
 If `brief.md` does not exist, fall back to fetching the ticket directly (Step 2).
 
-### Step 2 — Fetch the Ticket
+### Step 2: Fetch the Ticket
 
 If an issue tracker MCP tool is available, fetch the ticket by key.
 
 Extract from the issue:
-- `summary` — ticket title
-- `description` — may contain acceptance criteria or a link to requirements docs
+- `summary`: ticket title
+- `description`: may contain acceptance criteria or a link to requirements docs
 - Any linked documentation pages
 
-### Step 3 — Fetch the Requirements Page
+### Step 3: Fetch the Requirements Page
 
 If a requirements URL is found (from brief.md or the ticket):
 1. Fetch the page content using an appropriate MCP tool (Notion, GitHub Wiki, etc.).
@@ -89,7 +89,7 @@ If a requirements URL is found (from brief.md or the ticket):
 
 If no URL is available, use only the ticket description and brief.md as the requirement source.
 
-### Step 4 — Map Requirements to Implementation
+### Step 4: Map Requirements to Implementation
 
 For each requirement / acceptance criterion found, trace it to the implementation:
 
@@ -98,11 +98,11 @@ For each requirement / acceptance criterion found, trace it to the implementatio
 | R1 | {requirement text} | `path/to/file:line` | Covered / Missing / Partial |
 
 **Status definitions**:
-- **Covered** — requirement is fully implemented and verifiable in the code
-- **Partial** — implementation exists but is incomplete or does not fully satisfy the criterion
-- **Missing** — no implementation found for this requirement
+- **Covered**: requirement is fully implemented and verifiable in the code
+- **Partial**: implementation exists but is incomplete or does not fully satisfy the criterion
+- **Missing**: no implementation found for this requirement
 
-### Step 5 — Classify Gaps
+### Step 5: Classify Gaps
 
 For each `Missing` or `Partial` item, raise a `BLOCKER` in the review file using this format:
 
@@ -117,10 +117,10 @@ For each `Missing` or `Partial` item, raise a `BLOCKER` in the review file using
 
 ### Rules
 
-- Every acceptance criterion from the brief/requirements page **must** appear in the traceability table — no silently skipped items.
+- Every acceptance criterion from the brief/requirements page **must** appear in the traceability table: no silently skipped items.
 - A requirement is `Covered` only when there is concrete evidence in the code (a function, a class, a field, a test, a migration, etc.).
 - Test coverage alone does not count as coverage if the production code is absent.
-- If the requirements page cannot be fetched, log the error and proceed with `brief.md` + ticket description only — do not skip the traceability section.
+- If the requirements page cannot be fetched, log the error and proceed with `brief.md` + ticket description only: do not skip the traceability section.
 
 ---
 
@@ -129,7 +129,7 @@ For each `Missing` or `Partial` item, raise a `BLOCKER` in the review file using
 Write to `{plan_root}/{slug}/reviews/review-{model}.md`:
 
 ```markdown
-# Review: {slug} — {model} — {date}
+# Review: {slug}, {model}, {date}
 
 ## Summary
 {N} blockers, {N} suggestions
@@ -141,7 +141,7 @@ Write to `{plan_root}/{slug}/reviews/review-{model}.md`:
 | # | Requirement | Files / Code | Status |
 |---|---|---|---|
 | R1 | {requirement text} | `path/to/file:line` | Covered |
-| R2 | {requirement text} | — | Missing |
+| R2 | {requirement text} |: | Missing |
 
 **Coverage**: {N}/{total} requirements covered
 
@@ -149,7 +149,7 @@ Write to `{plan_root}/{slug}/reviews/review-{model}.md`:
 
 ### [B1] {Title}
 **File**: `path/to/file.go:line`
-**Rule**: rule-{N} — {rule name}
+**Rule**: rule-{N}: {rule name}
 **Issue**: {what is wrong}
 **Fix**: {what to do}
 
@@ -157,12 +157,12 @@ Write to `{plan_root}/{slug}/reviews/review-{model}.md`:
 
 ### [S1] {Title}
 **File**: `path/to/file.go:line`
-**Rule**: rule-{N} — {rule name}
+**Rule**: rule-{N}: {rule name}
 **Suggestion**: {improvement}
 
 ## Verdict
-- [ ] APPROVED — no blockers
-- [ ] CHANGES REQUESTED — {N} blockers must be resolved
+- [ ] APPROVED: no blockers
+- [ ] CHANGES REQUESTED: {N} blockers must be resolved
 ```
 
 

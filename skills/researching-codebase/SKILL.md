@@ -18,15 +18,15 @@ Read-only: never suggests improvements or critiques code quality.
 ## Steps
 
 1. Read architecture rules for context:
-   - active provider-native project instruction files — all project-specific architecture and design rules for the current repo
-2. **Query Graphify first** (primary research tool — do this before reading any source file):
-   - `graphify query "concept"` — broad context about a domain or module
-   - `graphify path "A" "B"` — trace connection between two nodes
-   - `graphify explain "NodeName"` — details about a specific node
+   - active provider-native project instruction files: all project-specific architecture and design rules for the current repo
+2. **Query Graphify first** (primary research tool, do this before reading any source file):
+   - `graphify query "concept"`: broad context about a domain or module
+   - `graphify path "A" "B"`: trace connection between two nodes
+   - `graphify explain "NodeName"`: details about a specific node
    - Read `graphify-out/GRAPH_REPORT.md` for high-level architecture overview
-   Never use `grep`, `find`, or `list_dir` for code discovery — use graphify instead.
+   Never use `grep`, `find`, or `list_dir` for code discovery; use graphify instead.
 3. **Locate**: if graphify is unavailable or does not have the answer, use `file_search` to find where things live. Group by layer according to the project's architecture (e.g. `domain/`, `service/`, `handler/`, `repository/`, `lib/`, tests, migrations). Do not read file contents in this step.
-4. **Analyze**: use `read_file` to trace data flow through layers — only after graphify query. Document with exact `file:line` references: domain types, service interfaces and implementations, data access methods, API/handler registration.
+4. **Analyze**: use `read_file` to trace data flow through layers, only after graphify query. Document with exact `file:line` references: domain types, service interfaces and implementations, data access methods, API/handler registration.
 5. **Pattern Extract**: find actual code snippets that can be modeled: route/handler registration, service constructors, data access patterns, test factories, test patterns, mock usage.
 6. Write results to `{plan_root}/{slug}/research.md` in the external vault. Do not create `.github/` or repo-local plan folders.
 
@@ -43,9 +43,9 @@ Write to `{plan_root}/{slug}/research.md`:
 
 ## Data Flow
 ### {OperationName}
-1. API/Handler: `file:line` — parses X, calls Y
-2. Service/Use Case: `file:line` — ...
-3. Data Access/Repository: `file:line` — ...
+1. API/Handler: `file:line`, parses X, calls Y
+2. Service/Use Case: `file:line`, ...
+3. Data Access/Repository: `file:line`, ...
 
 ## Patterns to Model
 ### Route/Handler Registration

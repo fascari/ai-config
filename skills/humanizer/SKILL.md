@@ -98,7 +98,7 @@ Removing style patterns is half the job. AI detectors like GPTZero also measure 
 
 Clean text that reads like a Wikipedia article still gets flagged. The text must also be statistically unpredictable.
 
-### Rule P1 — Token unpredictability
+### Rule P1: Token unpredictability
 
 After rewriting, scan for "safe" words any LLM would pick. Swap 3-5 per paragraph for less obvious alternatives.
 
@@ -117,7 +117,7 @@ After rewriting, scan for "safe" words any LLM would pick. Swap 3-5 per paragrap
 
 The replacement does not need to be a single-word synonym. Rephrase the whole clause if needed. The goal is to pick words a language model would not rank as the top-1 prediction in that context.
 
-### Rule P2 — Burstiness targets
+### Rule P2: Burstiness targets
 
 Each paragraph must have at least:
 - One sentence with **5 words or fewer**
@@ -131,7 +131,7 @@ If all sentences land in the 8-14 word range, the text reads as "uniform" to det
 **After (high burstiness):**
 > Config files? Done. It also handles test scaffolding and those repetitive refactors nobody wants to touch by hand, which honestly saves more time than the flashier features.
 
-### Rule P3 — Syntactic inversions
+### Rule P3: Syntactic inversions
 
 Use at least one inverted construction per 2 paragraphs. LLMs almost never generate these. Humans use them all the time.
 
@@ -140,7 +140,7 @@ Types:
 - **Prepositional-first:** "Without a single test name, the writeup leaves you guessing."
 - **Object-first:** "That part I actually liked."
 
-### Rule P4 — Break repetitive openers
+### Rule P4: Break repetitive openers
 
 No two consecutive sentences should start with the same word or pattern. Three sentences starting with "The..." or "It..." is a detector magnet.
 
@@ -150,7 +150,7 @@ No two consecutive sentences should start with the same word or pattern. Three s
 **After:**
 > Edge cases are handled. Clean implementation too. All tests pass.
 
-### Rule P5 — Controlled imperfection
+### Rule P5: Controlled imperfection
 
 Allow 1-2 constructions per text that are grammatically correct but stylistically unusual. Humans write slightly off phrases naturally. LLMs never do because they optimize for the most probable output.
 

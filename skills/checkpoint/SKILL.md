@@ -1,6 +1,6 @@
 ---
 name: checkpoint
-description: Use when ending a session or reaching a milestone — saves decisions, progress, and pending items to the Obsidian vault for future recall
+description: Use when ending a session or reaching a milestone, saves decisions, progress, and pending items to the Obsidian vault for future recall
 ---
 
 # Checkpoint
@@ -15,7 +15,7 @@ Saves session output to the Obsidian vault so the next session picks up exactly 
 
 ## Prerequisites
 
-`AI_MEMORY_HOME` must be set. If it is not, fall back to `COPILOT_VAULT`; if neither is set, inform the user and stop:
+`AI_MEMORY_HOME` must be set. If it is not, inform the user and stop:
 > "AI_MEMORY_HOME is not set. Add `export AI_MEMORY_HOME=\"$HOME/.ai-memory\"` to your shell profile and restart the shell."
 
 ## Steps
@@ -24,7 +24,7 @@ Saves session output to the Obsidian vault so the next session picks up exactly 
 
 ```bash
 REPO_NAME=$(basename "$(git rev-parse --show-toplevel)")
-MEMORY_ROOT="${AI_MEMORY_HOME:-${COPILOT_VAULT:-}}"
+MEMORY_ROOT="${AI_MEMORY_HOME:-}"
 if [ -z "$MEMORY_ROOT" ]; then
   echo "AI_MEMORY_HOME is not set. Add `export AI_MEMORY_HOME=\"$HOME/.ai-memory\"` to your shell profile and restart the shell."
   exit 1
@@ -51,7 +51,7 @@ Create a new file at:
 
 - Date: today's date in `YYYY-MM-DD` format
 - Short description: max 5 words in kebab-case, derived from the main topic of the session
-- Never overwrite an existing file — append a `-2`, `-3` suffix if a conflict exists
+- Never overwrite an existing file: append a `-2`, `-3` suffix if a conflict exists
 
 Log format:
 
@@ -80,9 +80,9 @@ project: {project}
 ### 4. Append to architecture decisions (if applicable)
 
 If any architectural or design decisions were made this session, append to:
-`$COPILOT_VAULT/{project}/architecture/decisions.md`
+`$AI_MEMORY_HOME/{project}/architecture/decisions.md`
 
-Append only — never overwrite or reorder existing entries. Format each entry as:
+Append only, never overwrite or reorder existing entries. Format each entry as:
 
 ```markdown
 ### {YYYY-MM-DD}: {decision title}

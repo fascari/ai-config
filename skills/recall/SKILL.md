@@ -1,6 +1,6 @@
 ---
 name: recall
-description: Use when resuming work on a project — loads vault context, recent logs, architecture decisions, and active plans
+description: Use when resuming work on a project, loads vault context, recent logs, architecture decisions, and active plans
 ---
 
 # Recall
@@ -19,11 +19,11 @@ Loads all persistent context from the Obsidian vault and Graphify graph to resto
 
 ```bash
 REPO_NAME=$(basename "$(git rev-parse --show-toplevel)" 2>/dev/null || echo "unknown")
-echo "VAULT=${AI_MEMORY_HOME:-${COPILOT_VAULT:-NO_VAULT}}"
+echo "VAULT=${AI_MEMORY_HOME:-NO_VAULT}"
 echo "REPO=$REPO_NAME"
 ```
 
-Map the repo name to the vault project folder using the table in your personal copilot instructions. If `AI_MEMORY_HOME` is not set, fall back to `COPILOT_VAULT`; if neither is set, skip all vault steps and note that no vault is configured.
+Map the repo name to the vault project folder. If `AI_MEMORY_HOME` is not set, skip all vault steps and note that no vault is configured.
 
 ### 2. Read recent session logs
 
@@ -46,14 +46,14 @@ All devs: resolve the external `{plan_root}` with the same rule as `orchestratin
 - For each, read `progress.md` if it exists
 - Identify plans with status `IN_PROGRESS`
 
-Vault devs — additionally read from `$COPILOT_VAULT/{project}/plans/` if it exists.
+Vault devs: additionally read from `$AI_MEMORY_HOME/{project}/plans/` if it exists.
 
 ### 5. Read Graphify context
 
-Always — read `graphify-out/GRAPH_REPORT.md` if it exists.
+Always, read `graphify-out/GRAPH_REPORT.md` if it exists.
 
-Vault devs — additionally read up to 5 relevant community files:
-`$COPILOT_VAULT/graphify/{project}/_COMMUNITY_{name}.md`
+Vault devs: additionally read up to 5 relevant community files:
+`$AI_MEMORY_HOME/graphify/{project}/_COMMUNITY_{name}.md`
 
 Pick communities most relevant to the current branch name or active plan.
 
@@ -77,6 +77,6 @@ Conclude with: "Ready. What would you like to work on?"
 ## Constraints
 
 - Never write to vault, create files, or modify any file
-- Never ask the user for the vault path — it comes from `AI_MEMORY_HOME`, then `COPILOT_VAULT`
-- Never crash if vault or graphify files are missing — always degrade gracefully
-- Keep summary under 20 lines — do not dump raw log content
+- Never ask the user for the vault path; it comes from `AI_MEMORY_HOME`
+- Never crash if vault or graphify files are missing: always degrade gracefully
+- Keep summary under 20 lines: do not dump raw log content

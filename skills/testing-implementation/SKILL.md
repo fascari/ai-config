@@ -27,24 +27,24 @@ In Copilot native mode this may map to `agent_type`. In Codex managed mode prefe
 
 ## Steps
 
-### Step 1 — Context Bootstrap
+### Step 1: Context Bootstrap
 
 1. Run availability checks:
    ```bash
    [ -f "graphify-out/GRAPH_REPORT.md" ] && GRAPHIFY_AVAILABLE=true || GRAPHIFY_AVAILABLE=false
-   [ -n "${COPILOT_VAULT:-${AI_MEMORY_HOME:-}}" ] && VAULT_AVAILABLE=true || VAULT_AVAILABLE=false
+    [ -n "${AI_MEMORY_HOME:-}" ] && VAULT_AVAILABLE=true || VAULT_AVAILABLE=false
    ```
    - If `GRAPHIFY_AVAILABLE=true`: scan the graph for the domains and packages being tested to understand dependencies and existing test patterns.
    - If `VAULT_AVAILABLE=true`: read domain notes for prior decisions on testing patterns.
    - If neither exists, proceed directly.
 
-2. Use the `{plan_root}` provided by `orchestrating-tasks`. If running standalone, resolve `{plan_root}` with the same rule: prefer `$AI_MEMORY_HOME/{project}/plans/`; if unset, use `$COPILOT_VAULT/{project}/plans/`; then create or refresh `.plans` as a symlink to `{plan_root}`.
+2. Use the `{plan_root}` provided by `orchestrating-tasks`. If running standalone, resolve `{plan_root}` with the same rule: use `$AI_MEMORY_HOME/{project}/plans/`; then create or refresh `.plans` as a symlink to `{plan_root}`.
 3. Read `{plan_root}/{slug}/implementation-plan.md` to understand success criteria for the current phase.
 4. Read the active provider-native project instruction files for project testing conventions and any repo-local docs they explicitly route you to.
 5. Analyze existing test files for the affected packages. Identify patterns, mock setup, factory functions, and whether the target code starts goroutines.
-6. Write unit tests: table-driven, fail-fast assertions, project's mock strategy (e.g. `EXPECT()` builder for testify/mockery). Cover happy path + each error case + edge cases. Test data via factory/fixture helpers — never inline complex structs.
+6. Write unit tests: table-driven, fail-fast assertions, project's mock strategy (e.g. `EXPECT()` builder for testify/mockery). Cover happy path + each error case + edge cases. Test data via factory/fixture helpers: never inline complex structs.
 7. Write integration tests where applicable (repository layer, external integrations): follow project conventions for test tagging, suites, and fixture files.
-8. Run **only the affected tests** — never the full suite:
+8. Run **only the affected tests**: never the full suite:
 
    ```bash
    # Unit tests: target the specific package(s) changed
@@ -72,7 +72,7 @@ In Copilot native mode this may map to `agent_type`. In Codex managed mode prefe
 Update `{plan_root}/{slug}/progress.md`:
 
 ```markdown
-## Test Results — Phase {N}
+## Test Results: Phase {N}
 - Unit tests: PASS ({N} tests)
 - Integration tests: PASS / SKIPPED (no local env) / FAIL
 - Lint: PASS / {issues}
@@ -90,7 +90,7 @@ TestSubject_ShouldDescribeExpectedBehavior
 { name: "should rollback transaction on save failure" }
 ```
 
-No ticket IDs. No `And` chaining two behaviors in one name — split or rename.
+No ticket IDs. No `And` chaining two behaviors in one name, split or rename.
 
 ## Mock pattern
 
@@ -120,11 +120,11 @@ time.Sleep(10 * time.Millisecond)
 
 ## Quality checklist
 
-- [ ] Fail-fast assertions — never soft assertions
+- [ ] Fail-fast assertions: never soft assertions
 - [ ] Project mock builder (`EXPECT()`, never `mock.On()`)
 - [ ] `//go:generate` or equivalent on all mocked interfaces
-- [ ] Test names: `TestFoo_ShouldDoX` / `"should do x"` — predicate holds for ALL rows
-- [ ] Test data via factory/fixture helpers — never inline complex structs
+- [ ] Test names: `TestFoo_ShouldDoX` / `"should do x"`: predicate holds for ALL rows
+- [ ] Test data via factory/fixture helpers: never inline complex structs
 - [ ] No comments anywhere in test code or testdata/ packages
 - [ ] No ticket IDs in test names, fixture identifiers, or payload filenames
 - [ ] For goroutine-based code: `synctest.Test` + `synctest.Wait()` (when available)

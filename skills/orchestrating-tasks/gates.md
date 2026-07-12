@@ -1,4 +1,4 @@
-# Orchestrating Tasks — Gates
+# Orchestrating Tasks: Gates
 
 > Sub-file of `skills/orchestrating-tasks/SKILL.md`. Read SKILL.md first for Critical Rules and Pre-Dispatch Checklist.
 
@@ -16,7 +16,7 @@ After `planning-implementation` completes and before `implementing-feature` star
 
 Dispatch a **general-purpose judge role** using the provider-specific shape from `provider-dispatch.md`. **Cross-vendor rule applies** - planning-implementation runs at Balanced/Deep (typically Anthropic); critique-gate MUST use a different vendor (OpenAI or Google). See `dispatching.md`.
 
-Include the Codebase Search Rules block (from `dispatching.md`) in the prompt — critique-gates need to verify claims against the code.
+Include the Codebase Search Rules block (from `dispatching.md`) in the prompt, critique-gates need to verify claims against the code.
 
 Prompt:
 
@@ -68,17 +68,17 @@ plan dir: {plan_root}/{slug}/
 retry count: {N} (0-indexed; max 2 before escalation)
 
 ## Required steps
-1. Read {plan_root}/{slug}/requirements.md — extract all acceptance criteria (ACs)
+1. Read {plan_root}/{slug}/requirements.md: extract all acceptance criteria (ACs)
 2. Run: git --no-pager diff HEAD~1 --stat
 3. Run: git --no-pager diff HEAD~1 (read actual changes)
 4. For each AC, find EXPLICIT evidence in the diff: specific file path, function name, or test
 5. Run: git --no-pager diff --name-only HEAD~1
    Flag as violation any modification to: requirements.md, brief.md
-   Do NOT flag test file modifications as violations — they are expected implementation evidence
+   Do NOT flag test file modifications as violations: they are expected implementation evidence
 6. Check: are modified files within scope described in implementation-plan.md?
    Flag unexpected files that are not test files and not in the plan
 
-## Output format — must be exactly one of:
+## Output format: must be exactly one of:
 
 PASS
 AC Coverage: N/N
@@ -88,7 +88,7 @@ OR:
 
 FAIL
 Missing AC evidence:
-- AC #N: "{ac text}" — no implementation or test evidence found
+- AC #N: "{ac text}": no implementation or test evidence found
 Violations:
 - {file} modified unexpectedly (protected or out-of-scope)
 

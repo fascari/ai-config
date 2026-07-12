@@ -1,4 +1,4 @@
-# Orchestrating Tasks — Task Types & Workflow
+# Orchestrating Tasks: Task Types & Workflow
 
 > Sub-file of `skills/orchestrating-tasks/SKILL.md`. Read SKILL.md first for Critical Rules and Pre-Dispatch Checklist.
 
@@ -20,7 +20,7 @@ This file covers task type classification, the skill chain for each task type, a
 
 ## Testing-Implementation Dispatch Rule
 
-`implementing-feature` and `testing-implementation` each run deterministic gates internally (lint + style greps). The orchestrator dispatches only the skills — never the code agents directly.
+`implementing-feature` and `testing-implementation` each run deterministic gates internally (lint + style greps). The orchestrator dispatches only the skills, never the code agents directly.
 
 **CRITICAL: NEVER dispatch `go-implementer` or `go-tester` directly for implementation work.**
 These are underlying logical roles. The orchestrator MUST always dispatch the SKILLS

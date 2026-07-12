@@ -5,7 +5,7 @@ description: Deterministic quality gates (lint, format, typecheck, tests, style 
 
 # Style Gate
 
-Deterministic quality gates that run after code changes. Zero LLM tokens — all checks are local commands with exit codes.
+Deterministic quality gates that run after code changes. Zero LLM tokens, all checks are local commands with exit codes.
 
 ## When to use
 
@@ -126,7 +126,7 @@ Report gate results:
 
 ## Rules
 
-- **Never skip gates** — all must pass before handoff
-- **Fix before handoff** — do not pass broken code to the next phase
-- **Scoped only** — run checks on changed paths, not full suite
-- **Zero LLM tokens** — all checks are deterministic commands
+- **Never skip gates**: all must pass before handoff
+- **Fix before handoff**: do not pass broken code to the next phase
+- **Scoped only**: run checks on changed paths, not full suite
+- **Zero LLM tokens**: all checks are deterministic commands

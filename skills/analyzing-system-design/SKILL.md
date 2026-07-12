@@ -7,8 +7,8 @@ description: Use before any implementation phase to analyse atomicity, idempoten
 
 Analyses every phase of an implementation plan through the lens of distributed systems
 correctness, data integrity, and production reliability. Never writes code. Produces a
-structured analysis, presents trade-offs and concrete proposals — including optional
-Mermaid diagrams — and waits for the developer to approve or reject each proposal before
+structured analysis, presents trade-offs and concrete proposals, including optional
+Mermaid diagrams, and waits for the developer to approve or reject each proposal before
 the Coder starts.
 
 > This skill is **mandatory** for all Standard and Complex tasks. It runs **after**
@@ -43,11 +43,11 @@ the Coder starts.
 ## Analysis Protocol
 
 For each phase in the implementation plan, run all seven lenses.
-If a lens has nothing to flag, write `No concerns identified.` — never skip a section.
+If a lens has nothing to flag, write `No concerns identified.`, never skip a section.
 
 ---
 
-### Lens 1 — Atomicity
+### Lens 1: Atomicity
 
 **Question**: Which operations must succeed or fail together (all-or-nothing)?
 
@@ -56,12 +56,12 @@ Check:
 - Determine whether writes that must be atomic share a single transaction boundary
 - Flag dual-write risks: writing to two stores without a coordination mechanism
   (e.g., write to DB + publish event without an Outbox Pattern)
-- Flag external calls (HTTP, gRPC, message brokers) inside DB transactions — external
+- Flag external calls (HTTP, gRPC, message brokers) inside DB transactions: external
   calls are slow and unreliable; they must never hold a DB transaction open
 
 **Output format**:
 ```
-ATOMICITY RISK — {operation name}
+ATOMICITY RISK: {operation name}
 Scope: {files/functions involved}
 Risk: {what inconsistency occurs on partial failure}
 Proposal: {DB transaction / Outbox Pattern / saga / compensating transaction}
@@ -69,7 +69,7 @@ Proposal: {DB transaction / Outbox Pattern / saga / compensating transaction}
 
 ---
 
-### Lens 2 — Idempotency
+### Lens 2: Idempotency
 
 **Question**: Can this operation be safely retried without unintended side effects?
 
@@ -80,7 +80,7 @@ Check:
 
 **Output format**:
 ```
-IDEMPOTENCY GAP — {operation name}
+IDEMPOTENCY GAP: {operation name}
 Scope: {files/functions involved}
 Risk: {what happens on duplicate or retry execution}
 Proposal: {idempotency key / deduplication table / check-before-execute / UNIQUE constraint}
@@ -88,7 +88,7 @@ Proposal: {idempotency key / deduplication table / check-before-execute / UNIQUE
 
 ---
 
-### Lens 3 — Consistency
+### Lens 3: Consistency
 
 **Question**: Are all data stores in a consistent state after every possible execution path,
 including partial failures?
@@ -101,16 +101,16 @@ Check:
 
 **Output format**:
 ```
-CONSISTENCY CONCERN — {area}
+CONSISTENCY CONCERN: {area}
 Scope: {stores/services involved}
 Risk: {divergence scenario}
-Consistency model required: {strong / eventual — and why}
+Consistency model required: {strong / eventual: and why}
 Proposal: {reconciliation strategy / strict guard / accepted divergence with rationale}
 ```
 
 ---
 
-### Lens 4 — Concurrency
+### Lens 4: Concurrency
 
 **Question**: What happens when two goroutines or two service instances execute this
 operation simultaneously?
@@ -123,7 +123,7 @@ below and recommend the most appropriate fit for the project's scale and complex
 | DB transaction + `SELECT FOR UPDATE` | Single-instance serialisation, low contention, correctness critical |
 | Optimistic lock (`version` / `updated_at` column) | High read, low write contention |
 | DB-level `UNIQUE` constraint | Last line of defence against duplicate inserts |
-| Distributed lock (Redis `SET NX PX`) + fencing token | Cross-instance serialisation — multiple replicas competing for the same resource |
+| Distributed lock (Redis `SET NX PX`) + fencing token | Cross-instance serialisation: multiple replicas competing for the same resource |
 | Channel semaphore (Go) | In-process goroutine fan-out control |
 | `sync.Mutex` / `sync.RWMutex` | Shared in-memory state within a single process |
 
@@ -139,18 +139,18 @@ Deadlock checklist:
 
 **Output format**:
 ```
-CONCURRENCY RISK — {operation name}
+CONCURRENCY RISK: {operation name}
 Scope: {functions/tables involved}
 Race condition / deadlock: {describe the scenario}
 Proposed solution: {pattern from table above}
-Fencing token required: {yes / no — reason}
+Fencing token required: {yes / no: reason}
 Trade-off: {performance cost vs correctness guarantee}
 Recommended: {which solution fits this project's scale and complexity}
 ```
 
 ---
 
-### Lens 5 — Resilience, Fault Tolerance, and Scalability
+### Lens 5: Resilience, Fault Tolerance, and Scalability
 
 Apply the checklist below. Flag only what is relevant to the phase.
 
@@ -161,7 +161,7 @@ Apply the checklist below. Flag only what is relevant to the phase.
 
 **Fault Tolerance**
 - What is the blast radius if this component fails completely?
-- Are failures surfaced via logs, metrics, or traces — or silent?
+- Are failures surfaced via logs, metrics, or traces: or silent?
 - Is there a circuit breaker for calls to unreliable external dependencies?
 
 **Scalability**
@@ -178,7 +178,7 @@ Rate the necessity of each mechanism for this project's current stage:
 
 **Output format**:
 ```
-SYSTEM DESIGN NOTE — {concern}
+SYSTEM DESIGN NOTE: {concern}
 Category: Resilience / Fault Tolerance / Scalability
 Necessity: ESSENTIAL / RECOMMENDED / DEFER
 Scope: {component affected}
@@ -188,7 +188,7 @@ Proposal: {concrete solution}
 
 ---
 
-### Lens 6 — Architectural Patterns (EDA / CQRS / SAGA)
+### Lens 6: Architectural Patterns (EDA / CQRS / SAGA)
 
 **Question**: Does the current design introduce problems that established distributed
 systems patterns would solve?
@@ -209,7 +209,7 @@ Applicable when:
 Costs: eventual consistency, harder debugging, event schema evolution, ordering guarantees.
 
 ```
-EDA OPPORTUNITY — {integration point}
+EDA OPPORTUNITY: {integration point}
 Current design: {synchronous call / tight coupling description}
 Problem it causes: {fragility / blocking / coupling issue}
 Proposal: {replace with event / add event alongside existing call}
@@ -229,7 +229,7 @@ Applicable when:
 Costs: eventual consistency between write and read models, synchronisation complexity.
 
 ```
-CQRS OPPORTUNITY — {domain / aggregate}
+CQRS OPPORTUNITY: {domain / aggregate}
 Current design: {describe the read/write coupling}
 Problem it causes: {slow queries / model tension / scaling bottleneck}
 Proposal: {separate read model / projection / materialised view}
@@ -252,18 +252,18 @@ Applicable when:
 | **Orchestration** | Many services, complex flow, explicit failure handling. Easier to trace. Higher complexity. |
 
 ```
-SAGA OPPORTUNITY — {workflow name}
+SAGA OPPORTUNITY: {workflow name}
 Current design: {how the multi-step operation is handled today}
 Problem it causes: {partial failure / no rollback path}
 Steps in the saga: {list each step and its compensating action}
-Recommended style: {choreography / orchestration — with rationale}
+Recommended style: {choreography / orchestration: with rationale}
 Trade-off: {complexity cost vs consistency guarantee}
 Recommendation: ADOPT / DEFER
 ```
 
 ---
 
-### Lens 7 — CAP Theorem and Database Selection
+### Lens 7: CAP Theorem and Database Selection
 
 **Question**: Is the database choice the right fit for this component's consistency,
 availability, and partition tolerance requirements?
@@ -276,12 +276,12 @@ Only flag when the current choice creates a concrete problem the access pattern 
 |---|---|---|
 | **CP** | Rejects requests rather than return stale data | PostgreSQL (sync replication), etcd, ZooKeeper |
 | **AP** | Returns potentially stale data rather than error | Cassandra, DynamoDB (eventual), NATS |
-| **CA** | No partitions assumed — single-node only | SQLite, single-node PostgreSQL |
+| **CA** | No partitions assumed: single-node only | SQLite, single-node PostgreSQL |
 
 ```
-CAP TRADE-OFF — {component / store}
+CAP TRADE-OFF: {component / store}
 Current choice: {database used}
-Required guarantee: {CP / AP — and why}
+Required guarantee: {CP / AP: and why}
 Risk of current choice: {over/under-engineered consistency}
 Proposal: {keep / adjust replication config / consider alternative}
 ```
@@ -298,7 +298,7 @@ Proposal: {keep / adjust replication config / consider alternative}
 | Search (Elasticsearch) | Full-text search, log aggregation |
 
 ```
-DATABASE SELECTION — {component / store}
+DATABASE SELECTION: {component / store}
 Current choice: {database used}
 Access pattern: {point reads / range queries / aggregations / full-text / graph}
 Transaction requirement: {ACID / eventual}
@@ -319,7 +319,7 @@ After completing the lenses, offer Mermaid diagrams for any finding that involve
 
 ### When to generate a diagram
 
-Always ask the developer first — do not generate unrequested diagrams:
+Always ask the developer first, do not generate unrequested diagrams:
 
 ```
 Diagram available for: {finding title}
@@ -332,7 +332,7 @@ If the developer confirms, generate the diagram inline using a fenced Mermaid bl
 
 ### Diagram types and use cases
 
-**State diagram** — transaction / saga lifecycle:
+**State diagram**, transaction / saga lifecycle:
 ```mermaid
 stateDiagram-v2
     [*] --> Pending
@@ -343,7 +343,7 @@ stateDiagram-v2
     Submitted --> Failed : reverted
 ```
 
-**Sequence diagram** — Outbox Pattern write path:
+**Sequence diagram**, Outbox Pattern write path:
 ```mermaid
 sequenceDiagram
     participant Handler
@@ -358,7 +358,7 @@ sequenceDiagram
     OutboxPoller->>DB: UPDATE status = published
 ```
 
-**Flowchart** — idempotency guard:
+**Flowchart**, idempotency guard:
 ```mermaid
 flowchart TD
     A[Receive event] --> B{event_id in processed_events?}
@@ -369,7 +369,7 @@ flowchart TD
     D -- Error --> G[NAK message]
 ```
 
-**Sequence diagram** — distributed lock + fencing token:
+**Sequence diagram**, distributed lock + fencing token:
 ```mermaid
 sequenceDiagram
     participant ServiceA
@@ -393,33 +393,33 @@ Write to `{plan_root}/{slug}/system-design-analysis.md`.
 ### File Format
 
 ```markdown
-# System Design Analysis — {slug}
+# System Design Analysis: {slug}
 **Date**: {YYYY-MM-DD}
 **Phases analysed**: {list of phase names}
 
 ---
 
-## Phase {N} — {Phase Name}
+## Phase {N}: {Phase Name}
 
-### Lens 1 — Atomicity
+### Lens 1: Atomicity
 {findings or "No concerns identified."}
 
-### Lens 2 — Idempotency
+### Lens 2: Idempotency
 {findings or "No concerns identified."}
 
-### Lens 3 — Consistency
+### Lens 3: Consistency
 {findings or "No concerns identified."}
 
-### Lens 4 — Concurrency
+### Lens 4: Concurrency
 {findings or "No concerns identified."}
 
-### Lens 5 — Resilience, Fault Tolerance, and Scalability
+### Lens 5: Resilience, Fault Tolerance, and Scalability
 {findings or "No concerns identified."}
 
-### Lens 6 — Architectural Patterns (EDA / CQRS / SAGA)
+### Lens 6: Architectural Patterns (EDA / CQRS / SAGA)
 {findings or "No EDA, CQRS, or SAGA opportunities identified for this phase."}
 
-### Lens 7 — CAP Theorem and Database Selection
+### Lens 7: CAP Theorem and Database Selection
 {findings or "Current database choices are appropriate for the identified access patterns."}
 
 ---
@@ -453,17 +453,17 @@ Write to `{plan_root}/{slug}/system-design-analysis.md`.
 After writing the file, present a concise summary to the developer:
 
 ```
-System Design Analysis complete — {N} phase(s) analysed.
+System Design Analysis complete: {N} phase(s) analysed.
 
 {N} proposals require your decision:
 
-1. [ATOMICITY] {title} — {one-line risk}
-2. [IDEMPOTENCY] {title} — {one-line risk}
-3. [CONCURRENCY] {title} — {one-line risk} (fencing token: yes/no)
-4. [EDA] {title} — {opportunity or risk}
-5. [DATABASE] {title} — {trade-off}
+1. [ATOMICITY] {title}: {one-line risk}
+2. [IDEMPOTENCY] {title}: {one-line risk}
+3. [CONCURRENCY] {title}: {one-line risk} (fencing token: yes/no)
+4. [EDA] {title}: {opportunity or risk}
+5. [DATABASE] {title}: {trade-off}
 
-Diagrams available: {list titles} — generate any? [Y/N per item]
+Diagrams available: {list titles}: generate any? [Y/N per item]
 
 Full analysis: {plan_root}/{slug}/system-design-analysis.md
 
@@ -476,9 +476,9 @@ Approve all / reject individual items / request changes before Coder starts.
 
 ## Rules
 
-- Never generate code — describe patterns and reference files only
+- Never generate code: describe patterns and reference files only
 - Never mark a proposal as approved on behalf of the developer
-- Every lens must be answered for every phase — never skipped
+- Every lens must be answered for every phase: never skipped
 - Never generate Mermaid diagrams without the developer confirming
 - Apply text-sanitizer rules before writing the output file
 

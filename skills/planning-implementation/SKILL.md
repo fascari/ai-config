@@ -20,8 +20,8 @@ Does not write code. Produces the plan that implementing-feature will follow.
    - `{plan_root}/{slug}/brief.md` (context and acceptance criteria)
    - `{plan_root}/{slug}/research.md` (existing codebase analysis)
 2. Read architecture rules for structural guidance:
-   - active provider-native project instruction files — all project-specific architecture and design rules for the current AI surface
-3. **Compatibility Analysis** — before designing phases, check whether any proposed change will:
+   - active provider-native project instruction files: all project-specific architecture and design rules for the current AI surface
+3. **Compatibility Analysis**: before designing phases, check whether any proposed change will:
    - Modify existing API contracts (request/response field names, types, or endpoints)
    - Change interface signatures that external callers implement
    - Modify, rename, or drop database columns/tables
@@ -37,9 +37,9 @@ Does not write code. Produces the plan that implementing-feature will follow.
    - {What changes}: {what breaks} · {who is affected}
 
    How would you like to proceed?
-   A) Maintain backward compatibility — describe the compatibility strategy in the plan
+    A) Maintain backward compatibility: describe the compatibility strategy in the plan
       (e.g. default values, pointer fields, versioned endpoints, adapter layer)
-   B) Accept the breaking change — coordinate deployment with affected consumers/callers
+    B) Accept the breaking change: coordinate deployment with affected consumers/callers
    ```
 
    **Do not design phases or write the plan until the user explicitly chooses A or B.**
@@ -64,7 +64,7 @@ Write to `{plan_root}/{slug}/implementation-plan.md`:
 # Implementation Plan: {slug}
 
 ## Compatibility Decision
-**Choice**: A — Backward compatible / B — Breaking change accepted
+**Choice**: A: Backward compatible / B: Breaking change accepted
 **Rationale**: {why this approach was chosen}
 **Strategy** (if A): {how compatibility is maintained}
 
@@ -73,14 +73,14 @@ Brief summary of the feature/fix.
 
 ## Phases
 
-### Phase 1 — {Name}
+### Phase 1: {Name}
 **Goal**: What this phase achieves.
 
 **Tasks**:
-- [ ] Create `src/{domain}/domain/{file}` — {description}
-- [ ] Create `src/{domain}/service/{op}/service.{ext}` — {description}
+- [ ] Create `src/{domain}/domain/{file}`: {description}
+- [ ] Create `src/{domain}/service/{op}/service.{ext}`: {description}
 
-**Code Sketch** (not final — implementing-feature fills in):
+**Code Sketch** (not final, implementing-feature fills in):
 \`\`\`go
 // Rough structure to guide implementation
 \`\`\`
@@ -89,7 +89,7 @@ Brief summary of the feature/fix.
 - Automated: project tests pass for this layer
 - Manual: {what to verify}
 
-### Phase 2 — {Name}
+### Phase 2: {Name}
 ...
 
 ## File Checklist
@@ -111,6 +111,6 @@ Brief summary of the feature/fix.
 - Phases must respect clean architecture dependency order
 - Each task must reference the exact file path
 - Success criteria must include both automated and manual checks
-- Perform Compatibility Analysis before designing any phase — never skip
+- Perform Compatibility Analysis before designing any phase, never skip
 - Flag any cross-domain dependencies as risks
 - Do NOT include final code, only structural sketches

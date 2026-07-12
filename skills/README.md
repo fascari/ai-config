@@ -65,10 +65,13 @@ Use **orchestrating-tasks** as the single entry point for any task involving cod
 
 ## Custom Agents
 
-This repo keeps provider-neutral agent guidance in `agents/` and Codex-native custom agent TOML files in `providers/codex/agents/`.
+This repo keeps agent definitions in three formats:
 
-- Copilot/Claude-style workflows may still reuse the markdown agent templates below.
-- Codex custom agents must be installed as TOML files under `~/.codex/agents/` or checked into `.codex/agents/`.
+| Format | Location | Installed to |
+|---|---|---|
+| Provider-agnostic markdown | `agents/*.md` | Referenced by orchestrating-tasks |
+| Codex TOML | `providers/codex/agents/*.toml` | `~/.codex/agents/` via `install-global-skills.sh` |
+| Opencode markdown | `providers/opencode/agents/*.md` | `~/.config/opencode/agents/` via `install-global-skills.sh` |
 
 Provider-neutral templates for Go projects:
 

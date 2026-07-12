@@ -17,11 +17,11 @@ Never starts implementation before presenting the restored state to the user.
 
 ## Steps
 
-### Step 0 — Setup
+### Step 0: Setup
 
-1. Use the `{plan_root}` resolved by `orchestrating-tasks`. If running standalone, resolve `{plan_root}` with the same rule: prefer `$AI_MEMORY_HOME/{project}/plans/`; if unset, use `$COPILOT_VAULT/{project}/plans/`; then create or refresh `.plans` as a symlink to `{plan_root}`.
+1. Use the `{plan_root}` resolved by `orchestrating-tasks`. If running standalone, resolve `{plan_root}` with the same rule: use `$AI_MEMORY_HOME/{project}/plans/`; then create or refresh `.plans` as a symlink to `{plan_root}`.
 
-### Step 1 — Discover the Plan
+### Step 1: Discover the Plan
 
 Before matching against any user-provided input, **always** run these two commands in parallel:
 
@@ -29,7 +29,7 @@ Before matching against any user-provided input, **always** run these two comman
 git rev-parse --abbrev-ref HEAD
 ```
 
-Resolve the external `{plan_root}` with the same rule as `orchestrating-tasks`: prefer `$AI_MEMORY_HOME/{project}/plans/`; if unset, use `$COPILOT_VAULT/{project}/plans/`. If neither is set, stop and ask the user to configure an external plan root.
+Resolve the external `{plan_root}` with the same rule as `orchestrating-tasks`: use `$AI_MEMORY_HOME/{project}/plans/`. If unset, stop and ask the user to configure an external plan root.
 
 List `.plans/` to find available plan slugs. `.plans` must be a symlink to `{plan_root}`. Never create real repo-local plan folders, provider-specific AI configuration inside the project repository, or `.github/plans`.
 
@@ -49,9 +49,9 @@ Then apply the discovery rules:
 | Branch name matches a slug prefix | Use that slug, inform user |
 | Exactly 1 plan with `IN_PROGRESS` in `progress.md` | Use it automatically, inform the user |
 | Multiple `IN_PROGRESS` plans | List them and ask the user which to resume |
-| No `IN_PROGRESS` plan found | Inform user — do not proceed without confirmation |
+| No `IN_PROGRESS` plan found | Inform user, do not proceed without confirmation |
 
-### Step 2 — Re-hydrate Context
+### Step 2: Re-hydrate Context
 
 Read **all three** files via `read_file` before doing anything else:
 
@@ -66,7 +66,7 @@ No session-summary.md found for plan "{slug}".
 Run /compress in the original session first to generate it.
 ```
 
-### Step 3 — Restore Key Decisions
+### Step 3: Restore Key Decisions
 
 Extract the **Key decisions** section from `session-summary.md`. Treat every item as a
 hard constraint for the rest of the resumed session. Present them before delegating:
@@ -79,7 +79,7 @@ Key decisions restored (non-negotiable):
 
 Forward these constraints verbatim to any skill delegated to.
 
-### Step 4 — Identify Resume Point
+### Step 4: Identify Resume Point
 
 Cross-reference `session-summary.md` sections (`## Work completed this session`, `## Next steps`)
 with `progress.md` phase checkboxes to determine:
@@ -88,22 +88,22 @@ with `progress.md` phase checkboxes to determine:
 - Current **in-progress** phase (first phase with unchecked items)
 - Exact **sub-task** to resume from (`## Next steps` in `session-summary.md`)
 
-### Step 5 — Present Restored State
+### Step 5: Present Restored State
 
 Show the user a concise restoration summary before delegating:
 
 ```
-Session restored — {slug}
+Session restored: {slug}
 
-Resuming from: Phase {N} — {phase name}
+Resuming from: Phase {N}, {phase name}
    Sub-task: "{exact sub-task from Next steps}"
 
 Completed phases:
-   - Phase 1 — {name}
-   - Phase 2 — {name}
+   - Phase 1: {name}
+   - Phase 2: {name}
 
 In progress:
-   - Phase {N} — {name}: {open sub-tasks}
+   - Phase {N}: {name}: {open sub-tasks}
 
 Key decisions (restored):
    - {decision 1}
@@ -116,7 +116,7 @@ Open items:
 Proceeding to delegate to {SkillName}...
 ```
 
-### Step 6 — Route to the Correct Skill
+### Step 6: Route to the Correct Skill
 
 Based on the resume point and `progress.md` status, delegate to the appropriate skill:
 
@@ -135,7 +135,7 @@ When delegating, pass:
 3. All key decisions as non-negotiable constraints
 4. Any open items that affect the delegated skill's work
 
-The delegated skill will read its own rules during its Step 0 — do not re-read rules here.
+The delegated skill will read its own rules during its Step 0, do not re-read rules here.
 
 ## Error Recovery
 

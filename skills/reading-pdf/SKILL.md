@@ -7,7 +7,7 @@ description: Use when a PDF file path is provided or attached and its text conte
 
 ## Overview
 
-Extracts text from PDF files using `pdftotext` (Poppler) as the primary tool, with `pypdf` as a fallback when Poppler is not available. Text only — no OCR, no images, no form fields.
+Extracts text from PDF files using `pdftotext` (Poppler) as the primary tool, with `pypdf` as a fallback when Poppler is not available. Text only, no OCR, no images, no form fields.
 
 `pdftotext` is preferred because it is faster, handles column layouts and kerning correctly, preserves word boundaries at inline style transitions, and normalizes common ligatures (`ﬁ`/`ﬂ`) that `pypdf` leaves as Unicode characters.
 
@@ -38,7 +38,7 @@ fi
 
 If neither is available, attempt to install `pdftotext` first (`brew install poppler` on macOS, `apt-get install poppler-utils` on Debian/Ubuntu). Fall back to the `pypdf` path only when installing Poppler is not possible.
 
-4. **Extract text — primary path (`pdftotext`)**:
+4. **Extract text: primary path (`pdftotext`)**:
 
 Default mode preserves visual layout (`-layout`), which is best for tables and multi-column documents:
 
@@ -64,7 +64,7 @@ pdftotext -layout -f 1 -l 3 <PATH_TO_PDF> -
 pdftotext -layout <PATH_TO_PDF> - | awk 'BEGIN{p=1;print "--- Page "p" ---"} /\f/{p++;print "\n--- Page "p" ---";next} {print}'
 ```
 
-5. **Extract text — fallback path (`pypdf`)**:
+5. **Extract text: fallback path (`pypdf`)**:
 
 Only when `pdftotext` is unavailable. Set up the environment once:
 

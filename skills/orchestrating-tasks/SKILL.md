@@ -1,6 +1,6 @@
 ---
 name: orchestrating-tasks
-description: Use when starting or resuming any AI-assisted task — feature implementation, bug fix, codebase research, planning, code review, or any multi-skill workflow
+description: Use when starting or resuming any AI-assisted task, feature implementation, bug fix, codebase research, planning, code review, or any multi-skill workflow
 ---
 
 # Orchestrating Tasks
@@ -27,22 +27,22 @@ This skill is split into focused sub-files. Always read this SKILL.md first for 
 
 These rules always apply regardless of task type. Read them before anything else.
 
-- **Never write production code, tests, or commits directly** — delegate to the appropriate skill
-- **Never propose, draft, or suggest commits** — commits and PRs are manual user commands only; report final state and stop
-- **Never transition `progress.md` to `REVIEW` from inside a skill** — only orchestrating-tasks does this after gates pass
-- **Always run Completion Gate before `reviewing-code`** — lint + tests must pass; on FAIL dispatch `implementing-feature` for up to 2 repair cycles; escalate to user if still failing
-- **On gate failure** — present the failure to the user and wait for direction; do not dispatch a repair cycle
+- **Never write production code, tests, or commits directly**: delegate to the appropriate skill
+- **Never propose, draft, or suggest commits**: commits and PRs are manual user commands only; report final state and stop
+- **Never transition `progress.md` to `REVIEW` from inside a skill**: only orchestrating-tasks does this after gates pass
+- **Always run Completion Gate before `reviewing-code`**: lint + tests must pass; on FAIL dispatch `implementing-feature` for up to 2 repair cycles; escalate to user if still failing
+- **On gate failure**: present the failure to the user and wait for direction; do not dispatch a repair cycle
 - **All narrative prose passes through `sanitizing-text` before presentation**
-- **Never skip user approval checkpoints** — commits, pushes, and any external API writes require explicit approval (see `approval-and-output.md`)
-- **Never assume a plan exists** — always run plan discovery first
-- **Codex compatibility is explicit** — when native `task(skill: "...")` dispatch is unavailable, read `codex-runtime.md`; generic `spawn_agent` workers are untrusted until the orchestrator loads the phase rule bundle and runs the manual acceptance checklist
-- **`implementing-feature` owns production code, `testing-implementation` owns tests** — never cross-assign; each returns completion report. A phase that touches both production files AND test files MUST be split into two dispatches. (See `task-types.md`)
-- **NEVER dispatch `go-implementer` or `go-tester` directly** — always dispatch the SKILLS (`implementing-feature`, `testing-implementation`). The skills are the wrappers that enforce quality gates. Dispatching the agents directly bypasses the quality checks entirely. (See `task-types.md`)
-- **`write_agent` is single-skill-scoped** — switching skill type requires a fresh `task()` dispatch
-- **Dispatch model selection is mandatory** — for every task dispatch, consult `dispatching.md` Delegation Model Matrix. Run the Pre-Dispatch Checklist before every `task` invocation.
-- **Dispatch syntax is provider-specific** — select the logical role in `dispatching.md`, then render the actual worker or task call using `provider-dispatch.md`
-- **Subagent prompts MUST include Codebase Search Rules** — for any subagent that needs codebase exploration, paste the verbatim block from `dispatching.md` into the dispatch prompt. Trusting global instructions alone is not enough.
-- **Judges and validators MUST use a different vendor than the producer** — see `dispatching.md` Cross-Vendor Rule. Same-vendor judging is a hard rule violation.
+- **Never skip user approval checkpoints**: commits, pushes, and any external API writes require explicit approval (see `approval-and-output.md`)
+- **Never assume a plan exists**: always run plan discovery first
+- **Codex compatibility is explicit**: when native `task(skill: "...")` dispatch is unavailable, read `codex-runtime.md`; generic `spawn_agent` workers are untrusted until the orchestrator loads the phase rule bundle and runs the manual acceptance checklist
+- **`implementing-feature` owns production code, `testing-implementation` owns tests**: never cross-assign; each returns completion report. A phase that touches both production files AND test files MUST be split into two dispatches. (See `task-types.md`)
+- **NEVER dispatch `go-implementer` or `go-tester` directly**: always dispatch the SKILLS (`implementing-feature`, `testing-implementation`). The skills are the wrappers that enforce quality gates. Dispatching the agents directly bypasses the quality checks entirely. (See `task-types.md`)
+- **`write_agent` is single-skill-scoped**: switching skill type requires a fresh `task()` dispatch
+- **Dispatch model selection is mandatory**: for every task dispatch, consult `dispatching.md` Delegation Model Matrix. Run the Pre-Dispatch Checklist before every `task` invocation.
+- **Dispatch syntax is provider-specific**: select the logical role in `dispatching.md`, then render the actual worker or task call using `provider-dispatch.md`
+- **Subagent prompts MUST include Codebase Search Rules**: for any subagent that needs codebase exploration, paste the verbatim block from `dispatching.md` into the dispatch prompt. Trusting global instructions alone is not enough.
+- **Judges and validators MUST use a different vendor than the producer**: see `dispatching.md` Cross-Vendor Rule. Same-vendor judging is a hard rule violation.
 
 ---
 
@@ -60,9 +60,9 @@ Answer these questions explicitly in your reasoning BEFORE dispatching any subag
 
 ---
 
-## Step 1 — Setup & Plan Discovery
+## Step 1: Setup & Plan Discovery
 
-1. Resolve the external plan root. Prefer `$AI_MEMORY_HOME/{project}/plans/`; if unset, use `$COPILOT_VAULT/{project}/plans/`. If neither is set, stop and ask the user to configure the Obsidian vault path.
+1. Resolve the external plan root. Use `$AI_MEMORY_HOME/{project}/plans/`. If unset, stop and ask the user to configure the vault path.
 2. Read and run [`plans-setup.md`](plans-setup.md): ensure `{plan_root}` exists and create or refresh the repo-local `.plans` symlink pointing to `{plan_root}`.
 3. Do not create real repo-local plan folders, provider-specific AI configuration inside the project repository, or `.github/plans`.
 
@@ -75,22 +75,22 @@ When no slug is provided, scan the external plan root and read each `progress.md
 | Multiple `IN_PROGRESS` | List and ask which to use |
 | None found | Offer to create a new plan or reopen a `DONE` one |
 
-## Step 2 — Read Plan Status
+## Step 2: Read Plan Status
 
 Read `{plan_root}/{slug}/progress.md` and route:
 
 | Status | Action |
 |--------|--------|
-| File absent or no `## Status` | Start from scratch — full workflow |
+| File absent or no `## Status` | Start from scratch: full workflow |
 | `IN_PROGRESS` | Find last completed phase, resume from there. If `## Harness Gates` shows `NOT_RUN` or `FAIL`, run the gates before transitioning to `REVIEW`. |
 | `REVIEW` | Check `## Harness Gates` first. If both PASS, proceed to reviewing-code. If any is `NOT_RUN` or `FAIL`, reset to `IN_PROGRESS` and run the gates. |
-| `DONE` | Report complete. Ask "Reopen?" — do not proceed without confirmation |
+| `DONE` | Report complete. Ask "Reopen?", do not proceed without confirmation |
 
 When reopening: update `## Status` to `IN_PROGRESS`, ask where to restart.
 
-## Step 3 — Classify & Delegate
+## Step 3: Classify & Delegate
 
-Classify complexity, then delegate to the matching skill chain. See `task-types.md` for the full matrix. Apply the parallel dispatch rule — dispatch independent phases in parallel before proceeding.
+Classify complexity, then delegate to the matching skill chain. See `task-types.md` for the full matrix. Apply the parallel dispatch rule: dispatch independent phases in parallel before proceeding.
 
 | Level | Criteria | Skill chain |
 |---|---|---|
@@ -131,11 +131,11 @@ IN_PROGRESS
 ## Harness Gates
 Output Judge: NOT_RUN
 
-## Phase 1 — Domain Model (DONE)
+## Phase 1: Domain Model (DONE)
 - [x] Entity created
 - [x] Tests passing
 
-## Phase 2 — Use Case (IN PROGRESS)
+## Phase 2: Use Case (IN PROGRESS)
 - [x] UseCase struct
 - [ ] Unit tests
 ```
@@ -148,7 +148,7 @@ Valid values: `IN_PROGRESS` | `REVIEW` | `DONE`
 
 **Whenever two or more sub-tasks are independent, dispatch them as background agents in parallel. Do not serialize work that can be parallelized.**
 
-Before each phase: identify which sub-tasks don't depend on each other's output — dispatch those in parallel; run the rest in dependency order.
+Before each phase: identify which sub-tasks don't depend on each other's output: dispatch those in parallel; run the rest in dependency order.
 
 | Scenario | Wrong | Right |
 |---|---|---|
@@ -164,7 +164,7 @@ Failing to parallelize independent tasks is a performance violation.
 Offer compression at every user-facing checkpoint when: context ≥ 70%, or session spans research + planning + coding.
 
 ```
-Context is at {N}% — compress now to resume cleanly in a new chat?
+Context is at {N}%, compress now to resume cleanly in a new chat?
 Reply "yes" or /compress.
 ```
 

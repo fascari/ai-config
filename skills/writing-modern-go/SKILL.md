@@ -6,7 +6,7 @@ description: Use when writing or reviewing Go code to ensure modern idioms are u
 # Writing Modern Go
 
 Always use the most modern Go idiom available up to the project's Go version.
-This project uses **Go 1.26.1** — all features below are available.
+This project uses **Go 1.26.1**; all features below are available.
 
 ## Quick Reference
 
@@ -35,9 +35,9 @@ This project uses **Go 1.26.1** — all features below are available.
 | `sync.Once` + wrapper function | `sync.OnceFunc(fn)` / `sync.OnceValue(fn)` | 1.21 |
 | `errors.New` + manual join | `errors.Join(err1, err2)` | 1.20 |
 
-## Go 1.26 — Critical (newest, most likely missed)
+## Go 1.26: Critical (newest, most likely missed)
 
-### `new(val)` — pointer to any value
+### `new(val)`: pointer to any value
 
 ```go
 // Before
@@ -67,7 +67,7 @@ resp := new(MintTokenResponse{
 Type is inferred: `new(0)` → `*int`, `new("s")` → `*string`, `new(T{})` → `*T`.
 Never use redundant casts like `new(int(0))`.
 
-### `errors.AsType[T](err)` — type-safe error matching
+### `errors.AsType[T](err)`: type-safe error matching
 
 ```go
 // Before
@@ -84,7 +84,7 @@ if pathErr, ok := errors.AsType[*os.PathError](err); ok {
 
 ## Go 1.25
 
-### `wg.Go(fn)` — goroutine with WaitGroup
+### `wg.Go(fn)`: goroutine with WaitGroup
 
 ```go
 // Before
@@ -110,7 +110,7 @@ wg.Wait()
 
 ## Go 1.24
 
-### `t.Context()` — test context (ALWAYS use in tests)
+### `t.Context()`: test context (ALWAYS use in tests)
 
 ```go
 func TestFoo(t *testing.T) {
@@ -119,7 +119,7 @@ func TestFoo(t *testing.T) {
 }
 ```
 
-### `b.Loop()` — benchmark loop
+### `b.Loop()`: benchmark loop
 
 ```go
 func BenchmarkFoo(b *testing.B) {
@@ -129,7 +129,7 @@ func BenchmarkFoo(b *testing.B) {
 }
 ```
 
-### `omitzero` — JSON tag for time, structs, slices, maps
+### `omitzero`: JSON tag for time, structs, slices, maps
 
 ```go
 type Config struct {
@@ -138,7 +138,7 @@ type Config struct {
 }
 ```
 
-### `strings.SplitSeq` / `strings.FieldsSeq` — iterate without allocating
+### `strings.SplitSeq` / `strings.FieldsSeq`: iterate without allocating
 
 ```go
 for part := range strings.SplitSeq(s, ",") {
@@ -150,7 +150,7 @@ Also: `bytes.SplitSeq`, `bytes.FieldsSeq`.
 
 ## Go 1.22–1.23
 
-### `for i := range n` — integer range loop
+### `for i := range n`: integer range loop
 
 ```go
 for i := range len(items) {
@@ -158,13 +158,13 @@ for i := range len(items) {
 }
 ```
 
-### `cmp.Or` — first non-zero value
+### `cmp.Or`: first non-zero value
 
 ```go
 name := cmp.Or(os.Getenv("NAME"), config.Name, "default")
 ```
 
-### `slices.Sorted(maps.Keys(m))` — sorted map keys
+### `slices.Sorted(maps.Keys(m))`: sorted map keys
 
 ```go
 keys := slices.Sorted(maps.Keys(m))
@@ -257,7 +257,7 @@ ptr.Store(cfg)
 
 | Mistake | Fix |
 |---|---|
-| Using `new(int(0))` | Just `new(0)` — type is inferred |
+| Using `new(int(0))` | Just `new(0)`, type is inferred |
 | Using `&T{field: val}` for pointer to struct literal | Use `new(T{field: val})` on Go 1.26+ |
 | Using `errors.As` when `errors.AsType` is available | Always prefer `errors.AsType[T]` on Go 1.26+ |
 | Using `wg.Add(1)` + `go func` + `defer wg.Done()` | Use `wg.Go(fn)` on Go 1.25+ |

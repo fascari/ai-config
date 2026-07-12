@@ -46,6 +46,6 @@ Use `<<'EOF'` (quoted) so the heredoc does not expand variables or escape sequen
 
 ## Common mistakes
 
-- Using `<<EOF` (unquoted) when text contains `$`, backticks, or backslashes — always quote the delimiter: `<<'EOF'`
-- Forgetting the confirmation echo — user has no feedback that the copy succeeded
-- Copying raw terminal markdown (bold `**`, backticks) into plain-text forms — sanitize first if needed
+- Using `<<EOF` (unquoted) when text contains `$`, backticks, or backslashes, always quote the delimiter: `<<'EOF'`
+- Forgetting the confirmation echo, user has no feedback that the copy succeeded
+- Copying raw terminal markdown (bold `**`, backticks) into plain-text forms, sanitize first if needed

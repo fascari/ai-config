@@ -5,9 +5,8 @@ in the external vault.
 
 Resolve the external `{plan_root}`:
 
-1. Prefer `$AI_MEMORY_HOME/{project}/plans/`.
-2. If unset, use `$COPILOT_VAULT/{project}/plans/`.
-3. If neither is set, stop and ask the user to configure an external plan root.
+1. Use `$AI_MEMORY_HOME/{project}/plans/`.
+2. If unset, stop and ask the user to configure an external plan root.
 
 Then ensure `{plan_root}` exists and create or refresh `.plans` in the current
 repo root:
@@ -18,10 +17,8 @@ PROJECT="${REPO_ROOT##*/}"
 
 if [ -n "${AI_MEMORY_HOME:-}" ]; then
   PLAN_ROOT="$AI_MEMORY_HOME/$PROJECT/plans"
-elif [ -n "${COPILOT_VAULT:-}" ]; then
-  PLAN_ROOT="$COPILOT_VAULT/$PROJECT/plans"
 else
-  echo "No external plan root configured; set AI_MEMORY_HOME or COPILOT_VAULT"
+  echo "No external plan root configured; set AI_MEMORY_HOME"
   exit 1
 fi
 

@@ -24,7 +24,7 @@ Recurring mistakes to check before presenting code. This file contains project-s
 | Category | Always do | Never do |
 |----------|-----------|----------|
 | Test data | Use factory/fixture helpers | Inline complex structs directly in test bodies |
-| Assertions | Use fail-fast assertions (test stops on first failure) | Use soft assertions that continue after failure — they cascade panics |
+| Assertions | Use fail-fast assertions (test stops on first failure) | Use soft assertions that continue after failure; they cascade panics |
 | Mock setup | Use the project's `EXPECT()`-style builder | Use string-based `On("MethodName", ...)` setup |
 
 ## Pattern References

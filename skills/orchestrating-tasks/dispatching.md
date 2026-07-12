@@ -1,4 +1,4 @@
-# Orchestrating Tasks — Dispatching
+# Orchestrating Tasks: Dispatching
 
 > Sub-file of `skills/orchestrating-tasks/SKILL.md`. Read SKILL.md first for Critical Rules and Pre-Dispatch Checklist.
 
@@ -10,7 +10,7 @@ and codebase search rules for subagents. Concrete dispatch syntax lives in
 
 ## Capability Tiers
 
-Use these tier names when selecting models. The exact model depends on your AI provider — see the reference table below.
+Use these tier names when selecting models. The exact model depends on your AI provider, see the reference table below.
 
 | Tier | Characteristics | When to use |
 |---|---|---|
@@ -44,13 +44,13 @@ Select a logical role here. Render the actual call shape using
 | `researching-codebase` | `general-purpose` | Deep | Search-heavy reasoning; needs to correctly map impact across layered architectures |
 | `planning-implementation` | `general-purpose` | Deep | Plan quality directly determines implementation quality; deep reasoning reduces critique-gate cycles |
 | `implementing-feature` | `go-implementer` | Balanced | Custom agent front-loads Go conventions in the system prompt |
-| `testing-implementation` | `go-tester` | Balanced | Dedicated test agent — explicitly forbidden from touching production files |
-| `reviewing-code` | `general-purpose` | Deep (**cross-vendor**) | Reviewer must use a different vendor than the implementer — see Cross-Vendor Rule |
+| `testing-implementation` | `go-tester` | Balanced | Dedicated test agent, explicitly forbidden from touching production files |
+| `reviewing-code` | `general-purpose` | Deep (**cross-vendor**) | Reviewer must use a different vendor than the implementer, see Cross-Vendor Rule |
 | `sanitizing-text` | `general-purpose` | Fast | Rule-based text transformation; no reasoning needed |
 | `committing-changes` | `general-purpose` | Fast | Structured, rule-based task |
 | `creating-pull-request` | `general-purpose` | Fast | Templated, structured task |
 
-> **`critique-gate`** is not a named skill — it is an inline `task` dispatched by the orchestrator. **Cross-vendor rule applies.** Default: Deep tier (different vendor from planning-implementation). See `gates.md`.
+> **`critique-gate`** is not a named skill, it is an inline `task` dispatched by the orchestrator. **Cross-vendor rule applies.** Default: Deep tier (different vendor from planning-implementation). See `gates.md`.
 
 ---
 
@@ -58,7 +58,7 @@ Select a logical role here. Render the actual call shape using
 
 **Any agent that judges, validates, critiques, reviews, or scores the output of another agent MUST use a model from a different vendor than the agent that produced the output.**
 
-Rationale: same-vendor judges share blind spots — they accept patterns their sibling models produced. Cross-vendor judging catches correlated errors at low extra cost.
+Rationale: same-vendor judges share blind spots; they accept patterns their sibling models produced. Cross-vendor judging catches correlated errors at low extra cost.
 
 ### Vendor groups
 
@@ -90,7 +90,7 @@ For Complex tasks, override certain skills from Balanced to Deep. This is the em
 |---|---|---|---|
 | `critique-gate` | Deep (cross-vendor) | Deep + high effort | Adversarial plan review |
 | `reviewing-code` | Deep (cross-vendor) | Deep + high effort | Semantic regression catching |
-| `researching-codebase` | Deep | — | Already Deep by default |
+| `researching-codebase` | Deep | - | Already Deep by default |
 
 **Rationale**: Balanced models excel at structured validation (file paths, AC mapping, syntax). Deep models are required to catch semantic regressions, cross-test interactions, and design-level simplifications. The cost premium is paid back when it prevents a re-plan or post-merge incident on Complex work.
 
@@ -110,7 +110,7 @@ Read and follow: skills/{skill}/SKILL.md
 slug: {slug}
 plan dir: {plan_root}/{slug}/
 graphify-out/: available only if graphify-out/GRAPH_REPORT.md exists
-$COPILOT_VAULT / $AI_MEMORY_HOME: available only if set
+$AI_MEMORY_HOME: available only if set
 current phase: {phase name and number, if applicable}
 
 ## Task
@@ -124,10 +124,10 @@ dependent skill. Never dispatch two dependent skills simultaneously.
 
 ## Style Reinforcement Block (Go projects)
 
-When dispatching `implementing-feature`, `testing-implementation`, or `reviewing-code` and the diff touches `.go` files, append the following block verbatim to the prompt **after the Task section**. Auto-injected instruction files are not enough in long contexts — regression to over-documenting and legacy idioms is common.
+When dispatching `implementing-feature`, `testing-implementation`, or `reviewing-code` and the diff touches `.go` files, append the following block verbatim to the prompt **after the Task section**. Auto-injected instruction files are not enough in long contexts; regression to over-documenting and legacy idioms is common.
 
 ```
-## Style Reinforcement (Go — non-negotiable)
+## Style Reinforcement (Go, non-negotiable)
 
 Re-read these BEFORE the first edit:
 - the active provider-native project instruction files for the current working directory
@@ -136,11 +136,11 @@ Re-read these BEFORE the first edit:
 
 Hard rules:
 - File names: NO underscores except the _test.go suffix
-- Tests: NO comments by default — no // TestFoo verifies, // Arrange/Act/Assert
+- Tests: NO comments by default, no // TestFoo verifies, // Arrange/Act/Assert
 - Production code: comments explain WHY only, never WHAT; godoc must add insight beyond the signature
 - Modern Go: wg.Go (not wg.Add(1)+go func), any (not interface{}), slices.SortFunc (not sort.Slice), for i := range n, t.Context() in tests, time.Since(start)
 - Every newly exported symbol must have a caller or a godoc explaining why it stays exported
-- Run the Style Compliance Gate (4 greps) before declaring any phase done — see implementing-feature/SKILL.md
+- Run the Style Compliance Gate (4 greps) before declaring any phase done, see implementing-feature/SKILL.md
 ```
 
 ---
@@ -153,9 +153,9 @@ When dispatching ANY subagent that needs to explore the codebase (researching-co
 ## Codebase Search Rules (mandatory)
 
 Use Graphify instead of grep/find when available:
-- `graphify query "<concept>"` — BFS traversal, ~2k tokens of relevant context
-- `graphify path "<A>" "<B>"` — shortest path between two concepts
-- `graphify explain "<NodeName>"` — node details + neighbors
+- `graphify query "<concept>"`: BFS traversal, ~2k tokens of relevant context
+- `graphify path "<A>" "<B>"`: shortest path between two concepts
+- `graphify explain "<NodeName>"`: node details + neighbors
 
 If Graphify is not available, use targeted file reads. Read source files only when you need exact line context for a finding.
 ```

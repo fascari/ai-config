@@ -1,4 +1,4 @@
-# Orchestrating Tasks — Provider Dispatch
+# Orchestrating Tasks: Provider Dispatch
 
 > Sub-file of `skills/orchestrating-tasks/SKILL.md`. Read SKILL.md first for Critical Rules and Pre-Dispatch Checklist.
 

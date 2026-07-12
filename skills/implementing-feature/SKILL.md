@@ -40,17 +40,17 @@ In Copilot native mode this may map to `agent_type`. In Codex managed mode prefe
 
 ## Setup
 
-1. Use the `{plan_root}` provided by `orchestrating-tasks`. If running standalone, resolve `{plan_root}` with the same rule: prefer `$AI_MEMORY_HOME/{project}/plans/`; if unset, use `$COPILOT_VAULT/{project}/plans/`; then create or refresh `.plans` as a symlink to `{plan_root}`.
-2. **Context Bootstrap** — skip entirely if the prompt contains `Violations:` (repair cycle):
+1. Use the `{plan_root}` provided by `orchestrating-tasks`. If running standalone, resolve `{plan_root}` with the same rule: use `$AI_MEMORY_HOME/{project}/plans/`; then create or refresh `.plans` as a symlink to `{plan_root}`.
+2. **Context Bootstrap**: skip entirely if the prompt contains `Violations:` (repair cycle):
    ```bash
    GRAPHIFY_AVAILABLE=false
    [ -f "graphify-out/GRAPH_REPORT.md" ] && GRAPHIFY_AVAILABLE=true
    VAULT_AVAILABLE=false
-   [ -n "${COPILOT_VAULT:-${AI_MEMORY_HOME:-}}" ] && VAULT_AVAILABLE=true
+   [ -n "${AI_MEMORY_HOME:-}" ] && VAULT_AVAILABLE=true
    ```
-   Resolve `{plan_root}` with the same rule as `orchestrating-tasks`: prefer `$AI_MEMORY_HOME/{project}/plans/`; if unset, use `$COPILOT_VAULT/{project}/plans/`. If neither is set, stop and ask the user to configure an external plan root.
+   Resolve `{plan_root}` with the same rule as `orchestrating-tasks`: use `$AI_MEMORY_HOME/{project}/plans/`. If unset, stop and ask the user to configure an external plan root.
    - If `GRAPHIFY_AVAILABLE=true` **and** the plan_excerpt does NOT contain explicit file paths: use `graphify query` for domains/packages in the plan.
-   - If `GRAPHIFY_AVAILABLE=true` **and** the plan already specifies exact files to edit: **skip graphify** — scope is known.
+    - If `GRAPHIFY_AVAILABLE=true` **and** the plan already specifies exact files to edit: **skip graphify**: scope is known.
    - If `VAULT_AVAILABLE=true`: read architecture decisions relevant to the target area.
 
 ---
@@ -70,7 +70,7 @@ Read only the instruction files whose `applyTo` glob matches files you will chan
 1. Read only the current phase section from `{plan_root}/{slug}/implementation-plan.md`.
 2. Load targeted context: `graphify query "{domain}"` if available; otherwise read the `## File Map` from `research.md`.
 3. **Pre-flight**: files marked MODIFY must exist; files marked CREATE must not exist (unless plan says overwrite).
-4. **Compatibility gate** — stop and ask before modifying any existing:
+4. **Compatibility gate**: stop and ask before modifying any existing:
    - HTTP request/response shape visible to callers
    - Exported interface that other packages implement
    - Database column (drop, rename, type change)
@@ -83,7 +83,7 @@ Read only the instruction files whose `applyTo` glob matches files you will chan
    B) Accept breaking change
    ```
 5. Implement following all project coding rules from the active provider-native project instruction files and any repo docs they explicitly route you to.
-6. After EVERY file edit — compile-check immediately and fix all issues.
+6. After EVERY file edit, compile-check immediately and fix all issues.
 7. **Style compliance gate** (run all before step 8):
 
    a. File-name audit (Go):
@@ -118,11 +118,11 @@ Read only the instruction files whose `applyTo` glob matches files you will chan
 
 9. If a non-obvious domain, database, or architectural anti-pattern is discovered:
    - Surface it in the phase summary.
-   - If `VAULT_AVAILABLE=true`, append to `$COPILOT_VAULT/{project}/architecture/anti-patterns.md`.
+   - If `VAULT_AVAILABLE=true`, append to `$AI_MEMORY_HOME/{project}/architecture/anti-patterns.md`.
 
 10. Update checkboxes in `implementation-plan.md`.
 11. Update `progress.md`.
-12. **Pause** — present results, wait for approval before next phase.
+12. **Pause**: present results, wait for approval before next phase.
 
 ---
 
@@ -141,12 +141,12 @@ After lint and style gate pass, prepare this handoff for `testing-implementation
 ## Go Code Rules
 
 - Grouped declarations: `type ( )`, `var ( )`, `const ( )`
-- No `else` — early returns only
+- No `else`: early returns only
 - `any` not `interface{}`
-- `errors.Is()` / `errors.As()` — never `==`
+- `errors.Is()` / `errors.As()`: never `==`
 - No `Get`/`Set` prefixes · lowercase single-word packages · no `utils`/`helpers`
 - Accept interfaces, return structs
-- Value receivers preferred — pointers only when mutation/nil/size required
+- Value receivers preferred: pointers only when mutation/nil/size required
 - Unused receiver → convert to package-level function
 - Pure functions over impure · inline logic when not reused
 - Comments only for non-obvious WHY
@@ -164,7 +164,7 @@ After lint and style gate pass, prepare this handoff for `testing-implementation
 - [ ] Errors wrapped with `%w`
 - [ ] No `Get`/`Set` prefixes
 - [ ] Value receivers · pure functions where possible
-- [ ] `errors.Is()` — never `==`
+- [ ] `errors.Is()`: never `==`
 - [ ] No magic strings (typed constants)
 - [ ] Backward compatibility verified
 
@@ -174,7 +174,7 @@ After lint and style gate pass, prepare this handoff for `testing-implementation
 
 **Commits**: NEVER commit automatically. Report final state and stop.
 
-**Docs**: show explanations in chat — never create `SOLUTION.md`, `TROUBLESHOOTING.md`, etc.
+**Docs**: show explanations in chat, never create `SOLUTION.md`, `TROUBLESHOOTING.md`, etc.
 
 ---
 
@@ -183,13 +183,13 @@ After lint and style gate pass, prepare this handoff for `testing-implementation
 Update `progress.md` after each phase. Mark only production file tasks:
 
 ```markdown
-## Phase 1 — Domain Model
+## Phase 1: Domain Model
 - [x] Created domain entity
 - [x] Linter: PASS
 - [x] Style gate: PASS
 ```
 
-**Do NOT update `## Status` to `REVIEW`** — that transition is owned exclusively by `orchestrating-tasks` after all gates pass. Leave `## Status` as `IN_PROGRESS` and update only the phase checkboxes.
+**Do NOT update `## Status` to `REVIEW`**, that transition is owned exclusively by `orchestrating-tasks` after all gates pass. Leave `## Status` as `IN_PROGRESS` and update only the phase checkboxes.
 
 ## Codex Runtime Override
 

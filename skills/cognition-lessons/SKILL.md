@@ -119,11 +119,11 @@ When `reviewing-code` runs:
 
 ## Rules
 
-- **Extract only on BLOCKED** — never extract on APPROVED
-- **Compact format** — lessons must be scannable in < 30 seconds
-- **Per-project storage** — lessons are project-specific
-- **Append-only** — never delete lessons, only update occurrence count
-- **Priority-based filtering** — load high-priority first, medium if space allows
+- **Extract only on BLOCKED**: never extract on APPROVED
+- **Compact format**: lessons must be scannable in < 30 seconds
+- **Per-project storage**: lessons are project-specific
+- **Append-only**: never delete lessons, only update occurrence count
+- **Priority-based filtering**: load high-priority first, medium if space allows
 
 ## Token Cost
 

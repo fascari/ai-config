@@ -26,7 +26,7 @@ via GitHub CLI after explicit user approval.
 
 
 
-### Step 1 — Gather Branch Context
+### Step 1: Gather Branch Context
 
 ```bash
 git --no-pager branch --show-current
@@ -53,7 +53,7 @@ git --no-pager rev-list --count HEAD ^origin/develop 2>/dev/null
 git --no-pager rev-list --count HEAD ^origin/main
 ```
 
-### Step 2 — Analyze Commits and Changed Files
+### Step 2: Analyze Commits and Changed Files
 
 ```bash
 git --no-pager log develop..HEAD --format="%s%n%b" 2>/dev/null || git --no-pager log main..HEAD --format="%s%n%b"
@@ -66,7 +66,7 @@ Read the most relevant changed files to understand:
 - Whether migrations exist (→ note in description)
 - Whether tests were added/updated
 
-### Step 3 — Determine PR Metadata
+### Step 3: Determine PR Metadata
 
 **Title**: a brief, imperative description of the change.
 ```
@@ -80,7 +80,7 @@ git --no-pager config user.email
 gh api user --jq '.login'
 ```
 
-**Labels** — choose ALL that apply (labels can be combined):
+**Labels**, choose ALL that apply (labels can be combined):
 
 | Condition | Label(s) |
 |---|---|
@@ -93,11 +93,11 @@ gh api user --jq '.login'
 | Only docs/config changed | `documentation` |
 | Dependency file updated | `dependencies` |
 
-Labels are **not mutually exclusive** — a `feature` PR that also improves existing behaviour should have both `feature` and `enhancement`.
+Labels are **not mutually exclusive**, a `feature` PR that also improves existing behaviour should have both `feature` and `enhancement`.
 
-**Reviewers**: do NOT set automatically — user will assign.
+**Reviewers**: do NOT set automatically, user will assign.
 
-### Step 4 — Generate PR Body
+### Step 4: Generate PR Body
 
 Use EXACTLY the project template structure from `.github/pull_request_template.md`.
 
@@ -122,7 +122,7 @@ Use the commit messages and changed file list as primary source.
 
 **References section**: keep as-is from template.
 
-### Step 5 — Present Plan for Approval
+### Step 5: Present Plan for Approval
 
 Present the full PR plan before any action:
 
@@ -156,25 +156,25 @@ PR Plan:
     --label "feature" \
     --body-file /tmp/pr-body.md
 
-Open this PR? [Y/N] — or type 'draft' to open as Draft PR
+Open this PR? [Y/N]: or type 'draft' to open as Draft PR
 ```
 
 **WAIT for explicit approval**: "yes", "ok", "y", "proceed", or "draft".
 
-### Step 6 — Write Body to Temp File and Open PR
+### Step 6: Write Body to Temp File and Open PR
 
-**ALWAYS use the `create_file` tool** to write the PR body — never use shell heredoc (`cat > file << 'EOF'`) or inline Python.
+**ALWAYS use the `create_file` tool** to write the PR body, never use shell heredoc (`cat > file << 'EOF'`) or inline Python.
 Shell heredocs lock the terminal and corrupt multi-line content in zsh. The `create_file` tool is safe, reliable, and produces correct Markdown.
 
 #### Body formatting rules (enforced via `create_file`)
 
 - Every Markdown section (`## Title`) must be preceded by a **blank line**
 - Every paragraph inside `## Description` must be separated by a **blank line**
-- Each sentence/paragraph must be on a **single unbroken line** — no mid-sentence line wraps
+- Each sentence/paragraph must be on a **single unbroken line**: no mid-sentence line wraps
 - Blockquotes (`>`) must have a blank line before and after them
 - Checklist items must have a blank line after the section header (`## Author' checklist`)
 
-#### Example — correct body file content
+#### Example: correct body file content
 
 ```markdown
 ## Description
@@ -218,7 +218,7 @@ If user typed `draft`, add `--draft` flag.
 > PAGER=cat gh label create "migration" --color "#0075ca" --description "Contains DB migration"
 > ```
 
-### Step 7 — Verify and Present Result
+### Step 7: Verify and Present Result
 
 ```bash
 gh pr view --web   # opens in browser (optional, ask user)
@@ -244,7 +244,7 @@ Use `PAGER=cat gh label list` to discover available labels. Choose ALL that appl
 | `bugfix/` | `bug` |
 | `hotfix/` | `bug` + `hotfix` |
 
-Labels are not mutually exclusive — combine freely (e.g., `feature` + `enhancement`).
+Labels are not mutually exclusive, combine freely (e.g., `feature` + `enhancement`).
 
 ## Anti-patterns (never do these)
 
@@ -259,9 +259,9 @@ Labels are not mutually exclusive — combine freely (e.g., `feature` + `enhance
 | Run `gh` commands without `PAGER=cat` | Always prefix `gh` with `PAGER=cat` |
 | Guess labels that don't exist | Check label existence, create if missing |
 | Skip checklist items silently | Mark unchecked items with `[ ]` + note why |
-| Run `git push` for pure docs/config changes when pre-push hooks don't apply | `git push --no-verify` — hooks are not relevant |
+| Run `git push` for pure docs/config changes when pre-push hooks don't apply | `git push --no-verify`: hooks are not relevant |
 | Use `--no-verify` when project validation hooks must run | Always `git push` (no `--no-verify`) when hooks are mandatory |
-| Add `Co-authored-by: Copilot` to the PR body | The `Co-authored-by` trailer belongs only in **git commit messages** — never in the PR description or any GitHub comment |
+| Add `Co-authored-by: Copilot` to the PR body | The `Co-authored-by` trailer belongs only in **git commit messages**: never in the PR description or any GitHub comment |
 
 
 

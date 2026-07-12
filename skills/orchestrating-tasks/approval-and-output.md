@@ -1,4 +1,4 @@
-# Orchestrating Tasks — Approvals & Output Contract
+# Orchestrating Tasks: Approvals & Output Contract
 
 > Sub-file of `skills/orchestrating-tasks/SKILL.md`. Read SKILL.md first for Critical Rules and Pre-Dispatch Checklist.
 
@@ -20,7 +20,7 @@ Approval rules:
 
 1. Present a full preview of all actions before executing
 2. Wait for written approval ("yes", "approve", "confirm", "ok", "y")
-3. "Go ahead" or "do it" before seeing the preview is NOT approval — present the preview first
+3. "Go ahead" or "do it" before seeing the preview is NOT approval, present the preview first
 4. Each action type requires separate approval
 5. If scope changes during execution, stop, present the change, and wait for approval
 
@@ -57,11 +57,11 @@ IN_PROGRESS
 ## Harness Gates
 Output Judge: NOT_RUN
 
-## Phase 1 — Domain Model (DONE)
+## Phase 1: Domain Model (DONE)
 - [x] Created domain entity
 - [x] Tests passing
 
-## Phase 2 — Use Case (IN PROGRESS)
+## Phase 2: Use Case (IN PROGRESS)
 - [x] UseCase struct
 - [ ] Unit tests
 ```

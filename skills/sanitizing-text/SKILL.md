@@ -7,12 +7,12 @@ description: Use when text produced by other skills is about to be written to a 
 
 Post-processing pass applied to any text produced by other skills before it is written to a file or sent to an external system (issue tracker, wiki, GitHub). Covers two concerns:
 
-1. **Formatting and structure** — list markers, heading levels, em-dashes, emojis. Applies to all content.
-2. **AI writing patterns** — inflated language, sycophantic tone, vague attributions, mechanical structure. Applies to narrative text (descriptions, PR bodies, prose). Based on [Wikipedia: Signs of AI writing](https://en.wikipedia.org/wiki/Wikipedia:Signs_of_AI_writing) and patterns from [blader/humanizer](https://github.com/blader/humanizer) (MIT).
+1. **Formatting and structure**, list markers, heading levels, em-dashes, emojis. Applies to all content.
+2. **AI writing patterns**, inflated language, sycophantic tone, vague attributions, mechanical structure. Applies to narrative text (descriptions, PR bodies, prose). Based on [Wikipedia: Signs of AI writing](https://en.wikipedia.org/wiki/Wikipedia:Signs_of_AI_writing) and patterns from [blader/humanizer](https://github.com/blader/humanizer) (MIT).
 
 Never generates content. Only cleans content that already exists.
 
-If the personal `humanizer` skill is available in the session, prefer it for the AI writing pass on prose — it has a richer voice-calibration process. If it is not available, the narrative rules in this skill cover the same ground.
+If the personal `humanizer` skill is available in the session, prefer it for the AI writing pass on prose, it has a richer voice-calibration process. If it is not available, the narrative rules in this skill cover the same ground.
 
 ## Execution Model
 
@@ -33,7 +33,7 @@ When dispatched by `orchestrating-tasks`, this skill should run in an isolated w
 2. Identify whether the text is **narrative** (prose descriptions) or **structured** (checklists, tables, code). Most PR bodies and issue descriptions are a mix of both.
 3. Apply **Formatting rules** (Rules 1-6) to the entire text.
 4. Apply **Narrative rules** (Rules 7-27) to prose sections only. Skip checklists, table cells with short values, and code comments.
-5. For narrative sections: run the **audit pass** — ask "What still sounds AI-generated?" and revise.
+5. For narrative sections: run the **audit pass**, ask "What still sounds AI-generated?" and revise.
 6. Return the sanitized text only. No commentary about what was changed unless the user asked for it.
 
 ## Output
@@ -73,9 +73,9 @@ Steps for HTML sanitization:
 
 ## Formatting rules (apply to all content)
 
-Apply all rules in order. Each rule is independent — do not skip any.
+Apply all rules in order. Each rule is independent, do not skip any.
 
-### Rule 1 — Remove forbidden AI-sounding words and phrases
+### Rule 1: Remove forbidden AI-sounding words and phrases
 
 Replace or remove any of the following. The list is not exhaustive; apply the same judgment to synonyms.
 
@@ -148,17 +148,17 @@ Replace or remove any of the following. The list is not exhaustive; apply the sa
 | the deeper issue | (state the issue directly) |
 | the heart of the matter | (remove) |
 
-### Rule 2 — Remove em-dashes, en-dashes, and decorative punctuation
+### Rule 2: Remove em-dashes, en-dashes, and decorative punctuation
 
 - Replace ` — ` (em-dash with spaces) with `, ` or rewrite the sentence to eliminate the dash
 - Replace ` -- ` (double hyphen used as dash) with `, ` or rewrite
 - Replace `–` (en-dash) in prose with `-` (hyphen) or `, ` as context requires
 - Do not remove hyphens in compound words (`auto-withdraw`, `date-range`, `rule-2`) or code identifiers
-- Remove repeated punctuation (`...`, `!!!`, `???`) — use a single character
+- Remove repeated punctuation (`...`, `!!!`, `???`): use a single character
 
 **Exception**: Em-dashes inside code blocks, SQL, or inline code spans are untouched.
 
-### Rule 3 — Remove emojis and icons
+### Rule 3: Remove emojis and icons
 
 - Remove all emoji characters (Unicode ranges U+1F300 to U+1FFFF and U+2600 to U+26FF)
 - Remove all icon shortcodes (e.g. `:white_check_mark:`, `:x:`, `:warning:`)
@@ -178,7 +178,7 @@ Replace or remove any of the following. The list is not exhaustive; apply the sa
 
 **Exception**: Icons inside code blocks or inline code spans are untouched.
 
-### Rule 4 — Enforce professional, objective language
+### Rule 4: Enforce professional, objective language
 
 - Write in third person or imperative voice. Avoid first person (`I`, `we`, `our`) in ticket descriptions, plans, and reports.
 - Use present or future tense for requirements. Avoid past tense unless describing existing behaviour.
@@ -190,7 +190,7 @@ Replace or remove any of the following. The list is not exhaustive; apply the sa
 - Use active voice. Passive constructions such as `it was decided that` must be rewritten (`the team decided`).
 - Remove subjectless fragments: `No configuration file needed` → `No configuration file is needed` or `You do not need a configuration file`.
 
-### Rule 5 — Replace colons and semicolons with natural connectors
+### Rule 5: Replace colons and semicolons with natural connectors
 
 Colons (`:`) and semicolons (`;`) used as sentence connectors make prose feel mechanical. Replace them with natural language connectors when they join two related clauses or introduce a consequence.
 
@@ -220,7 +220,7 @@ Colons (`:`) and semicolons (`;`) used as sentence connectors make prose feel me
 
 **Exception**: Colons and semicolons inside code blocks, inline code spans, or quoted strings are untouched.
 
-### Rule 6 — Normalize formatting
+### Rule 6: Normalize formatting
 
 - Use plain `-` for unordered list items. Do not use `*`, `+`, or `•`.
 - Do not mix heading levels arbitrarily. `##` for major sections, `###` for subsections, `####` only if strictly necessary.
@@ -230,7 +230,7 @@ Colons (`:`) and semicolons (`;`) used as sentence connectors make prose feel me
 - Do not insert blank lines inside a list item block.
 - One blank line between sections; two blank lines only before `##` top-level headings.
 - Do not use curly/smart quotes (`"..."`, `'...'`). Use straight quotes (`"..."`, `'...'`).
-- Do not bold entire phrases for emphasis. Bold is for UI labels, key terms on first use, or table headers — not for decorative emphasis.
+- Do not bold entire phrases for emphasis. Bold is for UI labels, key terms on first use, or table headers: not for decorative emphasis.
 - Do not use inline-header list style (bolded word + colon + description on same line). Convert to prose or a proper table.
 
 ---
@@ -239,7 +239,7 @@ Colons (`:`) and semicolons (`;`) used as sentence connectors make prose feel me
 
 These rules target AI writing patterns. Apply them to paragraph prose, PR descriptions, and issue description fields. Skip checklists, table cells with short values, and code comments.
 
-### Rule 7 — Remove inflated significance and legacy language
+### Rule 7: Remove inflated significance and legacy language
 
 AI writing inflates the importance of ordinary facts by adding statements about how they "represent", "mark", or "contribute to" broader themes.
 
@@ -248,9 +248,9 @@ AI writing inflates the importance of ordinary facts by adding statements about 
 | Before | After |
 |---|---|
 | The fix marks a pivotal moment in how the system handles resolution. | The fix changes how the system resolves the issue. |
-| This approach underscores our commitment to correctness. | (remove — it says nothing) |
+| This approach underscores our commitment to correctness. | (remove: it says nothing) |
 
-### Rule 8 — Remove superficial -ing endings
+### Rule 8: Remove superficial -ing endings
 
 AI appends present participle phrases (`-ing`) to sentences to fake depth. These add no information.
 
@@ -261,13 +261,13 @@ AI appends present participle phrases (`-ing`) to sentences to fake depth. These
 | The query was rewritten, ensuring correctness. | The query was rewritten. |
 | The handler returns a 404, reflecting the domain convention. | The handler returns a 404 per domain convention. |
 
-### Rule 9 — Remove promotional and advertisement language
+### Rule 9: Remove promotional and advertisement language
 
 **Words to watch:** boasts, vibrant, rich (figurative), profound, enhancing its, showcasing, exemplifies, commitment to, nestled, in the heart of, groundbreaking, renowned, breathtaking
 
 Replace with plain factual statements. If the sentence only carries promotional weight and no information, remove it.
 
-### Rule 10 — Remove vague attributions
+### Rule 10: Remove vague attributions
 
 AI attributes opinions to unnamed authorities.
 
@@ -275,7 +275,7 @@ AI attributes opinions to unnamed authorities.
 
 Replace with a specific source or remove entirely. If the point is worth making, make it directly.
 
-### Rule 11 — Replace copula avoidance
+### Rule 11: Replace copula avoidance
 
 AI avoids `is`/`are`/`has` by substituting elaborate constructions.
 
@@ -285,7 +285,7 @@ AI avoids `is`/`are`/`has` by substituting elaborate constructions.
 | The repository boasts three query methods. | The repository has three query methods. |
 | This commit marks the introduction of the feature. | This commit introduces the feature. |
 
-### Rule 12 — Remove negative parallelisms
+### Rule 12: Remove negative parallelisms
 
 AI overuses `It's not just X, it's Y` and tailing negation fragments.
 
@@ -294,7 +294,7 @@ AI overuses `It's not just X, it's Y` and tailing negation fragments.
 | It's not just about correctness; it's about predictability. | The fix improves predictability, not just correctness. |
 | Options come from the selected item, no guessing. | Options come from the selected item without requiring a guess. |
 
-### Rule 13 — Break up rule-of-three patterns
+### Rule 13: Break up rule-of-three patterns
 
 AI forces ideas into groups of three to appear comprehensive. If two items are the natural scope, use two.
 
@@ -302,7 +302,7 @@ AI forces ideas into groups of three to appear comprehensive. If two items are t
 |---|---|
 | The change improves correctness, reliability, and maintainability. | The change improves correctness and makes the code easier to maintain. |
 
-### Rule 14 — Remove chatbot artifacts
+### Rule 14: Remove chatbot artifacts
 
 Chatbot conversational fragments that end up in published text.
 
@@ -310,29 +310,29 @@ Chatbot conversational fragments that end up in published text.
 
 Keep the content. Remove the meta-commentary.
 
-### Rule 15 — Remove knowledge-cutoff disclaimers
+### Rule 15: Remove knowledge-cutoff disclaimers
 
 **Phrases to watch:** `as of [date]`, `up to my last training update`, `while specific details are limited`, `based on available information`
 
 Remove these. State what is known directly, or omit if genuinely unknown.
 
-### Rule 16 — Remove excessive hedging
+### Rule 16: Remove excessive hedging
 
 | Before | After |
 |---|---|
 | It could potentially possibly be argued that the policy might have some effect. | The policy may affect outcomes. |
 | This is essentially a workaround for what is basically a timing issue. | This is a workaround for a timing issue. |
 
-### Rule 17 — Remove generic positive conclusions
+### Rule 17: Remove generic positive conclusions
 
 Vague upbeat endings that add no information.
 
 | Before | After |
 |---|---|
 | The future looks bright. Exciting times lie ahead as we continue this journey. | (remove entirely) |
-| This represents a major step in the right direction. | (remove entirely — or state what specifically changes next) |
+| This represents a major step in the right direction. | (remove entirely: or state what specifically changes next) |
 
-### Rule 18 — Remove signposting and fragmented headers
+### Rule 18: Remove signposting and fragmented headers
 
 AI announces what it is about to do instead of doing it.
 
@@ -346,7 +346,7 @@ Also remove warm-up sentences that restate the heading before the real content:
 |---|---|
 | `## Performance` + `Speed matters.` + `When users hit a slow page, they leave.` | `## Performance` + `When users hit a slow page, they leave.` |
 
-### Rule 19 — Use contractions in prose
+### Rule 19: Use contractions in prose
 
 Uncontracted forms ("does not", "it is", "would not", "cannot") read as stiff and machine-generated. Use natural contractions in prose.
 
@@ -358,7 +358,7 @@ Uncontracted forms ("does not", "it is", "would not", "cannot") read as stiff an
 
 **Exception**: Keep the uncontracted form when used for deliberate emphasis ("The service does not retry. Ever.") or in formal specifications and acceptance criteria.
 
-### Rule 20 — Vary sentence openings
+### Rule 20: Vary sentence openings
 
 Runs of sentences starting with the same subject ("It names...", "It covers...", "It also...") are a strong AI tell. Break the pattern.
 
@@ -370,7 +370,7 @@ Runs of sentences starting with the same subject ("It names...", "It covers...",
 |---|---|
 | It covers PSS. It adds a test helper. It organizes changes file by file. | PSS support lands too. A test helper keeps the setup clean. File-by-file changes make the diff easy to follow. |
 
-### Rule 21 — Mix sentence lengths
+### Rule 21: Mix sentence lengths
 
 Uniform sentence length (all 15-25 words) is an AI signature. Vary the rhythm.
 
@@ -382,7 +382,7 @@ Uniform sentence length (all 15-25 words) is an AI signature. Vary the rhythm.
 |---|---|
 | Model A comes last because it describes the same core logic but omits too much detail in its output. | Model A comes last. Same core logic, but too much is left out. |
 
-### Rule 22 — Remove elegant variation and synonym cycling
+### Rule 22: Remove elegant variation and synonym cycling
 
 AI avoids repeating a word by cycling through synonyms, creating unnatural variety. Humans repeat words naturally.
 
@@ -394,7 +394,7 @@ AI avoids repeating a word by cycling through synonyms, creating unnatural varie
 
 If you mean the same thing, use the same word. Forced synonyms sound artificial.
 
-### Rule 23 — Remove false ranges
+### Rule 23: Remove false ranges
 
 AI creates "from X to Y" constructions that sound comprehensive but add nothing.
 
@@ -403,13 +403,13 @@ AI creates "from X to Y" constructions that sound comprehensive but add nothing.
 | From novice developers to seasoned engineers, everyone benefits. | Developers at any level benefit. |
 | Everything from configuration to deployment is automated. | Configuration and deployment are automated. |
 
-### Rule 24 — Remove viral and manipulation phrases
+### Rule 24: Remove viral and manipulation phrases
 
 Social media and engagement-bait phrases that AI picks up from training data.
 
 **Phrases to remove entirely:** `Let that sink in`, `Read that again`, `The truth is`, `And honestly?`, `Here's the kicker`, `Spoiler alert`, `Plot twist`, `Hot take`, `Unpopular opinion`, `Let me be clear`, `Make no mistake`, `Full stop`, `Period.` (as emphasis), `I said what I said`
 
-### Rule 25 — Remove filler phrase clusters
+### Rule 25: Remove filler phrase clusters
 
 AI inserts conversational filler to sound human, but overuses specific phrases in clusters.
 
@@ -417,7 +417,7 @@ AI inserts conversational filler to sound human, but overuses specific phrases i
 
 One filler phrase per paragraph is natural. Two or more in the same paragraph is a tell. Remove extras.
 
-### Rule 26 — Avoid symmetric treatment in comparisons
+### Rule 26: Avoid symmetric treatment in comparisons
 
 When comparing items (models, options, approaches), AI gives each item roughly the same word count and structure. Humans spend more words on what matters and less on the obvious.
 
@@ -427,7 +427,7 @@ When comparing items (models, options, approaches), AI gives each item roughly t
 
 Different items deserve different depth. The winner might get 3 sentences, the loser just one.
 
-### Rule 27 — Reduce hyphenated word pair overuse
+### Rule 27: Reduce hyphenated word pair overuse
 
 AI hyphenates compound modifiers with perfect consistency. Humans are inconsistent with common pairs.
 
