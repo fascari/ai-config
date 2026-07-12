@@ -11,6 +11,7 @@ On the first message of every new session, load the **recall** skill (`skills/re
 Before editing code, read the relevant files from `rules/`:
 
 - `rules/go-style.md` — Go style, naming, control flow
+- `rules/design-principles.md` — deep modules, entanglement, design-first, tradeoffs
 - `rules/testing.md` — test conventions, table-driven, assertions
 - `rules/error-handling.md` — domain errors, wrapping, HTTP mapping
 - `rules/package-design.md` — package boundaries and dependency direction

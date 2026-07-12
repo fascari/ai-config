@@ -217,30 +217,70 @@ func addToTotal(amount float64) { globalTotal += amount }
 
 ## Comments
 
-- Only comment when explaining WHY, not WHAT
-- Never add obvious/redundant comments
-- All exported types and functions must have doc comments (per Google Go Style)
-- Comments must be simple, objective, and in English
+Default: no comments. Code should be self-explanatory through good naming.
+
+- Only comment when explaining WHY something exists or WHY a non-obvious decision was made
+- Never comment WHAT the code does — the code already says that
+- Never comment HOW it does it — the code already says that
+- Delete any comment that restates the function/variable name
+- **No package doc comments beyond 1-2 lines.** Delete narrative descriptions, contracts, or caller-guidance.
+- **No inline comments in function bodies** unless the logic is genuinely surprising
 
 ```go
-// Bad: obvious
+// Bad: obvious (restates name)
 // FindByID finds entity by ID
 func (r Repository) FindByID(ctx context.Context, id string) (Entity, error)
 
-// Good: explains non-obvious business rule
+// Bad: obvious (godoc that restates params)
+// Params configures the input for Run.
+type Params struct { Input []int64 }
+
+// Bad: documents what+how in body
+func (r Repository) Save(ctx context.Context, input Entity) error {
+    // Validate input
+    if input.ID == "" {
+        return errors.New("id is empty")
+    }
+    // Save to database
+    return r.db.WithContext(ctx).Create(&model).Error
+}
+
+// Bad: package doc as narrative
+// Package goroutines computes a sum by launching one goroutine per input
+// element. It is designed for bounded pedagogical input and is not suitable
+// for large inputs. Callers must not mutate the slice concurrently.
+package goroutines
+
+// Good: explains WHY — non-obvious business rule
 // Apply institutional discount only for orders > 100 units (legacy rule from 2019 contract)
 if product.Quantity > 100 { basePrice *= 0.85 }
-```
 
-## Doc Comments
-
-Required for all exported names. Start with the name of the symbol:
-
-```go
+// Good: godoc adds insight beyond the name
 // Repository provides data access for user entities.
 type Repository struct { ... }
 
-// Execute processes the user registration for the given input.
+// Good: 1-line package doc
+// Package goroutines demonstrates concurrent sum via goroutines.
+package goroutines
+```
+
+### Doc Comments on Exported Symbols
+
+A godoc comment is justified **only when the name alone is insufficient to understand purpose or usage.** If the godoc merely restates the name, delete it — no comment is better than a redundant one.
+
+```go
+// Good: name alone is enough, no comment needed
+type Params struct {
+    Input []int64
+}
+
+// Good: name alone is enough
+type Result struct {
+    Sum int64
+}
+
+// Good: explains what "Execute" does in this context
+// Execute sends a transfer request to the payment gateway.
 func (u UseCase) Execute(ctx context.Context, input Input) (Output, error)
 ```
 

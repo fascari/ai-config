@@ -36,9 +36,21 @@ func TestCalculateDiscount_ShouldApplyCorrectRate(t *testing.T) {
         quantity int
         want     float64
     }{
-        {name: "should return zero for small orders", quantity: 5, want: 0},
-        {name: "should return 10% for medium orders", quantity: 50, want: 0.10},
-        {name: "should return 15% for large orders", quantity: 200, want: 0.15},
+        {
+            name:     "should return zero for small orders",
+            quantity: 5,
+            want:     0,
+        },
+        {
+            name:     "should return 10% for medium orders",
+            quantity: 50,
+            want:     0.10,
+        },
+        {
+            name:     "should return 15% for large orders",
+            quantity: 200,
+            want:     0.15,
+        },
     }
     for _, tt := range tests {
         t.Run(tt.name, func(t *testing.T) {
@@ -70,6 +82,42 @@ func TestPublishPost_ShouldRejectWhenAlreadyPublished(t *testing.T) {
 ```
 
 ## Table-Driven Tests
+
+Every row in a table-driven test slice must be formatted as a multiline struct literal. Each field goes on its own line, fields are aligned, and the closing brace is on its own line. This applies to the outer test table and to any nested tables (e.g. modes, fixtures).
+
+```go
+// Good: multiline rows, fields aligned, no single-line literals
+tests := []struct {
+    name     string
+    quantity int
+    want     float64
+}{
+    {
+        name:     "should return zero for small orders",
+        quantity: 5,
+        want:     0,
+    },
+    {
+        name:     "should return 10% for medium orders",
+        quantity: 50,
+        want:     0.10,
+    },
+}
+```
+
+```go
+// Bad: single-line literals, fields not aligned per row
+tests := []struct {
+    name     string
+    quantity int
+    want     float64
+}{
+    {name: "should return zero for small orders", quantity: 5, want: 0},
+    {name: "should return 10% for medium orders", quantity: 50, want: 0.10},
+}
+```
+
+This is a hard rule. Single-line row literals are prohibited in every table-driven test, including short rows with 1-2 fields. `gofmt` does not reformat single-line literals automatically, so this must be enforced in review and in the style-gate.
 
 ```go
 func TestUseCase_ShouldReturnEntity(t *testing.T) {
