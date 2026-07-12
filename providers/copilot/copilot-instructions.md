@@ -2,7 +2,7 @@
 
 ## Global Skills & Rules
 
-Skills, rules, and agents live in `~/.ai-config/` — installed globally by `install-global-skills.sh`.
+Skills, rules, and agents live in `~/.ai-config/`, installed globally by `install-global-skills.sh`.
 
 | What | Where | Purpose |
 |------|-------|---------|
@@ -46,8 +46,8 @@ Use `orchestrating-tasks` as the single entry point for any codebase change. Inv
 
 ## Hard Rules
 
-- **Never log and return the same error** — choose one
+- **Never log and return the same error**: choose one
 - **Never commit directly.** Always invoke `/skill:committing-changes`. The skill requires explicit user approval before any `git commit` or `git push`.
-- **No `else` blocks** — use early returns
-- **No `assert` in tests** — use `require` (stops on failure)
-- **No `interface{}`** — use `any`
+- **No `else` blocks**: use early returns
+- **No `assert` in tests**: use `require` (stops on failure)
+- **No `interface{}`**: use `any`

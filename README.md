@@ -5,27 +5,38 @@ Shared AI coding rules, workflow skills, and provider configurations for AI-assi
 ## Architecture
 
 ```
-~/.ai-config/                     ← clone location (universal, Linux and macOS)
-├── rules/                        ← SSOT coding rules (Go style, testing, etc.)
+ai-config/                        ← git clone (any location)
+├── rules/                        ← SSOT coding rules
 ├── skills/                       ← SSOT workflow skills (SKILL.md per skill)
 ├── agents/                       ← provider-agnostic agent definitions
 ├── providers/                    ← thin entrypoint templates for each provider
 ├── .opencode/                    ← opencode config for working ON this repo
 ├── AGENTS.md                     ← codex entrypoint for working ON this repo
 ├── CLAUDE.md                     ← claude entrypoint for working ON this repo
-└── install*.sh                   ← setup scripts
+├── install.sh                    ← setup script
+└── install-global-skills.sh      ← global skill installer
+
+~/.ai-config/                     ← staging dir (created by install.sh)
+├── rules/                  → symlink → ai-config/rules/
+├── skills/                 → symlink → ai-config/skills/
+├── agents/                 → symlink → ai-config/agents/
+├── providers/              → symlink → ai-config/providers/
+├── install.sh              → symlink → ai-config/install.sh
+└── install-global-skills.sh → symlink → ai-config/install-global-skills.sh
 ```
+
+`install.sh` auto-detects the repo root from its own location and symlinks `rules/`, `skills/`, `agents/`, and `providers/` into `~/.ai-config/`. Provider configs and project entrypoints reference `~/.ai-config/rules/`, a single indirection that stays valid across `git pull` without re-install.
 
 Each provider's entrypoint is a thin index that references `~/.ai-config/rules/` and `~/.ai-config/skills/`. No rules are duplicated inline.
 
 ## Fresh Machine Setup
 
 ```bash
-# 1. Clone to fixed location
-git clone git@github.com:user/ai-config.git ~/.ai-config
+# 1. Clone anywhere
+git clone git@github.com:user/ai-config.git ~/dev/pessoal/ai-config
 
-# 2. Run setup (symlinks skills globally, exports AI_CONFIG_HOME)
-~/.ai-config/install.sh
+# 2. Run setup (symlinks rules/skills/agents into ~/.ai-config/, installs global skills)
+~/dev/pessoal/ai-config/install.sh
 
 # 3. Restart shell
 ```
@@ -102,6 +113,7 @@ Opencode discovers agents from `~/.config/opencode/agents/` automatically. No pe
 | File | Applies to | Summary |
 |------|-----------|---------|
 | `rules/go-style.md` | `**/*.go` | Google Go Style Guide + project conventions |
+| `rules/design-principles.md` | `**/*.go` | Deep modules, entanglement, design-first, tradeoffs |
 | `rules/clean-architecture.md` | `internal/app/**/*.go` | Layer rules, DI, domain isolation |
 | `rules/testing.md` | `**/*_test.go` | Table-driven tests, mockery, integration |
 | `rules/error-handling.md` | `**/*.go` | Domain errors, wrapping, no log-and-return |
@@ -119,8 +131,8 @@ See [`skills/README.md`](skills/README.md) for the full catalog.
 ## Persistent Memory
 
 Two skills manage session persistence across AI providers:
-- **recall** — loads vault context at session start
-- **checkpoint** — saves decisions and progress at session end
+- **recall**: loads vault context at session start
+- **checkpoint**: saves decisions and progress at session end
 
 See [`docs/persistent-memory.md`](docs/persistent-memory.md).
 
@@ -128,14 +140,14 @@ See [`docs/persistent-memory.md`](docs/persistent-memory.md).
 
 Deterministic gates (zero tokens) + single LLM review (one call per cycle). Inspired by [copilot-tdd-harness](https://github.com/mrlarson2007/copilot-tdd-harness) and the 7 pillars of Harness Engineering.
 
-- **style-gate** — lint, format, typecheck, tests, style greps (deterministic)
-- **reviewing-code** — single LLM review of rules + diff
-- **cognition-lessons** — extract lessons from failures, load in future sessions
+- **style-gate**: lint, format, typecheck, tests, style greps (deterministic)
+- **reviewing-code**: single LLM review of rules + diff
+- **cognition-lessons**: extract lessons from failures, load in future sessions
 
 ## Updating
 
 ```bash
-cd ~/.ai-config && git pull
+cd ~/dev/pessoal/ai-config && git pull
 ```
 
-Symlinks stay valid — no re-install needed after a pull. Re-run `install-global-skills.sh` only when new skills are added.
+Symlinks in `~/.ai-config/` point to the repo, so a `git pull` is enough. No re-install needed. Re-run `install-global-skills.sh` only when new skills are added.

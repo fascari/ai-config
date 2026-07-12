@@ -184,7 +184,7 @@ func (r Repository) Save(ctx context.Context, entity domain.Entity) error {
 | No | plain `*gorm.DB` | `r.db.WithContext(ctx)` | No transaction to join; simpler and correct |
 | Yes | `dbtx.BaseRepository` | `r.DB(ctx)` | Must join the transaction propagated via context |
 
-> `r.DB(ctx)` checks the context for a transaction injected by `TransactionManager.WithTransaction`. Without that, it falls back to a plain connection — functionally equivalent to `r.db` but with unnecessary indirection.
+> `r.DB(ctx)` checks the context for a transaction injected by `TransactionManager.WithTransaction`. Without that, it falls back to a plain connection, functionally equivalent to `r.db` but with unnecessary indirection.
 
 ## Handler Layer
 
@@ -233,7 +233,7 @@ Rules:
   methods is only acceptable for a tiny spike or generated scaffold example,
   not for implementation work.
 
-### Handler must use the concrete use case type — never define a UseCase interface
+### Handler must use the concrete use case type, never define a UseCase interface
 
 Handlers hold the concrete `usecase.UseCase` struct directly. **Never** define a `UseCase` interface inside the handler package.
 
@@ -261,7 +261,7 @@ type Handler struct {
 }
 ```
 
-A `UseCase` interface in the handler package has no architectural value — the use case is never substituted with another implementation at runtime. Its only purpose is to allow test doubles, which is the wrong layer to mock. Use case interfaces belong in the use case layer (`//go:generate mockery`), and handler tests instantiate a **real use case** with mocked repositories.
+A `UseCase` interface in the handler package has no architectural value; the use case is never substituted with another implementation at runtime. Its only purpose is to allow test doubles, which is the wrong layer to mock. Use case interfaces belong in the use case layer (`//go:generate mockery`), and handler tests instantiate a **real use case** with mocked repositories.
 
 #### Handler test pattern
 
@@ -341,7 +341,7 @@ func main() {
     ).Run()
 }
 
-// Wrong — inline fx.Provide in main.go
+// Wrong: inline fx.Provide in main.go
 func main() {
     fx.New(
         fx.Provide(nats.NewNATSClient),   // ← must be in bootstrap.NATS
@@ -378,9 +378,9 @@ var User = fx.Options(
 ```
 
 The three-variable pattern:
-- `{domain}Factories` — `fx.Provide(repo.New, usecase.New, handler.NewHandler)`
-- `{domain}Dependencies` — `fx.Provide(func(repo X) usecase.SomeInterface { return repo })`
-- `{domain}Invokes` — `fx.Invoke(func(params RouterParams, h handler.Handler) { handler.RegisterEndpoint(...) })`
+- `{domain}Factories`: `fx.Provide(repo.New, usecase.New, handler.NewHandler)`
+- `{domain}Dependencies`: `fx.Provide(func(repo X) usecase.SomeInterface { return repo })`
+- `{domain}Invokes`: `fx.Invoke(func(params RouterParams, h handler.Handler) { handler.RegisterEndpoint(...) })`
 
 ### RouterParams
 

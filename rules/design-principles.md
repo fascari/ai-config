@@ -10,7 +10,7 @@ These rules govern the orchestrator → planner → implementer workflow. Read b
 
 ## 1. Deep Modules, Not Shallow Ones
 
-A module (function, type, package) is **deep** when it hides a lot of functionality behind a simple interface. Depth is the primary measure of decomposition quality — not line count.
+A module (function, type, package) is **deep** when it hides a lot of functionality behind a simple interface. Depth is the primary measure of decomposition quality, not line count.
 
 ```go
 // Deep: one call replaces 50 lines of HTTP boilerplate
@@ -48,8 +48,8 @@ When extraction would create entanglement, keep the code together. Entanglement 
 
 Extract a function only when ALL of the following are true:
 
-1. **The interface is simpler than the implementation** — the caller does not need to read the body
-2. **The extracted logic is genuinely separable** — no entanglement with the caller's context
+1. **The interface is simpler than the implementation**: the caller does not need to read the body
+2. **The extracted logic is genuinely separable**: no entanglement with the caller's context
 3. **At least one of:** reused across callers, the body is complex enough to benefit from a name, or the extraction creates a meaningful abstraction boundary
 
 Do NOT extract:
@@ -78,10 +78,10 @@ There are two categories of comments with opposite defaults:
 
 | Category | Default | Purpose |
 |----------|---------|---------|
-| Implementation comments | **None** — only WHY, only when non-obvious | Explain a surprising decision inside a function body |
+| Implementation comments | **None**, only WHY, only when non-obvious | Explain a surprising decision inside a function body |
 | Interface comments | **Required** when the signature is insufficient | Enable the caller to use the function WITHOUT reading its body |
 
-An interface comment describes the **contract**: preconditions, side effects, ordering constraints, format expectations, error semantics. Without interface comments there is no abstraction — the reader is forced to read the implementation.
+An interface comment describes the **contract**: preconditions, side effects, ordering constraints, format expectations, error semantics. Without interface comments there is no abstraction; the reader is forced to read the implementation.
 
 ```go
 // Bad: signature is insufficient, no comment — caller must read the body
@@ -102,16 +102,16 @@ func FindPrimes(n int) []int
 
 Rule of thumb: if a new developer would need to read the function body to use it correctly, it needs an interface comment. If the signature alone is sufficient (e.g., `len(s)` on a slice), no comment is needed.
 
-This does not contradict `go-style.md`'s "default no comments" rule — that rule applies to **implementation** comments. Interface comments are the mechanism that makes abstraction possible.
+This does not contradict `go-style.md`'s "default no comments" rule; that rule applies to **implementation** comments. Interface comments are the mechanism that makes abstraction possible.
 
 ## 5. Design-First, Then Test
 
 The unit of development is a **design unit** (a function, a type, a small set of related operations), not a single test. The workflow is:
 
-1. **Design** — think about the structure of the code you are about to write. What are the types? What are the function boundaries? What is the interface contract?
-2. **Implement** — write the code for the design unit (tens to a few hundred lines)
-3. **Test** — write comprehensive unit tests for the implemented code
-4. **Refactor** — adjust based on what the tests and the implementation revealed
+1. **Design**: think about the structure of the code you are about to write. What are the types? What are the function boundaries? What is the interface contract?
+2. **Implement**: write the code for the design unit (tens to a few hundred lines)
+3. **Test**: write comprehensive unit tests for the implemented code
+4. **Refactor**: adjust based on what the tests and the implementation revealed
 
 This is **bundling**, not strict TDD. Design comes before code, not after. Tests validate the design; they do not drive it.
 

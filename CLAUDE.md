@@ -6,12 +6,13 @@ Shared AI coding rules, workflow skills, and provider configurations for AI-assi
 
 Before editing code, read the relevant files from `rules/`:
 
-- `rules/go-style.md` — Go style, naming, control flow
-- `rules/testing.md` — test conventions, table-driven, assertions
-- `rules/error-handling.md` — domain errors, wrapping, HTTP mapping
-- `rules/package-design.md` — package boundaries and dependency direction
-- `rules/clean-architecture.md` — layer rules, DI, domain isolation
-- `rules/sanitizing-text.md` — text formatting before save
+- `rules/go-style.md`: Go style, naming, control flow
+- `rules/design-principles.md`: deep modules, entanglement, design-first, tradeoffs
+- `rules/testing.md`: test conventions, table-driven, assertions
+- `rules/error-handling.md`: domain errors, wrapping, HTTP mapping
+- `rules/package-design.md`: package boundaries and dependency direction
+- `rules/clean-architecture.md`: layer rules, DI, domain isolation
+- `rules/sanitizing-text.md`: text formatting before save
 
 ## Skills
 
@@ -25,8 +26,8 @@ Provider-agnostic agent definitions in `agents/`:
 ## Quick Start (new machine)
 
 ```bash
-git clone git@github.com:user/ai-config.git ~/.ai-config
-~/.ai-config/install.sh
+git clone git@github.com:user/ai-config.git ~/dev/pessoal/ai-config
+~/dev/pessoal/ai-config/install.sh
 ```
 
 See `README.md` for full setup guide.

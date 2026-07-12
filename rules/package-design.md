@@ -25,7 +25,7 @@ This project maps Bill Kennedy's layers as follows:
 
 ## Package Location Rules
 
-### `pkg/` — Shared Utilities (Kit)
+### `pkg/`: Shared Utilities (Kit)
 
 Highest portability. Could theoretically be extracted to a separate module.
 
@@ -36,7 +36,7 @@ Highest portability. Could theoretically be extracted to a separate module.
 - Configuration and runtime changes must be decoupled (accept interfaces, not concrete config)
 - Each package provides a single, focused capability: `clock`, `filter`, `paginator`, `money`, `slices`
 
-### `internal/` (non-app) — Infrastructure
+### `internal/` (non-app): Infrastructure
 
 Project-specific foundational support: `dbtx`, `audit`, `logger`, `tokenmanager`, `middleware`.
 
@@ -46,7 +46,7 @@ Project-specific foundational support: `dbtx`, `audit`, `logger`, `tokenmanager`
 - CAN import from `pkg/`
 - CAN import from other `internal/` infrastructure packages
 
-### `internal/app/{domain}/` — Business Domains
+### `internal/app/{domain}/`: Business Domains
 
 Domain-specific business logic. Each domain is a self-contained unit.
 
@@ -57,7 +57,7 @@ Domain-specific business logic. Each domain is a self-contained unit.
 - CAN set application-level policy (logging, config)
 - Sub-packages within a domain can import each other
 
-### `cmd/`, `consumers/cmd/`, `jobs/cmd/` — Programs
+### `cmd/`, `consumers/cmd/`, `jobs/cmd/`: Programs
 
 Entry points that wire everything together.
 

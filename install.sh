@@ -20,6 +20,14 @@ for subdir in rules skills agents providers; do
   ln -sfn "$script_dir/$subdir" "$AI_CONFIG_HOME/$subdir"
   echo "  linked $subdir -> $script_dir/$subdir"
 done
+for script in install.sh install-global-skills.sh; do
+  if [[ -e "$AI_CONFIG_HOME/$script" && ! -L "$AI_CONFIG_HOME/$script" ]]; then
+    echo "Skipping $script (exists and is not a symlink)"
+    continue
+  fi
+  ln -sfn "$script_dir/$script" "$AI_CONFIG_HOME/$script"
+  echo "  linked $script -> $script_dir/$script"
+done
 echo ""
 
 # Step 2: Symlink skills globally for all providers

@@ -115,10 +115,10 @@ u := User{
     Email: "user@example.com",
 }
 
-// Bad — positional, breaks silently when fields are reordered
+// Bad: positional, breaks silently when fields are reordered
 u := User{"abc", "user@example.com"}
 
-// Bad — multiple fields on one line
+// Bad: multiple fields on one line
 u := User{ID: "abc", Email: "user@example.com"}
 ```
 
@@ -220,8 +220,8 @@ func addToTotal(amount float64) { globalTotal += amount }
 Default: no comments. Code should be self-explanatory through good naming.
 
 - Only comment when explaining WHY something exists or WHY a non-obvious decision was made
-- Never comment WHAT the code does — the code already says that
-- Never comment HOW it does it — the code already says that
+- Never comment WHAT the code does; the code already says that
+- Never comment HOW it does it; the code already says that
 - Delete any comment that restates the function/variable name
 - **No package doc comments beyond 1-2 lines.** Delete narrative descriptions, contracts, or caller-guidance.
 - **No inline comments in function bodies** unless the logic is genuinely surprising
@@ -251,7 +251,7 @@ func (r Repository) Save(ctx context.Context, input Entity) error {
 // for large inputs. Callers must not mutate the slice concurrently.
 package goroutines
 
-// Good: explains WHY — non-obvious business rule
+// Good: explains WHY: non-obvious business rule
 // Apply institutional discount only for orders > 100 units (legacy rule from 2019 contract)
 if product.Quantity > 100 { basePrice *= 0.85 }
 
@@ -266,7 +266,7 @@ package goroutines
 
 ### Doc Comments on Exported Symbols
 
-A godoc comment is justified **only when the name alone is insufficient to understand purpose or usage.** If the godoc merely restates the name, delete it — no comment is better than a redundant one.
+A godoc comment is justified **only when the name alone is insufficient to understand purpose or usage.** If the godoc merely restates the name, delete it; no comment is better than a redundant one.
 
 ```go
 // Good: name alone is enough, no comment needed

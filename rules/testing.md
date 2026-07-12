@@ -181,7 +181,7 @@ require.Empty(t, results)
 ```
 
 ```go
-// Wrong — must never appear in any test file
+// Wrong; must never appear in any test file
 assert.Equal(t, want, got)   // ← test continues even when this fails
 assert.NoError(t, err)       // ← subsequent lines may panic on nil dereference
 ```
@@ -194,7 +194,7 @@ Never define complex test data inline in test files.
 
 ### testdata/ package (per feature)
 
-For use case and handler tests, create `testdata/` within the package. Each file is named after the domain entity it constructs — **never by role** (`inputs.go`, `expected.go`, `errors.go` are wrong):
+For use case and handler tests, create `testdata/` within the package. Each file is named after the domain entity it constructs, **never by role** (`inputs.go`, `expected.go`, `errors.go` are wrong):
 
 ```
 pkg/{feature}/
@@ -209,7 +209,7 @@ pkg/{feature}/
 Each entity file:
 - Contains every factory function for that entity covering all states needed by the tests
 - Groups constants (IDs, mock timestamps) with the entity that primarily owns them
-- Uses no artificial split between "inputs" and "expected outputs" — both live in the same file
+- Uses no artificial split between "inputs" and "expected outputs"; both live in the same file
 
 Function names describe the **specific state** of the entity, not just the type:
 
@@ -335,10 +335,10 @@ func OrderCancelled(t *testing.T, db *gorm.DB, orderID string) {
 }
 ```
 
-Call helpers directly from the test body or from a closure in a table field — the choice depends on whether the case fits naturally in the table:
+Call helpers directly from the test body or from a closure in a table field; the choice depends on whether the case fits naturally in the table:
 
 ```go
-// Individual test — when the DB assertion makes this case distinct enough to stand alone
+// Individual test; when the DB assertion makes this case distinct enough to stand alone
 func (cs *Suite) TestCancelOrder_ShouldCancelConflictingActiveOrder() {
     result, err := cs.repository.CancelOrder(cs.ctx, testdata.OrderID)
 
@@ -349,7 +349,7 @@ func (cs *Suite) TestCancelOrder_ShouldCancelConflictingActiveOrder() {
 ```
 
 ```go
-// Table field — when the case fits naturally alongside other cases in the table
+// Table field; when the case fits naturally alongside other cases in the table
 {
     name: "Should cancel active order",
     ...
