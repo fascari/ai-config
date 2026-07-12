@@ -1,23 +1,22 @@
 # Persistent Memory for AI Agents
 
-Step-by-step guide to set up long-term memory for GitHub Copilot (or any AI coding agent) using an Obsidian vault for knowledge and Graphify for codebase understanding.
-
+Guide to set up long-term memory for AI coding agents using an Obsidian vault for knowledge and Graphify for codebase understanding. Works with any provider (opencode, Codex CLI, Claude Code, GitHub Copilot).
 
 ## Problem
 
 AI coding agents start every session with zero context. They re-read the same files, re-discover the same architecture, and forget every decision made in previous sessions. This setup solves that with three layers:
 
-- **`AGENTS.md`** — loaded natively by Copilot CLI each session. Triggers automatic session bootstrap without any user action.
-- **Obsidian vault** — stores session logs, architecture decisions, and domain knowledge across sessions
-- **Graphify** — generates a persistent knowledge graph of the codebase so the agent understands code structure without re-reading every file
-
+- **Project entrypoint** (`AGENTS.md`, `CLAUDE.md`, or `.opencode/opencode.jsonc`) - loaded natively by the provider at session start. Triggers automatic session bootstrap without any user action.
+- **Obsidian vault** - stores session logs, architecture decisions, and domain knowledge across sessions
+- **Graphify** - generates a persistent knowledge graph of the codebase so the agent understands code structure without re-reading every file
 
 ## How It Works
 
 ### Session Start (automatic)
 
-Copilot CLI loads `AGENTS.md` at the project root before processing the first user message. The bootstrap steps run automatically:
-1. Detect vault path from `$COPILOT_VAULT` env var
+The provider loads the project entrypoint before processing the first user message. The bootstrap steps run automatically:
+
+1. Detect vault path from `$AI_MEMORY_HOME`
 2. Read 3 most recent session logs from the vault
 3. Read architecture decisions
 4. Read active plans (`.github/plans/` + vault)
@@ -28,9 +27,9 @@ Copilot CLI loads `AGENTS.md` at the project root before processing the first us
 ### During the Session
 
 The agent follows the 3-layer context query rule:
-1. **Graphify** — `graphify query "concept"` for code structure questions
-2. **Vault** — check prior decisions and session history
-3. **Source code** — read files only when editing or when layers 1–2 have no answer
+1. **Graphify** - `graphify query "concept"` for code structure questions
+2. **Vault** - check prior decisions and session history
+3. **Source code** - read files only when editing or when layers 1-2 have no answer
 
 ### Session End (manual)
 
@@ -40,15 +39,13 @@ When the user says "checkpoint", the checkpoint skill writes a session log to th
 
 Session N+1 picks up where session N left off because `recall` loads the logs written by `checkpoint`. The agent knows what was done, what was decided, and what is pending without the user repeating anything.
 
-
 ## Prerequisites
 
-- GitHub Copilot CLI (or any agent that supports custom skills and global instructions)
+- An AI coding agent that supports custom skills and global instructions (opencode, Codex CLI, Claude Code, or GitHub Copilot)
 - Python 3.10+ (for Graphify)
-- An Obsidian vault (or just a directory — Obsidian is optional for viewing)
+- An Obsidian vault (or just a directory; Obsidian is optional for viewing)
 
-
-## Step 1 - Set `$COPILOT_VAULT`
+## Step 1 - Set `$AI_MEMORY_HOME`
 
 Add to `~/.zshrc` or `~/.bashrc`:
 
@@ -56,12 +53,11 @@ Add to `~/.zshrc` or `~/.bashrc`:
 export AI_MEMORY_HOME="$HOME/.ai-memory"
 ```
 
-This is the only per-developer configuration required. The agent reads this variable to locate the vault. Developers without Obsidian can skip this step — all vault operations degrade gracefully when the variable is unset.
-
+This is the only per-developer configuration required. The agent reads this variable to locate the vault. Developers without a vault can skip this step; all vault operations degrade gracefully when the variable is unset.
 
 ## Step 2 - Create the Vault
 
-Create the directory structure for the Obsidian vault:
+Create the directory structure:
 
 ```bash
 VAULT_DIR="$AI_MEMORY_HOME"
@@ -84,7 +80,7 @@ Top-level directories:
 - `session-captures/` - compressed session summaries
 - `graphify/{project}/` - Graphify-generated vault notes
 
-Each project gets its own folder at `$COPILOT_VAULT/{project}/` with these subdirectories:
+Each project gets its own folder at `$AI_MEMORY_HOME/{project}/` with these subdirectories:
 
 - `architecture/` - decisions and conventions (`decisions.md`)
 - `pipeline/` - data flows, APIs
@@ -95,7 +91,7 @@ Each project gets its own folder at `$COPILOT_VAULT/{project}/` with these subdi
 
 ### Create Templates
 
-Session log template at `$COPILOT_VAULT/templates/session-log.md`:
+Session log template at `$AI_MEMORY_HOME/templates/session-log.md`:
 
 ```markdown
 ---
@@ -119,7 +115,7 @@ project: {{project}}
 ## Related Notes
 ```
 
-Default note template at `$COPILOT_VAULT/templates/default-note.md`:
+Default note template at `$AI_MEMORY_HOME/templates/default-note.md`:
 
 ```markdown
 ---
@@ -150,52 +146,64 @@ All notes in the vault follow these rules:
 - 1 concept per permanent note (atomicity)
 - Minimum 2 wikilinks per permanent note
 
+## Step 3 - Add Entry point to Each Project
 
-## Step 3 - Add `AGENTS.md` to Each Project
+Copy the appropriate entrypoint template from `~/.ai-config/providers/` to the project root:
 
-Copy `AGENTS.md` from this repo to the project root, or keep the repo available as the project's `.github/` tree and copy or link `AGENTS.md` as needed.
+```bash
+# Codex CLI
+cp ~/.ai-config/providers/codex/AGENTS.md /path/to/project/AGENTS.md
 
-Copilot CLI reads `AGENTS.md` natively at session start — no configuration required. The file triggers the automatic bootstrap described above.
+# Claude Code
+cp ~/.ai-config/providers/claude/CLAUDE.md /path/to/project/CLAUDE.md
 
-The repo-to-vault-folder mapping lives in the developer's personal copilot instructions (`~/.copilot/copilot-instructions.md`):
+# Opencode
+cp ~/.ai-config/providers/codex/AGENTS.md /path/to/project/AGENTS.md
+mkdir -p /path/to/project/.opencode
+cp ~/.ai-config/providers/opencode/opencode.jsonc /path/to/project/.opencode/opencode.jsonc
 
-```markdown
-| Repository | Vault folder |
-|---|---|
-| my-long-repo-name | short-name |
+# GitHub Copilot
+mkdir -p /path/to/project/.github/instructions
+cp ~/.ai-config/providers/copilot/copilot-instructions.md /path/to/project/.github/copilot-instructions.md
+ln -s ~/.ai-config/rules/*.md /path/to/project/.github/instructions/
 ```
 
-For unmapped repositories, the agent uses the repository name as the vault folder name.
-
+The entrypoint triggers the automatic bootstrap described above. The provider reads it natively at session start; no extra configuration required.
 
 ## Step 4 - Install the Session Skills
 
-Two global skills manage the session lifecycle. Install them at `~/.copilot/skills/`.
+Two global skills manage the session lifecycle. Install them via `install-global-skills.sh`:
 
 ```bash
-mkdir -p ~/.copilot/skills/{recall,checkpoint}
+~/.ai-config/install-global-skills.sh --provider all
 ```
 
-Copy `skills/recall/SKILL.md` and `skills/checkpoint/SKILL.md` from this repo to those directories.
+This symlinks `recall` and `checkpoint` into the provider-specific skill directories:
+
+| Provider | Skill location |
+|---|---|
+| Codex CLI | `~/.agents/skills/` |
+| GitHub Copilot | `~/.copilot/skills/` |
+| Claude Code | `~/.claude/skills/` |
+| Opencode | `~/.config/opencode/skills/` |
 
 ### recall skill
 
-Runs when the user explicitly says "recall". Also triggered automatically by the AGENTS.md bootstrap. Loads:
-- 3 most recent session logs from `$COPILOT_VAULT/{project}/logs/`
-- Architecture decisions from `$COPILOT_VAULT/{project}/architecture/decisions.md`
-- Active plans from `.github/plans/` and `$COPILOT_VAULT/{project}/plans/`
+Runs when the user explicitly says "recall". Also triggered automatically by the entrypoint bootstrap. Loads:
+- 3 most recent session logs from `$AI_MEMORY_HOME/{project}/logs/`
+- Architecture decisions from `$AI_MEMORY_HOME/{project}/architecture/decisions.md`
+- Active plans from `.github/plans/` and `$AI_MEMORY_HOME/{project}/plans/`
 - Graphify report from `graphify-out/GRAPH_REPORT.md`
 - Current branch, recent commits, and working tree status
 
-Read-only — never modifies the vault.
+Read-only; never modifies the vault.
 
 ### checkpoint skill
 
 Runs when the user says "checkpoint". Writes to the vault:
-1. Creates a session log at `$COPILOT_VAULT/{project}/logs/{YYYY-MM-DD}-{short-description}.md`
-2. Appends to `$COPILOT_VAULT/{project}/architecture/decisions.md` if architectural decisions were made (never overwrites existing entries)
+1. Creates a session log at `$AI_MEMORY_HOME/{project}/logs/{YYYY-MM-DD}-{short-description}.md`
+2. Appends to `$AI_MEMORY_HOME/{project}/architecture/decisions.md` if architectural decisions were made (never overwrites existing entries)
 3. Creates new vault notes for discovered domain knowledge, following Zettelkasten rules
-
 
 ## Step 5 - Install Graphify
 
@@ -217,7 +225,7 @@ graphify .
 Optionally export communities as vault notes:
 
 ```bash
-graphify . --obsidian --obsidian-dir "$COPILOT_VAULT/graphify/{project}"
+graphify . --obsidian --obsidian-dir "$AI_MEMORY_HOME/graphify/{project}"
 ```
 
 This creates a `graphify-out/` directory with:
@@ -235,13 +243,13 @@ For large codebases, the first run takes a few minutes. Subsequent runs with `gr
 Store graphs centrally and symlink into each project:
 
 ```bash
-mkdir -p ~/.copilot/graphify/{project-name}
+mkdir -p ~/.ai-memory/graphify/{project-name}
 
 # Run graphify, then move output to persistent location
-mv graphify-out/* ~/.copilot/graphify/{project-name}/
+mv graphify-out/* ~/.ai-memory/graphify/{project-name}/
 
 # Symlink back into the project root
-ln -s ~/.copilot/graphify/{project-name} graphify-out
+ln -s ~/.ai-memory/graphify/{project-name} graphify-out
 ```
 
 Add `graphify-out` to the project `.gitignore`.
@@ -258,7 +266,7 @@ There is no need to rebuild the graph every session.
 
 ### Querying the Graph
 
-Never read `graph.json` directly — use the CLI:
+Never read `graph.json` directly; use the CLI:
 
 | Need | Command | Output size |
 |---|---|---|
@@ -276,65 +284,13 @@ Every edge in the graph is tagged:
 
 The agent can distinguish what was found versus what was inferred.
 
-
-## Step 6 - Configure Personal Instructions
-
-Add the vault and Graphify configuration to `~/.copilot/copilot-instructions.md` so every session picks it up automatically.
-
-### Vault Section
-
-```markdown
-## Obsidian Vault (Persistent Memory)
-
-The vault at `$COPILOT_VAULT` is the long-term memory across sessions.
-
-### Identify Current Project
-
-To determine the project folder in the vault, use the git repository name:
-
-REPO_NAME=$(basename "$(git rev-parse --show-toplevel)")
-
-Repository to vault folder mapping:
-
-| Repository | Vault folder |
-|---|---|
-| my-long-repo-name | short-name |
-
-For unmapped projects, create the folder using the repository name.
-```
-
-### Graphify and Session Skills Section
-
-```markdown
-## Context Navigation (Graphify)
-
-### 3-Layer Context Query Rule
-1. First: `graphify query "concept"` or `graphify-out/GRAPH_REPORT.md`
-2. Second: query the Obsidian vault for decisions, progress, and project context
-3. Third: only read source code files when editing or when the first two layers don't have the answer
-
-Never use grep or find to explore the codebase.
-
-## Session Skills
-
-| Command | Skill | Purpose |
-|---|---|---|
-| recall | ~/.copilot/skills/recall/ | Load vault context at session start |
-| checkpoint | ~/.copilot/skills/checkpoint/ | Save decisions and progress at session end |
-
-## Automatic Session Bootstrap
-
-On the first user message of every new session, automatically execute the bootstrap steps in AGENTS.md before responding.
-```
-
-
-## Step 7 - Verify the Setup
+## Step 6 - Verify the Setup
 
 ### Test bootstrap
 
-Start a new Copilot session in any project. The agent should automatically:
-1. Detect `$COPILOT_VAULT` and the project name
-2. Look for session logs in the vault (none yet — expected)
+Start a new session in any project. The agent should automatically:
+1. Detect `$AI_MEMORY_HOME` and the project name
+2. Look for session logs in the vault (none yet; expected)
 3. Show git state and report no prior sessions
 
 ### Test checkpoint
@@ -348,9 +304,7 @@ At the end of a session, say "checkpoint". The agent should:
 
 Run `graphify .` on a project, then ask the agent about the codebase architecture. It should run `graphify query` or read `GRAPH_REPORT.md` before reading any source file.
 
-
 ## Maintenance
 
 - **Vault cleanup**: periodically move resolved pending items out of logs, consolidate repeated decisions into permanent notes
 - **Graph rebuild**: run `graphify . --update` after major refactors or new module additions
-- **Repo mapping**: update the mapping table in personal instructions when adding new projects with non-obvious vault folder names
