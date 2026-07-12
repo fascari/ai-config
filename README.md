@@ -75,8 +75,8 @@ Skills are symlinked globally so every project can use them without per-project 
 
 | Provider | Location | Link name |
 |----------|----------|-----------|
-| Codex CLI | `~/.agents/skills/` | `atlas-ai-config-<skill>` |
-| Codex agents | `~/.codex/agents/` | `atlas-ai-config-<agent>.toml` |
+| Codex CLI | `~/.agents/skills/` | `<skill>` |
+| Codex agents | `~/.codex/agents/` | `<agent>.toml` |
 | GitHub Copilot | `~/.copilot/skills/` | `<skill>` |
 | Claude Code | `~/.claude/skills/` | `<skill>` |
 | Opencode | `~/.config/opencode/skills/` | `<skill>` |

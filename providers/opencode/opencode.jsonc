@@ -1,11 +1,6 @@
 {
   "$schema": "https://opencode.ai/config.json",
   "instructions": [
-    "AGENTS.md",
-    "~/.ai-config/rules/go-style.md",
-    "~/.ai-config/rules/testing.md",
-    "~/.ai-config/rules/error-handling.md",
-    "~/.ai-config/rules/package-design.md",
-    "~/.ai-config/rules/clean-architecture.md"
+    "AGENTS.md"
   ]
 }

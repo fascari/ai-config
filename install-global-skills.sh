@@ -64,7 +64,7 @@ esac
 
 if [[ "$provider" == "all" || "$provider" == "codex" ]]; then
   TARGETS["codex"]="$HOME/.agents/skills"
-  PREFIXES["codex"]="atlas-${repo_name}-"
+  PREFIXES["codex"]=""
 fi
 if [[ "$provider" == "all" || "$provider" == "copilot" ]]; then
   TARGETS["copilot"]="$HOME/.copilot/skills"
