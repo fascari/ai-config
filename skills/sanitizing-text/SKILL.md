@@ -186,7 +186,7 @@ Replace or remove any of the following. The list is not exhaustive; apply the sa
 - Remove filler openings: sentences that start with `So,`, `Well,`, `Basically,`, `In essence,`.
 - Remove closing affirmations: `Hope this helps`, `Feel free to`, `Let me know if`, `Happy to`, `I hope this helps`.
 - Remove sycophantic openings: `Great question!`, `Of course!`, `Certainly!`, `You're absolutely right!`.
-- Keep sentences short. If a sentence exceeds 30 words, split it.
+- Vary sentence length. Humans naturally write some short sentences and some longer ones with comma-separated clauses. A 50-word sentence is fine when the clauses connect logically; a paragraph of 15-word sentences all built the same way is the real Ai tell.
 - Use active voice. Passive constructions such as `it was decided that` must be rewritten (`the team decided`).
 - Remove subjectless fragments: `No configuration file needed` → `No configuration file is needed` or `You do not need a configuration file`.
 
@@ -372,11 +372,11 @@ Runs of sentences starting with the same subject ("It names...", "It covers...",
 
 ### Rule 21: Mix sentence lengths
 
-Uniform sentence length (all 15-25 words) is an AI signature. Vary the rhythm.
+Uniform sentence length (all 15-25 words, all built with the same structure) is an AI signature. Vary the rhythm.
 
-- Each paragraph needs at least one sentence under 10 words.
-- Short sentences add punch and emphasis. Use them after a longer sentence to land a point.
-- Do not let three consecutive sentences sit in the same word-count band.
+- Prefer a natural mix: one long sentence weaving clauses with commas, then a shorter one landing the point.
+- Do not mechanically insert a short sentence in every paragraph. Some paragraphs work as one long, flowing sentence.
+- Three consecutive sentences starting with the same subject is a stronger tell than uniform length.
 
 | Before | After |
 |---|---|
