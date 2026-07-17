@@ -16,7 +16,7 @@ Before editing code, read the relevant files from `rules/`:
 
 ## Skills
 
-Workflow skills are in `skills/`. Use `orchestrating-tasks` as the entry point for any codebase change.
+Workflow skills are in `skills/`. Use `orchestrating-tasks` as the entry point for any codebase change. Use `orchestrating-tasks-efficient` when cost-aware quality is preferred (Lean, Standard, or High Assurance modes).
 
 ## Agents
 

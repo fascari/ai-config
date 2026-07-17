@@ -3,9 +3,9 @@
 AI-assisted workflow skills for software engineering tasks. Each subdirectory contains a `SKILL.md` with the full instructions for that skill.
 
 
-## Entry Point
+## Entry Points
 
-Use **orchestrating-tasks** as the single entry point for any task involving codebase analysis or changes. It detects complexity, delegates to the right skills, and manages plan state.
+Use **orchestrating-tasks** as the single entry point when maximum assurance is required, or **orchestrating-tasks-efficient** when cost-aware quality is preferred.
 
 `orchestrating-tasks` is split into focused sub-files for maintainability. Read `orchestrating-tasks/SKILL.md` first, then open the relevant sub-file:
 
@@ -16,6 +16,17 @@ Use **orchestrating-tasks** as the single entry point for any task involving cod
 | `task-types.md` | Skill chain per task type, NEVER-dispatch-agents-directly rule |
 | `approval-and-output.md` | Approval checkpoints, plan artifact contract |
 
+`orchestrating-tasks-efficient` offers Lean, Standard, and High Assurance modes. Read `orchestrating-tasks-efficient/SKILL.md` first, then open the relevant sub-file:
+
+| Sub-file | Content |
+|---|---|
+| `dispatching.md` | Cost-aware model tier matrix, dispatch contract |
+| `task-types.md` | Complexity + risk classification, mode selection |
+| `gates.md` | Deterministic Go gates and conditional LLM gates |
+| `context-management.md` | `context-capsule.md` format and reuse rules |
+| `provider-dispatch.md` | Multi-provider call shapes |
+| `migration.md` | Comparison with `orchestrating-tasks` and migration guide |
+
 
 ## Skill Catalog
 
@@ -23,7 +34,8 @@ Use **orchestrating-tasks** as the single entry point for any task involving cod
 
 | Skill | Purpose |
 |---|---|
-| [orchestrating-tasks](orchestrating-tasks/) | Single entry point for all AI-assisted tasks. Detects complexity, routes to the right skill chain, manages plan state, and dispatches parallel agents when possible. |
+| [orchestrating-tasks](orchestrating-tasks/) | Single entry point for all AI-assisted tasks. Detects complexity, routes to the right skill chain, manages plan state, and dispatches parallel agents when possible. High Assurance reference. |
+| [orchestrating-tasks-efficient](orchestrating-tasks-efficient/) | Cost-aware entry point that preserves deterministic Go gates and cross-vendor review, but reduces dispatches, context repetition, and unnecessary Deep model usage. Offers Lean, Standard, and High Assurance modes. |
 | [compressing-context](compressing-context/) | Compresses the current session into `session-summary.md` so a new chat can resume where this one left off. Triggered manually or when context reaches 70%+. |
 | [resuming-context](resuming-context/) | Restores full working context from a compressed session summary and hands off to the correct skill to continue. |
 
