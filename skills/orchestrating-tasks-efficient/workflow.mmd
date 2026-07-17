@@ -1,0 +1,72 @@
+sequenceDiagram
+    autonumber
+    actor User
+    participant O as Orchestrator
+    participant A as Agent
+
+    Note over User,A: LEAN MODE (Simple complexity, Low/Medium risk)
+
+    User->>O: Task request
+    O->>O: Classify: Lean
+    O->>A: implementing-feature (Balanced)
+    A->>A: Deterministic Go gates (gofmt, build, lint, tests, style greps)
+    A-->>O: Completion report
+    O->>O: Update progress.md
+    O-->>User: Report + AI Execution Metrics
+
+    Note over User,A: STANDARD MODE (Standard complexity, Low/Medium risk)
+
+    User->>O: Task request
+    O->>O: Classify: Standard
+    O->>A: Consolidated discovery-and-planning (Balanced)
+    Note right of A: Stage 1: Research
+    Note right of A: Stage 2: Architecture assessment
+    Note right of A: Stage 3: Planning
+    A->>A: Write research.md
+    A->>A: Write system-design-analysis.md (if needed)
+    A->>A: Write implementation-plan.md
+    A->>A: Write context-capsule.md
+    A-->>O: Plan artifacts + capsule
+    O->>User: Approve implementation plan?
+    User-->>O: Approved
+    O->>A: implementing-feature (Balanced)
+    A->>A: Production code + style gate
+    A-->>O: Completion report
+    O->>A: testing-implementation (Balanced)
+    A->>A: Tests + lint
+    A-->>O: Completion report
+    O->>O: Run Completion Gate (gofmt, compile, lint, typecheck, tests, style greps, API check, package check)
+    O->>A: Combined Output Judge + semantic review (Balanced, cross-vendor)
+    Note right of A: AC coverage if requirements.md exists
+    Note right of A: Scope, architecture, regressions, errors, concurrency, test quality
+    A-->>O: PASS / FAIL
+    O->>O: Update progress.md
+    O-->>User: Report + AI Execution Metrics
+
+    Note over User,A: HIGH ASSURANCE MODE (High/Critical risk)
+
+    User->>O: Task request
+    O->>O: Classify: High Assurance
+    O->>A: researching-codebase (Deep)
+    A-->>O: research.md
+    O->>A: analyzing-system-design (Deep, mandatory)
+    A-->>O: system-design-analysis.md
+    O->>A: planning-implementation (Deep)
+    A-->>O: implementation-plan.md
+    O->>A: Critique gate (Deep, cross-vendor)
+    A-->>O: APPROVED
+    O->>User: Approve implementation plan?
+    User-->>O: Approved
+    O->>A: implementing-feature (Balanced or Deep)
+    A->>A: Production code + style gate
+    A-->>O: Completion report
+    O->>A: testing-implementation (Balanced or Deep)
+    A->>A: Tests + lint
+    A-->>O: Completion report
+    O->>O: Run Completion Gate
+    O->>A: Output Judge (Deep, cross-vendor)
+    A-->>O: PASS / FAIL
+    O->>A: Semantic review (Deep, cross-vendor)
+    A-->>O: PASS / FAIL
+    O->>O: Update progress.md
+    O-->>User: Report + AI Execution Metrics
