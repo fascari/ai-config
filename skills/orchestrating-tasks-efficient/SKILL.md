@@ -1,11 +1,11 @@
 ---
 name: orchestrating-tasks-efficient
-description: Cost-aware entry point for AI-assisted tasks. Preserves deterministic Go gates and cross-vendor review, but reduces dispatches, context repetition, and unnecessary Deep model usage.
+description: Cost-aware entry point for AI-assisted tasks. Preserves deterministic gates and cross-vendor review, but reduces dispatches, context repetition, and unnecessary Complex model usage.
 ---
 
 # Orchestrating Tasks: Efficient
 
-Cost-aware entry point for AI-assisted tasks. Preserves the deterministic Go gates, security controls, and cross-vendor review of `orchestrating-tasks`, but reduces dispatches, context repetition, and unnecessary Deep model usage.
+Cost-aware entry point for AI-assisted tasks. Preserves the deterministic gates, security controls, and cross-vendor review of `orchestrating-tasks`, but reduces dispatches, context repetition, and unnecessary Complex model usage.
 
 Use this skill when speed and cost matter more than the full High Assurance ceremony. Keep using `orchestrating-tasks` when maximum assurance is required.
 
@@ -38,10 +38,10 @@ Read this SKILL.md first for Critical Rules and Pre-Dispatch Checklist. Then ope
 - **Never write production code, tests, or commits directly**: delegate to the appropriate skill.
 - **Never propose, draft, or suggest commits**: commits and PRs require manual user commands only.
 - **Never transition `progress.md` to `REVIEW` from inside a skill**: only this orchestrator does that after gates pass.
-- **Always run deterministic Completion Gate before any LLM review**: lint, format, typecheck, relevant tests, and Go style greps must pass.
+- **Always run deterministic Completion Gate before any LLM review**: lint, format, typecheck, relevant tests, and style greps must pass.
 - **On gate failure**: present the failure to the user and wait for direction. Do not auto-dispatch a repair cycle.
-- **Balanced first, Deep on risk or escalation**: see `dispatching.md`.
-- **NEVER dispatch `go-implementer` or `go-tester` directly**: always dispatch the skills (`implementing-feature`, `testing-implementation`).
+- **Balanced first, Complex on risk or escalation**: see `dispatching.md`.
+- **NEVER dispatch `go-implementer` or `go-tester` directly**: always dispatch the skills (`implementing-feature`, `testing-implementation`). The skills detect the stack and decide: Go gets `go-implementer`/`go-tester`, non-Go gets `general-purpose`.
 - **`implementing-feature` owns production code, `testing-implementation` owns tests**: each returns a completion report.
 - **Cross-vendor rule applies to any judge/reviewer**: see `dispatching.md`.
 - **Do not run `sanitizing-text` on internal handoffs**: use it only for public output, PR descriptions, docs, and user-facing reports.
@@ -163,7 +163,7 @@ Flow: `orchestrator -> implementation -> deterministic gates`
    - no externally observable error handling change;
    - all deterministic gates remain mandatory.
    If any condition fails, split into separate `implementing-feature` and `testing-implementation` dispatches.
-4. Run deterministic Completion Gate: gofmt, compile, lint, scoped tests, style greps.
+4. Run deterministic Completion Gate: format, compile, lint, scoped tests, style greps.
 5. Run LLM review only when semantic risk is identified.
 6. Update `progress.md`.
 
@@ -185,15 +185,15 @@ Flow: `discovery-and-planning -> implementation -> testing -> deterministic comp
 
 Flow: reuse the full `orchestrating-tasks` workflow.
 
-1. Dispatch `researching-codebase` (Deep).
-2. Dispatch `analyzing-system-design` (Deep, mandatory).
-3. Dispatch `planning-implementation` (Deep).
-4. Run critique gate (Deep, cross-vendor) before implementation.
-5. Dispatch `implementing-feature` (Balanced or Deep for critical security/finance).
-6. Dispatch `testing-implementation` (Balanced; Deep only when tests involve Critical risk, complex concurrency, financial calculation, security, cryptography, smart contracts, or cross-service behavior. Record the override justification in the dispatch or `progress.md`).
+1. Dispatch `researching-codebase` (Complex).
+2. Dispatch `analyzing-system-design` (Complex, mandatory).
+3. Dispatch `planning-implementation` (Complex).
+4. Run critique gate (Expert Review, cross-vendor) before implementation.
+5. Dispatch `implementing-feature` (Balanced or Complex for critical security/finance).
+6. Dispatch `testing-implementation` (Balanced; Complex only when tests involve Critical risk, complex concurrency, financial calculation, security, cryptography, smart contracts, or cross-service behavior. Record the override justification in the dispatch or `progress.md`).
 7. Run deterministic Completion Gate.
-8. Run Output Judge (Deep, cross-vendor).
-9. Run semantic review (Deep, cross-vendor).
+8. Run Output Judge (Expert Review, cross-vendor).
+9. Run semantic review (Expert Review, cross-vendor).
 10. Update `progress.md`.
 
 In High Assurance, still reuse `context-capsule.md` instead of re-reading full artifacts.
@@ -264,7 +264,7 @@ Add a `## AI Execution Metrics` section to the final report:
 - mode chosen;
 - complexity and risk;
 - number of dispatches;
-- number of Deep agents used;
+- number of Complex agents used;
 - number of Balanced agents used;
 - Graphify queries executed;
 - gates executed;
@@ -278,12 +278,13 @@ Do not invent token counts. The goal is to enable comparison between `orchestrat
 
 ## Common Mistakes
 
-- Using Deep models for mechanical tasks (formatting, summaries, progress updates).
+- Using Complex models for mechanical tasks (formatting, summaries, progress updates).
 - Running `sanitizing-text` on handoffs, checkpoints, lint output, or progress updates.
 - Dispatching `go-implementer` or `go-tester` directly instead of the skills.
+- Dispatching `go-implementer` or `go-tester` for non-Go stacks.
 - Re-reading full `research.md` or `implementation-plan.md` when `context-capsule.md` is sufficient.
 - Parallelizing agents that share overlapping context just to save wall-clock time.
-- Skipping deterministic Go gates in any mode.
+- Skipping deterministic gates in any mode.
 
 ## Permissions
 

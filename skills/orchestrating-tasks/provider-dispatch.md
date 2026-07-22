@@ -12,6 +12,7 @@ call.
 Choose the role in `dispatching.md` first. Only then choose the transport:
 
 - **Copilot native**: `task(skill: ..., agent_type: ..., model: ..., mode: ..., prompt: ...)`
+- **OpenCode native**: model selection is agent-based; dispatch via `task(subagent_type: "...", description: "...", prompt: "...")`. See `orchestrating-tasks-efficient/provider-dispatch.md` for the tier → agent mapping.
 - **Codex managed**: generic worker call only; use the smallest accepted field set
 - **Claude managed**: generic worker call only unless the runtime explicitly exposes native skill dispatch
 
@@ -37,6 +38,28 @@ task(
   prompt: "{task prompt}"
 )
 ```
+
+### OpenCode
+
+OpenCode resolves models from agent definitions, not from dispatch calls. Each
+agent has a `model` field in its config (JSON or Markdown frontmatter). The
+orchestrator selects the agent by `subagent_type`; the model is implicit.
+
+Tier → agent mapping and full dispatch shapes live in
+`orchestrating-tasks-efficient/provider-dispatch.md`. This file reuses that
+reference without duplication.
+
+Dispatch shape:
+
+```unknown
+task(
+  subagent_type: "{agent name from mapping}",
+  description: "{short description}",
+  prompt: "{task prompt}"
+)
+```
+
+Do not pass `model:` in the Task tool call. It is not a supported parameter.
 
 ### Codex managed
 

@@ -2,60 +2,77 @@
 
 > Sub-file of `skills/orchestrating-tasks-efficient/SKILL.md`. Read SKILL.md first for Critical Rules and Pre-Dispatch Checklist.
 
-This file defines the deterministic Go gates that run in every mode, plus the conditional LLM gates used in Standard and High Assurance.
+This file defines the deterministic gates that run in every mode, plus the conditional LLM gates used in Standard and High Assurance. Gates are stack-aware: the commands used depend on the detected language stack.
 
 ---
 
-## Deterministic Go Gates (mandatory in every mode)
+## Deterministic Gates (mandatory in every mode)
 
-These gates are zero-token, command-based checks. They must pass before any LLM review or status transition.
+These gates are zero-token, command-based checks. They must pass before any LLM review or status transition. Commands are selected based on stack detection (see `implementing-feature` and `testing-implementation`).
+
+Gates are split into **mandatory** (must pass) and **configured** (run only if the tool is present in the project). Skipped configured gates do not block.
 
 ### 1. Format
 
-```bash
-gofmt -l $(git diff --name-only --diff-filter=AM HEAD | grep '\.go$')
-```
+**Go (mandatory):** `gofmt -l $(git diff --name-only --diff-filter=AM HEAD | grep '\.go$')`
 
-Pass: no files listed.
+**TypeScript (configured):** `npx prettier --check $(git diff --name-only --diff-filter=AM HEAD | grep -E '\.(ts|tsx)$')` — skip if `.prettierrc` / `prettier.config.*` not found
 
-### 2. Compile
+**Python (configured):** `python -m ruff format --check $(git diff --name-only --diff-filter=AM HEAD | grep '\.py$')` — skip if ruff not installed
 
-```bash
-go build ./path/to/changed/...
-```
+Pass: no files listed, or skipped.
 
-Pass: exit code 0.
+### 2. Compile / Typecheck
+
+**Go (mandatory):** `go build ./path/to/changed/...`
+
+**TypeScript (mandatory):** `npx tsc --noEmit --strict` — tsc is always a devDependency
+
+**Python (configured):** `python -m mypy path/to/changed/ --strict` — skip if mypy not installed. At least one configured gate must pass; escalate if none.
+
+Pass: exit code 0, or skipped with at least one other gate passing.
 
 ### 3. Lint
 
-```bash
-golangci-lint run ./path/to/changed/... | head -50
-```
+**Go (mandatory):** `golangci-lint run ./path/to/changed/... | head -50`
 
-Pass: exit code 0, no issues.
+**TypeScript (configured):** `npx eslint $(git diff --name-only --diff-filter=AM HEAD | grep -E '\.(ts|tsx)$') 2>&1 | head -50` — skip if `.eslintrc*` / `eslint.config.*` not found
+
+**Python (configured):** `python -m ruff check $(git diff --name-only --diff-filter=AM HEAD | grep '\.py$') 2>&1 | head -50` — skip if ruff not installed
+
+Pass: exit code 0, or skipped.
 
 ### 4. Typecheck
 
-```bash
-go vet ./path/to/changed/...
-```
+**Go:** `go vet ./path/to/changed/...`
+
+**TypeScript/Python:** already covered by step 2 (compile includes typecheck in these stacks).
 
 Pass: exit code 0.
 
 ### 5. Relevant tests
 
+**Go:**
 ```bash
-# Unit tests
 go test ./path/to/package/... -count=1 -timeout=60s
-
-# Integration tests
 grep -rl '//go:build integration' path/to/domain/ | xargs -I{} dirname {} | sort -u
-# Run each package found
 ```
+
+**TypeScript (mandatory):**
+```bash
+npx jest --findRelatedTests path/to/changed/file.test.ts 2>&1 | head -50
+```
+
+**Python (mandatory):**
+```bash
+python -m pytest path/to/changed/test_file.py -x 2>&1 | head -50
+```
+
+**Other (mandatory):** use the project's documented test command.
 
 Pass: all tests pass, exit code 0.
 
-### 6. Race detector
+### 6. Race detector (Go only)
 
 Run when the change touches goroutines, channels, `sync`, or concurrent access:
 
@@ -65,7 +82,7 @@ go test ./path/to/package/... -race -count=1 -timeout=120s
 
 Pass: no race detected.
 
-### 7. Style compliance greps
+### 7. Style compliance greps (Go only)
 
 Run all four checks:
 
@@ -87,20 +104,22 @@ git diff --name-only --diff-filter=AM HEAD | grep '\.go$' | xargs grep -nE \
 
 Pass: no output from any grep.
 
+> Non-Go stacks skip style greps. Trust community tooling (ESLint recommended, ruff's E/F/I/N/W).
+
 ### 8. API compatibility check
 
 When the diff changes exported functions, interfaces, or HTTP contracts:
 
 - Verify no exported signature changed without a compatibility decision.
-- Check that `context.Context` is propagated through new calls.
-- Check that errors are wrapped with `%w` and compared with `errors.Is` / `errors.As`.
 
-### 9. Package naming and structure
+### 9. Package naming and structure (Go only)
 
 - No new `utils`, `helpers`, `common`, `misc`, `shared`, `base`, `core`, `types`, or `model` packages.
 - Handler packages are per-operation (`handler/{operation}/`).
 - Domain types have no `json`, `gorm`, or framework tags.
 - Models stay inside `repository/` and do not leak.
+
+> Non-Go stacks: follow the project's existing conventions.
 
 ---
 
@@ -110,15 +129,15 @@ Run all applicable deterministic gates in order. Stop at first failure.
 
 ```markdown
 ## Completion Gate Results
-- gofmt: PASS / FAIL
+- format: PASS / FAIL / SKIPPED (tool not configured)
 - compile: PASS / FAIL
-- lint: PASS / FAIL
-- typecheck: PASS / FAIL
-- tests: PASS / FAIL / SKIPPED
-- race detector: PASS / FAIL / SKIPPED
-- style greps: PASS / FAIL
+- lint: PASS / FAIL / SKIPPED (tool not configured)
+- typecheck: PASS / FAIL / SKIPPED (covered by compile)
+- tests: PASS / FAIL
+- race detector: PASS / FAIL / SKIPPED (Go only or not applicable)
+- style greps: PASS / FAIL / SKIPPED (Go only)
 - API compatibility: PASS / FAIL / N/A
-- package structure: PASS / FAIL
+- package structure: PASS / FAIL / SKIPPED (Go only)
 ```
 
 On FAIL:
@@ -150,7 +169,7 @@ On PASS:
 
 Combine Output Judge and `reviewing-code` into a single cross-vendor review.
 
-Dispatch a `general-purpose` agent at Balanced tier (or Deep if risk is High). The agent must be from a different vendor than the implementer.
+Dispatch a `general-purpose` agent at Balanced tier (or Expert Review if risk is High). The agent must be from a different vendor than the implementer.
 
 Prompt:
 
@@ -211,9 +230,9 @@ On FAIL:
 
 Keep the gates from `skills/orchestrating-tasks/gates.md`:
 
-- Critique gate before implementation (Deep, cross-vendor).
-- Output Judge after implementation (Deep, cross-vendor).
-- Semantic review after Output Judge (Deep, cross-vendor).
+- Critique gate before implementation (Expert Review, cross-vendor).
+- Output Judge after implementation (Expert Review, cross-vendor).
+- Semantic review after Output Judge (Expert Review, cross-vendor).
 
 Each judge receives the diff and the capsule, not the full session history.
 
@@ -221,7 +240,7 @@ Each judge receives the diff and the capsule, not the full session history.
 
 ## Gate Avoidance Rules
 
-- Do not run a Deep LLM gate when deterministic gates already cover the concern.
+- Do not run a Complex LLM gate when deterministic gates already cover the concern.
 - Do not run `sanitizing-text` on gate results, lint output, or progress updates.
 - Do not run AC coverage validation (equivalent to Output Judge) when `requirements.md` is absent. The semantic review component of the Standard combined review remains mandatory regardless: it still validates scope, architecture, regressions, error handling, concurrency, and test quality.
 - Do not run the standalone Output Judge gate when `requirements.md` is absent in High Assurance. Proceed directly to semantic review.
@@ -235,7 +254,7 @@ Update `{plan_root}/{slug}/progress.md` after every gate run:
 
 ```markdown
 ## Harness Gates
-- gofmt: PASS
+- format: PASS
 - compile: PASS
 - lint: PASS
 - typecheck: PASS

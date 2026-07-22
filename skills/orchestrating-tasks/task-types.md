@@ -23,8 +23,9 @@ This file covers task type classification, the skill chain for each task type, a
 `implementing-feature` and `testing-implementation` each run deterministic gates internally (lint + style greps). The orchestrator dispatches only the skills, never the code agents directly.
 
 **CRITICAL: NEVER dispatch `go-implementer` or `go-tester` directly for implementation work.**
-These are underlying logical roles. The orchestrator MUST always dispatch the SKILLS
-(`implementing-feature` -> `go-implementer`, `testing-implementation` -> `go-tester`).
+These are underlying logical roles for **Go stacks only**. The orchestrator MUST always dispatch the SKILLS
+(`implementing-feature`, `testing-implementation`). The skills detect the stack and decide the logical role:
+`go-implementer`/`go-tester` for Go, `general-purpose` for TypeScript, Python, or unknown stacks.
 The skills are the wrappers that enforce quality gates. Bypassing the skills bypasses
 the quality checks entirely.
 
@@ -32,18 +33,24 @@ the quality checks entirely.
 # WRONG - bypasses quality gates
 task(agent_type: "go-implementer", ...)     <- direct agent, no quality gates
 task(agent_type: "go-tester", ...)          <- direct agent, no quality gates
+task(agent_type: "go-tester", ...)          <- dispatched for non-Go stack (hard rule violation)
 spawn_worker(prompt: "act like go-implementer", ...) <- managed worker accepted as final without orchestrator review
 
-# CORRECT - choose by runtime
+# CORRECT - choose by runtime. implementer role is stack-dependent.
 Copilot native:
+# Go stack
 task(skill: "implementing-feature", agent_type: "go-implementer", ...)
 task(skill: "testing-implementation", agent_type: "go-tester", ...)
+# Non-Go stack (TypeScript, Python, etc.)
+task(skill: "implementing-feature", agent_type: "general-purpose", ...)
+task(skill: "testing-implementation", agent_type: "general-purpose", ...)
 
 Codex/Claude managed:
+# Go stack
 spawn_agent(agent: "go-implementer", prompt: "...")  <- when a matching Codex custom agent exists
 spawn_agent(agent: "go-tester", prompt: "...")       <- when a matching Codex custom agent exists
-spawn_worker(prompt: "Logical role: go-implementer ...", ...) <- fallback
-spawn_worker(prompt: "Logical role: go-tester ...", ...)      <- fallback
+# Non-Go stack
+spawn_worker(prompt: "Logical role: general-purpose ...", ...) <- fallback
 orchestrator manual acceptance checklist
 ```
 
@@ -80,8 +87,11 @@ Dispatch order:
 Native harness mode remains the preferred path for Copilot-style runtimes:
 
 ```unknown
-task(skill: "implementing-feature", agent_type: "go-implementer", ...)
-task(skill: "testing-implementation", agent_type: "go-tester", ...)
+# The skill detects the stack internally
+task(skill: "implementing-feature", agent_type: "go-implementer", ...)  # Go stack
+task(skill: "implementing-feature", agent_type: "general-purpose", ...) # non-Go stack
+task(skill: "testing-implementation", agent_type: "go-tester", ...)     # Go stack
+task(skill: "testing-implementation", agent_type: "general-purpose", ...) # non-Go stack
 ```
 
 Codex managed mode is different:

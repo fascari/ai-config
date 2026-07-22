@@ -21,12 +21,33 @@ Implements **production code only**, phase by phase, validates with linter and s
 
 ## Execution Model
 
-When dispatched by `orchestrating-tasks`, choose the logical role first, then render the actual call using `skills/orchestrating-tasks/provider-dispatch.md`.
+When dispatched by `orchestrating-tasks`, detect the stack first, then choose the logical role. Render the actual call using `skills/orchestrating-tasks/provider-dispatch.md`.
 
-- Go production work -> logical role `go-implementer`
-- Non-Go production work -> logical role `general-purpose`
+### Stack Detection
 
-In Copilot native mode this may map to `agent_type`. In Codex managed mode prefer a matching custom agent from `~/.codex/agents/` or `.codex/agents/`; otherwise bind the logical role in the prompt and treat the worker output as untrusted until the orchestrator accepts it.
+```bash
+STACK="unknown"
+[ -f "go.mod" ] && STACK="go"
+[ -f "package.json" ] && STACK="typescript"
+[ -f "pyproject.toml" ] && STACK="python"
+[ -f "setup.py" ] || [ -f "requirements.txt" ] && STACK="python"
+echo "stack=$STACK"
+```
+
+### Dispatch by stack
+
+| Stack | Logical role | Why |
+|---|---|---|
+| Go | `go-implementer` | Custom agent with Go conventions front-loaded. Go code rules and style gates apply. |
+| TypeScript / JavaScript | `general-purpose` | No TS-specific implementer exists. Depend on deterministic gates (`tsc --strict`, `eslint`, `prettier`). |
+| Python | `general-purpose` | No Python-specific implementer exists. Depend on deterministic gates (`mypy --strict`, `ruff check`). |
+| Other / unknown | `general-purpose` | Fall back to project's own test/lint commands. Warn the orchestrator. |
+
+### Hard rule
+
+**Never dispatch `go-implementer` for non-Go stacks.** The Go code rules and style gates only apply when `STACK=go`. For any other stack, skip the Go-specific sections below and use only the non-Go gates.
+
+In Copilot native mode `go-implementer` may map to `agent_type`. In Codex managed mode prefer a matching custom agent from `~/.codex/agents/` or `.codex/agents/`; otherwise bind the logical role in the prompt and treat the worker output as untrusted until the orchestrator accepts it.
 
 ---
 
@@ -84,7 +105,9 @@ Read only the instruction files whose `applyTo` glob matches files you will chan
    ```
 5. Implement following all project coding rules from the active provider-native project instruction files and any repo docs they explicitly route you to.
 6. After EVERY file edit, compile-check immediately and fix all issues.
-7. **Style compliance gate** (run all before step 8):
+7. **Style compliance gate** (run ALL that apply to the detected stack before step 8):
+
+   **Go stack (`STACK=go`):**
 
    a. File-name audit (Go):
    ```bash
@@ -107,14 +130,62 @@ Read only the instruction files whose `applyTo` glob matches files you will chan
 
    d. Dead-code: every newly exported symbol must have an external caller.
 
-8. **HARD GATE: lint must pass before handoff.** Run and fix ALL issues:
-   ```bash
-   # Use the project's lint command scoped to changed paths
-   # e.g. golangci-lint run ./path/to/changed/... | head -50
-   ```
-   Only proceed when lint returns 0 issues.
+   **Non-Go stacks (TypeScript, Python, other):**
 
-   > **Note:** Semantic validation (rules compliance, architecture, error handling) happens in `reviewing-code`, not here. This phase focuses on deterministic gates only (lint + style greps).
+   Skip a-d above. Instead:
+   - Run the stack's own compile/lint/format commands (see step 8).
+   - Trust the stack's community tooling (ESLint, Prettier, mypy, ruff) for style.
+   - Do not apply Go naming or style conventions to non-Go code.
+
+8. **HARD GATE: compile + lint + format must pass before handoff.**
+
+   **Go stack:**
+   ```bash
+   golangci-lint run ./path/to/changed/... | head -50
+   ```
+
+   **TypeScript stack:**
+   ```bash
+   # Always run: compile check (tsc is a devDependency in every TS project)
+   npx tsc --noEmit --strict 2>&1 | head -50
+   ```
+   Then detect and run only the tools that are configured:
+   ```bash
+   # ESLint: run only if configured
+   if [ -f ".eslintrc" ] || [ -f ".eslintrc.js" ] || [ -f ".eslintrc.json" ] || \
+      [ -f "eslint.config.js" ] || [ -f "eslint.config.mjs" ] || \
+      grep -q '"eslint"' package.json 2>/dev/null; then
+     npx eslint src/ 2>&1 | head -50
+   else
+     echo "SKIPPED: eslint not configured in this project"
+   fi
+   # Prettier: run only if configured
+   if [ -f ".prettierrc" ] || [ -f ".prettierrc.js" ] || [ -f ".prettierrc.json" ] || \
+      [ -f "prettier.config.js" ] || grep -q '"prettier"' package.json 2>/dev/null; then
+     npx prettier --check src/ 2>&1 | head -50
+   else
+     echo "SKIPPED: prettier not configured in this project"
+   fi
+   ```
+   **Mandatory: `tsc --strict` + `npm test`.** ESLint and Prettier are skipped with a warning when not configured.
+
+   **Python stack:**
+   ```bash
+   # Run only what is installed and configured
+   python -m mypy src/ --strict 2>&1 | head -50 2>/dev/null || echo "SKIPPED: mypy not available"
+   python -m ruff check src/ 2>&1 | head -50 2>/dev/null || echo "SKIPPED: ruff not available"
+   python -m ruff format --check src/ 2>&1 | head -50 2>/dev/null || echo "SKIPPED: ruff not available"
+   ```
+   At least one gate must pass. If all tools are unavailable, escalate to the user.
+
+   **Other / unknown stack:**
+   ```bash
+   # Use whatever test/lint command the project documents
+   # e.g. npm test, make check, cargo test
+   ```
+   Only proceed when mandatory commands return 0. Skipped gates (tool not configured) do not block. Escalate if no gate passes at all.
+
+   > **Note:** Semantic validation (rules compliance, architecture, error handling) happens in `reviewing-code`, not here. This phase focuses on deterministic gates only (compile + lint + format).
 
 9. If a non-obvious domain, database, or architectural anti-pattern is discovered:
    - Surface it in the phase summary.
@@ -138,7 +209,9 @@ After lint and style gate pass, prepare this handoff for `testing-implementation
 
 ---
 
-## Go Code Rules
+## Go Code Rules (Go stack only)
+
+When `STACK=go`, apply these rules. Skip this entire section for non-Go stacks.
 
 - Grouped declarations: `type ( )`, `var ( )`, `const ( )`
 - No `else`: early returns only
@@ -151,14 +224,22 @@ After lint and style gate pass, prepare this handoff for `testing-implementation
 - Pure functions over impure · inline logic when not reused
 - Comments only for non-obvious WHY
 
-### Context & Observability
+### Context & Observability (Go)
 - Propagate `ctx` through ALL calls
 - Wrap errors: `fmt.Errorf("context: %w", err)`
+
+### Non-Go stacks
+
+No language-specific code rules are prescribed. Defer to:
+- The stack's community linter defaults (e.g. ESLint recommended, ruff's E/F/I/N/W)
+- The project's existing code patterns (follow local conventions, read neighboring files)
+- The style gate (step 7-8) serves as the deterministic quality check
 
 ---
 
 ## Quality Checklist (before presenting code)
 
+**Go stack:**
 - [ ] Declarations grouped
 - [ ] No `else` · early returns · context propagated
 - [ ] Errors wrapped with `%w`
@@ -166,6 +247,13 @@ After lint and style gate pass, prepare this handoff for `testing-implementation
 - [ ] Value receivers · pure functions where possible
 - [ ] `errors.Is()`: never `==`
 - [ ] No magic strings (typed constants)
+- [ ] Backward compatibility verified
+
+**Non-Go stacks:**
+- [ ] Compile/lint/format gates pass (step 8)
+- [ ] Existing project patterns respected (read neighboring files)
+- [ ] No unnecessary dependencies or framework introductions
+- [ ] Change is minimal (no unrelated refactors)
 - [ ] Backward compatibility verified
 
 ---

@@ -39,7 +39,7 @@ Risk overrides complexity. A 10-line balance calculation change is Simple in siz
 orchestrator
   -> create context-capsule.md
   -> dispatch implementing-feature (Balanced)
-     -> deterministic gates (gofmt, compile, lint, style greps, scoped tests)
+     -> deterministic gates (format, compile, lint, style greps, scoped tests)
   -> [optional] semantic review if risk surfaces
   -> update progress.md
 ```
@@ -89,22 +89,22 @@ Rules:
 - Research, planning, and conditional system design happen in one dispatch.
 - One combined LLM review at the end.
 - No separate critique gate.
-- Deep used only for the final review when risk is High within Standard.
+- Expert Review used only for the final review when risk is High within Standard.
 
 ### High Assurance
 
 ```
 orchestrator
-  -> dispatch researching-codebase (Deep)
-  -> dispatch analyzing-system-design (Deep, mandatory)
-  -> dispatch planning-implementation (Deep)
-  -> critique gate (Deep, cross-vendor)
+  -> dispatch researching-codebase (Complex)
+  -> dispatch analyzing-system-design (Complex, mandatory)
+  -> dispatch planning-implementation (Complex)
+  -> critique gate (Expert Review, cross-vendor)
   -> user approves plan
-  -> dispatch implementing-feature (Balanced or Deep)
-  -> dispatch testing-implementation (Balanced; Deep only when tests involve Critical risk, complex concurrency, financial calculation, security, cryptography, smart contracts, or cross-service behavior. Record the override justification in the dispatch or progress.md.)
+  -> dispatch implementing-feature (Balanced or Complex)
+  -> dispatch testing-implementation (Balanced; Complex only when tests involve Critical risk, complex concurrency, financial calculation, security, cryptography, smart contracts, or cross-service behavior. Record the override justification in the dispatch or progress.md.)
   -> deterministic Completion Gate
-  -> Output Judge (Deep, cross-vendor)
-  -> semantic review (Deep, cross-vendor)
+  -> Output Judge (Expert Review, cross-vendor)
+  -> semantic review (Expert Review, cross-vendor)
   -> update progress.md
 ```
 
@@ -112,7 +112,7 @@ Rules:
 
 - Reuse context-capsule.md between phases instead of re-reading full artifacts.
 - Do not parallelize agents that need the same code areas.
-- Do not use Deep for mechanical tasks.
+- Do not use Complex for mechanical tasks.
 
 ---
 
@@ -156,4 +156,4 @@ The skills enforce deterministic gates. Direct agent dispatch bypasses them.
 
 - If a skill fails mid-execution, capture the error, update `progress.md` with the failure point, and present options (retry, skip, abort).
 - If a tool is unavailable, inform the user and proceed with local-only context.
-- If a Balanced model fails a semantic gate, escalate to Deep once. If Deep also fails, stop for user direction.
+- If a Balanced model fails a semantic gate, escalate to Complex once. If Complex also fails, stop for user direction.

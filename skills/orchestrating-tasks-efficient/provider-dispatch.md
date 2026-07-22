@@ -37,26 +37,38 @@ task(
 
 ### OpenCode
 
-OpenCode discovers skills globally from `~/.config/opencode/skills/` and `~/.agents/skills/`.
+OpenCode discovers skills globally from `~/.config/opencode/skills/` and agents from `~/.config/opencode/agents/`. Model selection is **agent-based**, not call-based: each agent defines its own `model` in its config. The orchestrator selects the right agent for the tier.
 
-Preferred native shape when available:
+Model IDs use the provider prefix: `opencode-go/<model-id>` for Go, `opencode/<model-id>` for Zen.
+
+#### Tier → agent mapping
+
+| Tier | Agent | Model (Go) |
+|---|---|---|
+| Balanced | `go-implementer` (Go), `go-tester` (Go), `general` (default) | opencode-go/deepseek-v4-pro |
+| Complex | `general-complex` | opencode-go/kimi-k2.7-code |
+| Fast | `general-fast` | opencode-go/deepseek-v4-flash |
+| Expert Review | `reviewer-expert` | opencode-go/glm-5.2 |
+
+#### Dispatch shapes
+
+Dispatch a skill to a specific subagent (model determined by agent config):
+
+```unknown
+task(
+  subagent_type: "{agent name from mapping}",
+  description: "{short description}",
+  prompt: "{task prompt}"
+)
+```
+
+Load a skill inline in the current agent (no model change, uses current agent's model):
 
 ```unknown
 skill(name: "implementing-feature", prompt: "{task prompt}")
 ```
 
-Fallback shape when only task dispatch is exposed:
-
-```unknown
-task(
-  skill: "implementing-feature",
-  agent_type: "go-implementer",
-  model: "{provider-tier model}",
-  prompt: "{task prompt}"
-)
-```
-
-If neither is available, fall back to the Codex managed generic worker shape.
+Do not pass `model:` in the dispatch call. OpenCode resolves the model from the agent definition, not from the Task tool invocation.
 
 ### Codex managed
 

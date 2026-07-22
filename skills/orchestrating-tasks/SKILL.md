@@ -51,7 +51,7 @@ These rules always apply regardless of task type. Read them before anything else
 Answer these questions explicitly in your reasoning BEFORE dispatching any subagent. If you cannot answer all of them, do not dispatch yet.
 
 1. **Complexity tier?** Simple | Standard | Complex
-2. **Model tier + logical role?** From `dispatching.md` matrix; Deep override if Complex judge/reviewer.
+2. **Model tier + logical role?** From `dispatching.md` matrix; Expert Review override for judge/reviewer roles in Complex tasks.
 3. **Subagent needs codebase exploration?** If yes (researching, critique, reviewing), inject the verbatim Codebase Search Rules block from `dispatching.md`.
 4. **Approval needed before dispatch?** Check `approval-and-output.md` Approval Checkpoints table.
 5. **Does the phase touch both production files AND test files?** If yes, SPLIT into two dispatches.

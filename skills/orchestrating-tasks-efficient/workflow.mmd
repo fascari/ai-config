@@ -9,7 +9,7 @@ sequenceDiagram
     User->>O: Task request
     O->>O: Classify: Lean
     O->>A: implementing-feature (Balanced)
-    A->>A: Deterministic Go gates (gofmt, build, lint, tests, style greps)
+    A->>A: Deterministic gates (format, build, lint, typecheck, tests, style greps)
     A-->>O: Completion report
     O->>O: Update progress.md
     O-->>User: Report + AI Execution Metrics
@@ -35,7 +35,7 @@ sequenceDiagram
     O->>A: testing-implementation (Balanced)
     A->>A: Tests + lint
     A-->>O: Completion report
-    O->>O: Run Completion Gate (gofmt, compile, lint, typecheck, tests, style greps, API check, package check)
+    O->>O: Run Completion Gate (format, compile, lint, typecheck, tests, style greps, API check, package check)
     O->>A: Combined Output Judge + semantic review (Balanced, cross-vendor)
     Note right of A: AC coverage if requirements.md exists
     Note right of A: Scope, architecture, regressions, errors, concurrency, test quality
@@ -47,26 +47,26 @@ sequenceDiagram
 
     User->>O: Task request
     O->>O: Classify: High Assurance
-    O->>A: researching-codebase (Deep)
+    O->>A: researching-codebase (Complex)
     A-->>O: research.md
-    O->>A: analyzing-system-design (Deep, mandatory)
+    O->>A: analyzing-system-design (Complex, mandatory)
     A-->>O: system-design-analysis.md
-    O->>A: planning-implementation (Deep)
+    O->>A: planning-implementation (Complex)
     A-->>O: implementation-plan.md
-    O->>A: Critique gate (Deep, cross-vendor)
+    O->>A: Critique gate (Expert Review, cross-vendor)
     A-->>O: APPROVED
     O->>User: Approve implementation plan?
     User-->>O: Approved
-    O->>A: implementing-feature (Balanced or Deep)
+    O->>A: implementing-feature (Balanced or Complex)
     A->>A: Production code + style gate
     A-->>O: Completion report
-    O->>A: testing-implementation (Balanced or Deep)
+    O->>A: testing-implementation (Balanced or Complex)
     A->>A: Tests + lint
     A-->>O: Completion report
     O->>O: Run Completion Gate
-    O->>A: Output Judge (Deep, cross-vendor)
+    O->>A: Output Judge (Expert Review, cross-vendor)
     A-->>O: PASS / FAIL
-    O->>A: Semantic review (Deep, cross-vendor)
+    O->>A: Semantic review (Expert Review, cross-vendor)
     A-->>O: PASS / FAIL
     O->>O: Update progress.md
     O-->>User: Report + AI Execution Metrics

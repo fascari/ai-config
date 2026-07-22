@@ -14,7 +14,7 @@ After `planning-implementation` completes and before `implementing-feature` star
 - Standard tasks: offer the gate to the user; proceed if they skip.
 - Complex tasks: run the gate (mandatory).
 
-Dispatch a **general-purpose judge role** using the provider-specific shape from `provider-dispatch.md`. **Cross-vendor rule applies** - planning-implementation runs at Balanced/Deep (typically Anthropic); critique-gate MUST use a different vendor (OpenAI or Google). See `dispatching.md`.
+Dispatch a **general-purpose judge role** using the provider-specific shape from `provider-dispatch.md`. **Cross-vendor rule applies** - planning-implementation runs at Balanced/Complex (typically Anthropic); critique-gate MUST use a different vendor (OpenAI or Google). See `dispatching.md`.
 
 Include the Codebase Search Rules block (from `dispatching.md`) in the prompt, critique-gates need to verify claims against the code.
 
@@ -56,7 +56,7 @@ After both `implementing-feature` and `testing-implementation` complete, run an 
 
 **Only runs when `requirements.md` exists.** If absent, skip and proceed to `reviewing-code`.
 
-Dispatch a **general-purpose judge role**, Deep tier, **cross-vendor**, using the provider-specific shape from `provider-dispatch.md`:
+Dispatch a **general-purpose judge role**, Expert Review tier, **cross-vendor**, using the provider-specific shape from `provider-dispatch.md`:
 
 ```
 You are an adversarial Output Judge. Do NOT act as a developer or helper.

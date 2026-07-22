@@ -35,7 +35,7 @@ Use **orchestrating-tasks** as the single entry point when maximum assurance is 
 | Skill | Purpose |
 |---|---|
 | [orchestrating-tasks](orchestrating-tasks/) | Single entry point for all AI-assisted tasks. Detects complexity, routes to the right skill chain, manages plan state, and dispatches parallel agents when possible. High Assurance reference. |
-| [orchestrating-tasks-efficient](orchestrating-tasks-efficient/) | Cost-aware entry point that preserves deterministic Go gates and cross-vendor review, but reduces dispatches, context repetition, and unnecessary Deep model usage. Offers Lean, Standard, and High Assurance modes. |
+| [orchestrating-tasks-efficient](orchestrating-tasks-efficient/) | Cost-aware entry point that preserves deterministic gates and cross-vendor review, but reduces dispatches, context repetition, and unnecessary Complex model usage. Offers Lean, Standard, and High Assurance modes. |
 | [compressing-context](compressing-context/) | Compresses the current session into `session-summary.md` so a new chat can resume where this one left off. Triggered manually or when context reaches 70%+. |
 | [resuming-context](resuming-context/) | Restores full working context from a compressed session summary and hands off to the correct skill to continue. |
 

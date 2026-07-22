@@ -71,9 +71,9 @@ func (u UseCase) Execute(ctx context.Context, input Input) (Output, error)
 
 ## Lint and Test Commands
 ```bash
-gofmt -l path/to/changed
-go test ./path/to/package/... -count=1 -timeout=60s
-golangci-lint run ./path/to/changed/...
+format command
+test command
+lint command
 ```
 
 ## Current State

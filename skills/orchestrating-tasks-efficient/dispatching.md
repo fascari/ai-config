@@ -8,31 +8,32 @@ This file covers model tier selection, dispatch contract, Style Reinforcement bl
 
 ## Capability Tiers
 
-Use these tier names. Exact models depend on the provider.
-
 | Tier | Characteristics | When to use |
 |---|---|---|
-| **Fast** | Low latency, lowest cost, deterministic or rule-based | Sanitization, formatting, summaries, progress updates, text transformation |
+| **Fast** | Low latency, lowest cost | Sanitization, formatting, summaries, progress updates, text transformation |
 | **Balanced** | Good reasoning at moderate cost | Default for research, planning, implementation, tests, and low-risk review |
-| **Deep** | Highest reasoning, highest cost | Architecture cross-domain, unclear root cause, complex concurrency, security, finance, migrations, critique, high-risk semantic review, escalation |
+| **Complex** | High reasoning, higher cost | Unfamiliar codebases, large refactors, multi-domain changes, unclear root cause, complex concurrency, security, finance, migrations, escalation |
+| **Expert Review** | Maximum reasoning, highest cost | Architecture validation, cross-domain critique, critical semantic review |
 
 ### Provider model reference
 
-| Tier | Anthropic (Claude) | OpenAI (Codex/GPT) | Google (Gemini) |
-|---|---|---|---|
-| **Fast** | claude-haiku-* | gpt-*-mini, o4-mini | gemini-flash-* |
-| **Balanced** | claude-sonnet-* | gpt-*/codex (default) | gemini-pro-* |
-| **Deep** | claude-opus-* (effort: high) | gpt-*/o-series (high effort) | gemini-pro-* (high effort) |
+| Tier | OpenCode (Go) | Anthropic (Claude) | OpenAI | Google (Gemini) |
+|---|---|---|---|---|
+| **Fast** | deepseek-v4-flash, mimo-v2.5 | claude-haiku-* | gpt-*-mini, o4-mini | gemini-flash-* |
+| **Balanced** | deepseek-v4-pro (default) | claude-sonnet-* | gpt-*/codex (default) | gemini-pro-* |
+| **Complex** | kimi-k2.7-code | claude-opus-* | gpt-*/o-series | gemini-pro-* |
+| **Expert Review** | glm-5.2 | — (use cross-vendor) | — (use cross-vendor) | — (use cross-vendor) |
 
-These are examples. Use the current model version your provider offers at each tier.
+> Tier names and model assignments follow `providers/opencode/docs/model-routing.md`.
+> OpenCode Go provides `opencode-go/<model-id>`. OpenCode Zen provides `opencode/<model-id>`. Models listed are the Go variants.
 
 ---
 
 ## Core Model Rule
 
-**Balanced first, Deep on risk or escalation.**
+**Balanced first, Complex on risk or escalation.**
 
-Except for explicit High Assurance, unknown-root-cause, or escalation overrides, do not use Deep by default for research, planning, implementation, or testing. Deep is reserved for:
+Except for explicit High Assurance, unknown-root-cause, or escalation overrides, do not use Complex by default for research, planning, implementation, or testing. Complex is reserved for:
 
 - High Assurance critique;
 - High-risk semantic review;
@@ -45,23 +46,25 @@ Except for explicit High Assurance, unknown-root-cause, or escalation overrides,
 
 Select a logical role here. Render the actual call using `provider-dispatch.md`. Never invoke a skill inline in a multi-skill workflow.
 
+For OpenCode, select the agent name from the tier → agent mapping in `provider-dispatch.md`. The model is configured on the agent, not passed per call.
+
 | Skill / Gate | Logical role | Default tier | Override |
 |---|---|---|---|
-| `researching-codebase` | `general-purpose` | Balanced | Deep for High Assurance or unclear root cause |
-| `planning-implementation` | `general-purpose` | Balanced | Deep for High Assurance or cross-domain architecture |
-| Consolidated discovery + planning (Standard) | `general-purpose` | Balanced | Deep when system design is required; see template below |
-| `implementing-feature` | `go-implementer` | Balanced | Deep for finance/security/critical concurrency |
-| `testing-implementation` | `go-tester` | Balanced | Deep for finance/security/critical concurrency tests |
-| `reviewing-code` (semantic review) | `general-purpose` | Balanced | Deep for High Risk/Critical or cross-domain |
-| Standard combined review (Output Judge + semantic review) | `general-purpose` | Balanced | Deep when risk is High or Balanced is insufficient |
-| HA critique gate | `general-purpose` judge | Deep | Deep + high effort for Complex/Critical; cross-vendor mandatory |
-| HA Output Judge | `general-purpose` judge | Deep | Deep + high effort for Complex/Critical; cross-vendor mandatory |
-| HA semantic review | `general-purpose` | Deep | Cross-vendor mandatory |
+| `researching-codebase` | `general-purpose` | Balanced | Complex for High Assurance or unclear root cause |
+| `planning-implementation` | `general-purpose` | Balanced | Complex for High Assurance or cross-domain architecture |
+| Consolidated discovery + planning (Standard) | `general-purpose` | Balanced | Complex when system design is required; see template below |
+| `implementing-feature` | `go-implementer` (Go) / `general-purpose` (non-Go) | Balanced | Complex for finance/security/critical concurrency |
+| `testing-implementation` | `go-tester` (Go) / `general-purpose` (non-Go) | Balanced | Complex for finance/security/critical concurrency tests |
+| `reviewing-code` (semantic review) | `general-purpose` | Balanced | Expert Review for High Risk/Critical or cross-domain |
+| Standard combined review (Output Judge + semantic review) | `general-purpose` | Balanced | Expert Review when risk is High or Balanced is insufficient |
+| HA critique gate | `general-purpose` judge | Expert Review | Cross-vendor mandatory |
+| HA Output Judge | `general-purpose` judge | Expert Review | Cross-vendor mandatory |
+| HA semantic review | `general-purpose` | Expert Review | Cross-vendor mandatory |
 | `sanitizing-text` | `general-purpose` | Fast | - |
 | `committing-changes` | `general-purpose` | Fast | - |
 | `creating-pull-request` | `general-purpose` | Fast | - |
 
-Implementation always uses Balanced or Deep. Fast is never allowed for writing production code. Fast is restricted to mechanical transformations, formatting, status updates, and final sanitization.
+Implementation always uses Balanced or Complex. Fast is never allowed for writing production code. Fast is restricted to mechanical transformations, formatting, status updates, and final sanitization.
 
 ---
 
@@ -71,20 +74,24 @@ Any agent that judges, validates, critiques, reviews, or scores the output of an
 
 ### Vendor groups
 
-| Vendor | Examples |
-|---|---|
-| **Anthropic** | claude-haiku-*, claude-sonnet-*, claude-opus-* |
-| **OpenAI** | gpt-*-mini, gpt-*, o-series, codex-* |
-| **Google** | gemini-flash-*, gemini-pro-* |
+| Vendor | Models | Provider prefix |
+|---|---|---|
+| **DeepSeek** | deepseek-v4-pro, deepseek-v4-flash | opencode-go/deepseek-* |
+| **Moonshot** | kimi-k2.7-code | opencode-go/kimi-* |
+| **Zhipu** | glm-5.2 | opencode-go/glm-* |
+| **MiniMax** | mimo-v2.5 | opencode-go/mimo-* |
+| **Anthropic** | claude-sonnet-*, claude-haiku-*, claude-opus-* | anthropic/* |
+| **OpenAI** | gpt-*, o-series, codex-* | openai/* |
+| **Google** | gemini-flash-*, gemini-pro-* | google/* |
 
-### Producer to judge pairing
+### Producer → judge pairing (OpenCode primary)
 
-| Producer | Suggested judge vendor |
-|---|---|
-| implementing-feature (Anthropic) | OpenAI or Google |
-| testing-implementation (Anthropic) | OpenAI or Google |
-| planning-implementation / consolidated discovery (Anthropic) | OpenAI or Google |
-| Balanced OpenAI producer | Anthropic or Google |
+| Producer | Judge (different vendor) | Rationale |
+|---|---|---|
+| implementing-feature (DeepSeek V4 Pro) | GLM-5.2 | DeepSeek + GLM is cross-vendor |
+| implementing-feature (Kimi K2.7 Code) | GLM-5.2 | Complex impl reviewed by expert reviewer |
+| testing-implementation (DeepSeek V4 Pro) | Kimi K2.7 Code or GLM-5.2 | Same cross-vendor logic |
+| planning-implementation (Kimi K2.7 Code) | GLM-5.2 | Complex plan deserves expert review |
 
 If the producer's vendor changes, re-check every downstream judge.
 

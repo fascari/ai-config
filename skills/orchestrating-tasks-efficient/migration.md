@@ -16,7 +16,7 @@ This document explains the differences between `orchestrating-tasks` and `orches
 | Critique gate | Standard/Complex | Only High Assurance |
 | Output Judge | Standard/Complex | Combined with review in Standard; separate in High Assurance |
 | Semantic review | Separate | Combined with Output Judge in Standard |
-| Deep model default | Research, planning, critique, review | Balanced first; Deep only for risk or escalation |
+| Deep model default | Research, planning, critique, review | Balanced first; Complex only for risk or escalation |
 | Context reuse | Full artifact re-read | `context-capsule.md` between phases |
 | Sanitizing text | Mandatory for all narrative | Only public/user-facing text |
 | Checkpoints | Per phase | Batchable when plan is approved |
@@ -39,13 +39,13 @@ This document explains the differences between `orchestrating-tasks` and `orches
 - the change is small and well understood (Lean);
 - the change is a standard bug fix, endpoint, or small service (Standard);
 - cost or speed is a priority and the risk is Low or Medium;
-- the same deterministic Go gates are sufficient.
+- the same deterministic gates are sufficient.
 
 ---
 
 ## Example: Lean flow
 
-Scenario: fix a guard condition in a single Go file.
+Scenario: fix a guard condition in a single file.
 
 ```
 User: "Add a nil check in internal/app/user/usecase/create.go before calling repo.Save."
@@ -56,7 +56,7 @@ orchestrating-tasks-efficient:
   -> dispatch implementing-feature (Balanced)
   -> run deterministic gates
   -> update progress.md
-  -> report: 1 dispatch, 0 Deep agents, gates passed
+  -> report: 1 dispatch, 0 Complex agents, gates passed
 ```
 
 No separate research, no system design, no critique gate, no Output Judge, no LLM review unless risk surfaces.
@@ -83,7 +83,7 @@ orchestrating-tasks-efficient:
   -> run Completion Gate
   -> combined cross-vendor semantic review (Balanced)
   -> update progress.md
-  -> report: 5 dispatches, 0 Deep agents, 1 LLM gate
+  -> report: 5 dispatches, 0 Complex agents, 1 LLM gate
 ```
 
 In `orchestrating-tasks`, the same task would use: research (Deep) -> system design (Deep) -> planning (Deep) -> critique (Deep) -> implement -> test -> Output Judge (Deep) -> review (Deep) -> sanitize. The efficient version consolidates research/planning and merges Output Judge + review.
@@ -99,18 +99,18 @@ User: "The payment consumer must not double-charge on retry."
 
 orchestrating-tasks-efficient:
   -> classify: Standard, High Risk, High Assurance
-  -> dispatch researching-codebase (Deep)
-  -> dispatch analyzing-system-design (Deep, mandatory)
-  -> dispatch planning-implementation (Deep)
-  -> run critique gate (Deep, cross-vendor)
+  -> dispatch researching-codebase (Complex)
+  -> dispatch analyzing-system-design (Complex, mandatory)
+  -> dispatch planning-implementation (Complex)
+  -> run critique gate (Expert Review, cross-vendor)
   -> user approves plan
   -> dispatch implementing-feature (Balanced)
   -> dispatch testing-implementation (Balanced)
   -> run Completion Gate
-  -> run Output Judge (Deep, cross-vendor)
-  -> run semantic review (Deep, cross-vendor)
+  -> run Output Judge (Expert Review, cross-vendor)
+  -> run semantic review (Expert Review, cross-vendor)
   -> update progress.md
-  -> report: 8 dispatches, 5 Deep agents, 2 LLM gates
+  -> report: 8 dispatches, 5 Complex agents, 2 LLM gates
 ```
 
 This matches the depth of `orchestrating-tasks` but still uses `context-capsule.md` to avoid re-reading full artifacts.
@@ -119,12 +119,12 @@ This matches the depth of `orchestrating-tasks` but still uses `context-capsule.
 
 ## Preserved gates
 
-Both skills enforce the same deterministic Go gates:
+Both skills enforce the same deterministic gates:
 
-- `gofmt`
+- format
 - compile
 - lint
-- typecheck (`go vet`)
+- typecheck
 - relevant tests
 - race detector when concurrency is present
 - style compliance greps
@@ -142,7 +142,7 @@ To compare the two skills on real AI credit usage:
 1. Pick a representative task for each mode.
 2. Run the task with `orchestrating-tasks` and record:
    - number of dispatches;
-   - number of Deep/Balanced/Fast agents;
+   - number of Complex/Balanced/Fast agents;
    - Graphify queries;
    - LLM gate calls;
    - wall-clock time.
@@ -157,7 +157,7 @@ Do not invent token counts. Use provider-supplied metrics when available.
 
 To migrate a project or workflow to `orchestrating-tasks-efficient`:
 
-1. Confirm the project has deterministic Go gates in place (`style-gate`, `writing-modern-go`).
+1. Confirm the project has deterministic gates in place (`style-gate`, `writing-modern-go` for Go projects).
 2. Train the team on the risk classification table.
 3. Update provider entrypoints to list `orchestrating-tasks-efficient` as an alternative entry point.
 4. Start with Lean and Standard tasks. Reserve High Assurance for Critical/High Risk.

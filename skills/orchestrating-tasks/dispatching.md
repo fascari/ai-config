@@ -10,23 +10,30 @@ and codebase search rules for subagents. Concrete dispatch syntax lives in
 
 ## Capability Tiers
 
-Use these tier names when selecting models. The exact model depends on your AI provider, see the reference table below.
-
 | Tier | Characteristics | When to use |
 |---|---|---|
-| **Fast** | Low latency, lower cost, rule-based tasks | Structured output: commit messages, PR bodies, text transformation |
-| **Balanced** | Good reasoning at moderate cost | Standard implementation, planning, code generation |
-| **Deep** | High reasoning, higher cost | Cross-cutting analysis, complex planning, adversarial review |
+| **Fast** | Low latency, lowest cost | Structured output: commit messages, PR bodies, text transformation |
+| **Balanced** | Good reasoning at moderate cost | Standard implementation, planning, code generation, daily development |
+| **Complex** | High reasoning, higher cost | Cross-cutting analysis, unfamiliar codebases, large refactors, multi-domain changes |
+| **Expert Review** | Maximum reasoning, highest cost | Architecture validation, security analysis, critical business logic review, adversarial review |
+
+> Tier names and model assignments follow `providers/opencode/docs/model-routing.md`.
+> **Complex** replaces the old **Deep** tier name. **Expert Review** replaces the old **Deep (cross-vendor)** pattern.
+> Core principle: use the cheapest model capable of safely completing the task.
 
 ### Provider model reference (adapt to your provider)
 
-| Tier | Anthropic (Claude) | OpenAI (Codex/GPT) | Google (Gemini) |
-|---|---|---|---|
-| **Fast** | claude-haiku-* | gpt-*-mini, o4-mini | gemini-flash-* |
-| **Balanced** | claude-sonnet-* | gpt-*/codex (default) | gemini-pro-* |
-| **Deep** | claude-opus-* (effort: high) | gpt-*/o-series (high effort) | gemini-pro-* (high effort) |
+| Tier | OpenCode (Go) | Anthropic (Claude) | OpenAI | Google (Gemini) |
+|---|---|---|---|---|
+| **Fast** | deepseek-v4-flash, mimo-v2.5 | claude-haiku-* | gpt-*-mini, o4-mini | gemini-flash-* |
+| **Balanced** | deepseek-v4-pro (default) | claude-sonnet-* | gpt-*/codex (default) | gemini-pro-* |
+| **Complex** | kimi-k2.7-code | claude-opus-* (high effort) | gpt-*/o-series (high effort) | gemini-pro-* (high effort) |
+| **Expert Review** | glm-5.2 | — (use cross-vendor) | — (use cross-vendor) | — (use cross-vendor) |
 
-> These are examples. Use whichever current model version your provider offers at each tier.
+> The OpenCode tier names (Fast, Balanced, Complex, Expert Review) come from `providers/opencode/docs/model-routing.md`.
+> **Complex** replaces the old **Deep** tier. **Expert Review** is the cross-vendor reviewer tier.
+> Core principle from model-routing: use the cheapest model capable of safely completing the task. Escalate only when complexity, risk, or uncertainty demands it.
+> OpenCode Go provides `opencode-go/<model-id>`. OpenCode Zen provides `opencode/<model-id>`. Models listed are the Go variants.
 
 ---
 
@@ -37,20 +44,20 @@ Select a logical role here. Render the actual call shape using
 
 **Source of truth**: each skill's frontmatter in `skills/{name}/SKILL.md` defines the intended behavior. The matrix below mirrors that. On any divergence, the frontmatter wins.
 
-> **Note on logical role**: values like `go-implementer` and `go-tester` are logical roles. In Copilot native mode they often map to literal `agent_type` values. In Codex or Claude managed mode they belong in the worker prompt unless the runtime explicitly supports an equivalent field.
-
 | Skill | Logical role | Tier | Rationale |
 |---|---|---|---|
-| `researching-codebase` | `general-purpose` | Deep | Search-heavy reasoning; needs to correctly map impact across layered architectures |
-| `planning-implementation` | `general-purpose` | Deep | Plan quality directly determines implementation quality; deep reasoning reduces critique-gate cycles |
-| `implementing-feature` | `go-implementer` | Balanced | Custom agent front-loads Go conventions in the system prompt |
-| `testing-implementation` | `go-tester` | Balanced | Dedicated test agent, explicitly forbidden from touching production files |
-| `reviewing-code` | `general-purpose` | Deep (**cross-vendor**) | Reviewer must use a different vendor than the implementer, see Cross-Vendor Rule |
+| `researching-codebase` | `general-purpose` | Complex | Search-heavy reasoning; needs to correctly map impact across layered architectures |
+| `planning-implementation` | `general-purpose` | Complex | Plan quality directly determines implementation quality; complex reasoning reduces critique-gate cycles |
+| `implementing-feature` | `go-implementer` (Go) / `general-purpose` (non-Go) | Balanced | Stack is detected at dispatch time: Go gets the custom agent with conventions front-loaded; non-Go falls back to general-purpose with deterministic gates |
+| `testing-implementation` | `go-tester` (Go) / `general-purpose` (non-Go) | Balanced | Same stack detection: Go gets the dedicated test agent; non-Go falls back to general-purpose |
+| `reviewing-code` | `general-purpose` | Expert Review (**cross-vendor**) | Reviewer must use a different vendor than the implementer |
 | `sanitizing-text` | `general-purpose` | Fast | Rule-based text transformation; no reasoning needed |
 | `committing-changes` | `general-purpose` | Fast | Structured, rule-based task |
 | `creating-pull-request` | `general-purpose` | Fast | Templated, structured task |
 
-> **`critique-gate`** is not a named skill, it is an inline `task` dispatched by the orchestrator. **Cross-vendor rule applies.** Default: Deep tier (different vendor from planning-implementation). See `gates.md`.
+> **`critique-gate`** is not a named skill, it is an inline `task` dispatched by the orchestrator. **Cross-vendor rule applies.** Default: Expert Review tier (different vendor from planning-implementation). See `gates.md`.
+
+> **Note on logical role**: values like `go-implementer` and `go-tester` are Go-specific logical roles. They MUST NOT be dispatched for non-Go stacks. Stack detection happens in `implementing-feature` and `testing-implementation`. Non-Go stacks fall back to `general-purpose`. For OpenCode, the agent name comes from the tier → agent mapping in `orchestrating-tasks-efficient/provider-dispatch.md`.
 
 ---
 
@@ -62,19 +69,24 @@ Rationale: same-vendor judges share blind spots; they accept patterns their sibl
 
 ### Vendor groups
 
-| Vendor | Examples |
-|---|---|
-| **Anthropic** | claude-haiku-*, claude-sonnet-*, claude-opus-* |
-| **OpenAI** | gpt-*-mini, gpt-*, o-series, codex-* |
-| **Google** | gemini-flash-*, gemini-pro-* |
-
-### Producer → judge pairing
-
-| Producer (skill) | Suggested judge vendor | Example pairing |
+| Vendor | Models | Provider prefix |
 |---|---|---|
-| planning-implementation (Anthropic) | OpenAI or Google | critique-gate |
-| implementing-feature (Anthropic) | OpenAI or Google | reviewing-code |
-| testing-implementation (Anthropic) | OpenAI or Google | reviewing-code |
+| **DeepSeek** | deepseek-v4-pro, deepseek-v4-flash | opencode-go/deepseek-* |
+| **Moonshot** | kimi-k2.7-code | opencode-go/kimi-* |
+| **Zhipu** | glm-5.2 | opencode-go/glm-* |
+| **MiniMax** | mimo-v2.5 | opencode-go/mimo-* |
+| **Anthropic** | claude-sonnet-*, claude-haiku-*, claude-opus-* | anthropic/* |
+| **OpenAI** | gpt-*, o-series, codex-* | openai/* |
+| **Google** | gemini-flash-*, gemini-pro-* | google/* |
+
+### Producer → judge pairing (OpenCode primary)
+
+| Producer | Judge (different vendor) | Rationale |
+|---|---|---|
+| implementing-feature (DeepSeek V4 Pro) | GLM-5.2 | Kimi or GLM for review; DeepSeek + GLM is cross-vendor |
+| implementing-feature (Kimi K2.7 Code) | GLM-5.2 | Complex impl reviewed by expert reviewer |
+| testing-implementation (DeepSeek V4 Pro) | Kimi K2.7 Code or GLM-5.2 | Same cross-vendor logic |
+| planning-implementation (Kimi K2.7 Code) | GLM-5.2 | Complex plan deserves expert review |
 
 **If you change a producer's vendor, every downstream judge for that skill MUST be re-checked.** Verify the pairing whenever the model matrix changes.
 
@@ -84,15 +96,17 @@ This rule applies ONLY to judges/validators/reviewers. Producer tasks (researchi
 
 ## Complexity Tier Model Overrides
 
-For Complex tasks, override certain skills from Balanced to Deep. This is the empirically-derived "Balanced first, Deep on gates" pattern.
+For Complex tasks, override certain skills from Balanced to Complex or Expert Review. This aligns with model-routing.md's High Assurance Mode.
 
 | Skill | Default (Simple/Standard) | Override for Complex | Why |
 |---|---|---|---|
-| `critique-gate` | Deep (cross-vendor) | Deep + high effort | Adversarial plan review |
-| `reviewing-code` | Deep (cross-vendor) | Deep + high effort | Semantic regression catching |
-| `researching-codebase` | Deep | - | Already Deep by default |
+| `critique-gate` | Expert Review (cross-vendor) | GLM-5.2 | Adversarial plan review demands best reasoning |
+| `reviewing-code` | Expert Review (cross-vendor) | GLM-5.2 | Semantic regression catching on high-impact work |
+| `researching-codebase` | Complex | Kimi K2.7 Code | Unfamiliar or multi-domain codebase exploration |
 
-**Rationale**: Balanced models excel at structured validation (file paths, AC mapping, syntax). Deep models are required to catch semantic regressions, cross-test interactions, and design-level simplifications. The cost premium is paid back when it prevents a re-plan or post-merge incident on Complex work.
+Rationale: Balanced models (DeepSeek V4 Pro) excel at structured validation. Complex models (Kimi K2.7 Code) are required for unfamiliar codebases and large refactors. Expert Review models (GLM-5.2) are needed to catch semantic regressions, cross-domain interactions, and design-level issues. The cost premium is justified when the change impacts multiple domains or carries high risk.
+
+**Rationale**: Balanced models excel at structured validation (file paths, AC mapping, syntax). Complex models are required to catch semantic regressions, cross-test interactions, and design-level simplifications. The cost premium is paid back when it prevents a re-plan or post-merge incident on Complex work.
 
 ---
 
@@ -122,9 +136,11 @@ dependent skill. Never dispatch two dependent skills simultaneously.
 
 ---
 
-## Style Reinforcement Block (Go projects)
+## Style Reinforcement Block (Go projects only)
 
-When dispatching `implementing-feature`, `testing-implementation`, or `reviewing-code` and the diff touches `.go` files, append the following block verbatim to the prompt **after the Task section**. Auto-injected instruction files are not enough in long contexts; regression to over-documenting and legacy idioms is common.
+When dispatching `implementing-feature`, `testing-implementation`, or `reviewing-code` and **the stack is Go** (determined by `implementing-feature`'s stack detection), append the following block verbatim to the prompt **after the Task section**. Auto-injected instruction files are not enough in long contexts; regression to over-documenting and legacy idioms is common.
+
+For non-Go stacks, skip this block. The style gate commands in `implementing-feature` and `testing-implementation` serve as the deterministic quality check instead.
 
 ```
 ## Style Reinforcement (Go, non-negotiable)
