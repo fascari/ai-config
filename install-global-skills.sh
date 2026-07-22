@@ -159,4 +159,13 @@ if [[ "$provider" == "all" || "$provider" == "opencode" ]]; then
       echo "Installed $opencode_link_count Opencode custom agent link(s) into $opencode_target_dir."
     fi
   fi
+  
+  # Install opencode.jsonc template
+  opencode_config_src="$repo_root/providers/opencode/opencode.jsonc"
+  opencode_config_dst="$HOME/.config/opencode/opencode.jsonc"
+  if [[ -f "$opencode_config_src" ]]; then
+    mkdir -p "$(dirname "$opencode_config_dst")"
+    cp "$opencode_config_src" "$opencode_config_dst"
+    echo "Installed opencode.jsonc to $opencode_config_dst."
+  fi
 fi

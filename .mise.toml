@@ -1,9 +1,9 @@
 [tasks."skills:install"]
-description = "Install this repo's skills globally for Codex, Copilot, and Claude; also installs Codex custom agents"
+description = "Install this repo's skills globally for Codex, Copilot, Claude, and OpenCode; also installs Codex and OpenCode custom agents"
 run = "./install-global-skills.sh"
 
 [tasks."skills:install:all"]
-description = "Install this repo's skills globally for Codex, Copilot, and Claude; also installs Codex custom agents"
+description = "Install this repo's skills globally for all providers (Codex, Copilot, Claude, OpenCode); also installs custom agents"
 run = "./install-global-skills.sh"
 
 [tasks."skills:install:codex"]
@@ -17,6 +17,10 @@ run = "./install-global-skills.sh --provider copilot"
 [tasks."skills:install:claude"]
 description = "Install this repo's skills globally for Claude"
 run = "./install-global-skills.sh --provider claude"
+
+[tasks."skills:install:opencode"]
+description = "Install this repo's skills and custom agents globally for OpenCode"
+run = "./install-global-skills.sh --provider opencode"
 
 [tasks."project:install:codex"]
 description = "Install or refresh Codex-native project rules into a target repo"
