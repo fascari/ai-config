@@ -48,8 +48,8 @@ Select a logical role here. Render the actual call shape using
 |---|---|---|---|
 | `researching-codebase` | `general-purpose` | Complex | Search-heavy reasoning; needs to correctly map impact across layered architectures |
 | `planning-implementation` | `general-purpose` | Complex | Plan quality directly determines implementation quality; complex reasoning reduces critique-gate cycles |
-| `implementing-feature` | `go-implementer` (Go) / `general-purpose` (non-Go) | Balanced | Stack is detected at dispatch time: Go gets the custom agent with conventions front-loaded; non-Go falls back to general-purpose with deterministic gates |
-| `testing-implementation` | `go-tester` (Go) / `general-purpose` (non-Go) | Balanced | Same stack detection: Go gets the dedicated test agent; non-Go falls back to general-purpose |
+| `implementing-feature` | `go-implementer` (Go) / `general` (non-Go) | Balanced | Stack is detected at dispatch time: Go gets the custom agent with conventions front-loaded; non-Go falls back to general with deterministic gates |
+| `testing-implementation` | `go-tester` (Go) / `general` (non-Go) | Balanced | Same stack detection: Go gets the dedicated test agent; non-Go falls back to general |
 | `reviewing-code` | `general-purpose` | Expert Review (**cross-vendor**) | Reviewer must use a different vendor than the implementer |
 | `sanitizing-text` | `general-purpose` | Fast | Rule-based text transformation; no reasoning needed |
 | `committing-changes` | `general-purpose` | Fast | Structured, rule-based task |
@@ -57,7 +57,7 @@ Select a logical role here. Render the actual call shape using
 
 > **`critique-gate`** is not a named skill, it is an inline `task` dispatched by the orchestrator. **Cross-vendor rule applies.** Default: Expert Review tier (different vendor from planning-implementation). See `gates.md`.
 
-> **Note on logical role**: values like `go-implementer` and `go-tester` are Go-specific logical roles. They MUST NOT be dispatched for non-Go stacks. Stack detection happens in `implementing-feature` and `testing-implementation`. Non-Go stacks fall back to `general-purpose`. For OpenCode, the agent name comes from the tier → agent mapping in `orchestrating-tasks-efficient/provider-dispatch.md`.
+> **Note on logical role**: values like `go-implementer` and `go-tester` are Go-specific logical roles. They MUST NOT be dispatched for non-Go stacks. Stack detection happens in `implementing-feature` and `testing-implementation`. Non-Go stacks fall back to `general`. For OpenCode, the agent name comes from the tier → agent mapping in `orchestrating-tasks-efficient/provider-dispatch.md`.
 
 ---
 

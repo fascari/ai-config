@@ -53,8 +53,8 @@ For OpenCode, select the agent name from the tier → agent mapping in `provider
 | `researching-codebase` | `general-purpose` | Balanced | Complex for High Assurance or unclear root cause |
 | `planning-implementation` | `general-purpose` | Balanced | Complex for High Assurance or cross-domain architecture |
 | Consolidated discovery + planning (Standard) | `general-purpose` | Balanced | Complex when system design is required; see template below |
-| `implementing-feature` | `go-implementer` (Go) / `general-purpose` (non-Go) | Balanced | Complex for finance/security/critical concurrency |
-| `testing-implementation` | `go-tester` (Go) / `general-purpose` (non-Go) | Balanced | Complex for finance/security/critical concurrency tests |
+| `implementing-feature` | `go-implementer` (Go) / `general` (non-Go) | Balanced | Complex for finance/security/critical concurrency |
+| `testing-implementation` | `go-tester` (Go) / `general` (non-Go) | Balanced | Complex for finance/security/critical concurrency tests |
 | `reviewing-code` (semantic review) | `general-purpose` | Balanced | Expert Review for High Risk/Critical or cross-domain |
 | Standard combined review (Output Judge + semantic review) | `general-purpose` | Balanced | Expert Review when risk is High or Balanced is insufficient |
 | HA critique gate | `general-purpose` judge | Expert Review | Cross-vendor mandatory |

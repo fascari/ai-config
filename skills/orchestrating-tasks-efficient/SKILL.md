@@ -41,7 +41,7 @@ Read this SKILL.md first for Critical Rules and Pre-Dispatch Checklist. Then ope
 - **Always run deterministic Completion Gate before any LLM review**: lint, format, typecheck, relevant tests, and style greps must pass.
 - **On gate failure**: present the failure to the user and wait for direction. Do not auto-dispatch a repair cycle.
 - **Balanced first, Complex on risk or escalation**: see `dispatching.md`.
-- **NEVER dispatch `go-implementer` or `go-tester` directly**: always dispatch the skills (`implementing-feature`, `testing-implementation`). The skills detect the stack and decide: Go gets `go-implementer`/`go-tester`, non-Go gets `general-purpose`.
+- **NEVER dispatch `go-implementer` or `go-tester` directly**: always dispatch the skills (`implementing-feature`, `testing-implementation`). The skills detect the stack and decide: Go gets `go-implementer`/`go-tester`, non-Go gets `general`.
 - **`implementing-feature` owns production code, `testing-implementation` owns tests**: each returns a completion report.
 - **Cross-vendor rule applies to any judge/reviewer**: see `dispatching.md`.
 - **Do not run `sanitizing-text` on internal handoffs**: use it only for public output, PR descriptions, docs, and user-facing reports.

@@ -25,7 +25,7 @@ This file covers task type classification, the skill chain for each task type, a
 **CRITICAL: NEVER dispatch `go-implementer` or `go-tester` directly for implementation work.**
 These are underlying logical roles for **Go stacks only**. The orchestrator MUST always dispatch the SKILLS
 (`implementing-feature`, `testing-implementation`). The skills detect the stack and decide the logical role:
-`go-implementer`/`go-tester` for Go, `general-purpose` for TypeScript, Python, or unknown stacks.
+`go-implementer`/`go-tester` for Go, `general` for TypeScript, Python, or unknown stacks.
 The skills are the wrappers that enforce quality gates. Bypassing the skills bypasses
 the quality checks entirely.
 
