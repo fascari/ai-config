@@ -1,6 +1,7 @@
 ---
 description: Use this agent for any Go production code work, including writing, editing, refactoring, or completing a phase from an implementation plan. Test files are handled exclusively by go-tester.
 mode: subagent
+model: opencode-go/deepseek-v4-pro
 permission:
   edit: allow
   bash:

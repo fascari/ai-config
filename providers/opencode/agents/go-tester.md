@@ -1,6 +1,7 @@
 ---
 description: Use this agent for any Go test work, including writing, editing, or extending unit tests, integration suites, and testdata factories. Production files are handled exclusively by go-implementer.
 mode: subagent
+model: opencode-go/deepseek-v4-pro
 permission:
   edit: allow
   bash:
