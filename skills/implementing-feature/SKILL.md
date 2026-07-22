@@ -39,9 +39,9 @@ echo "stack=$STACK"
 | Stack | Logical role | Why |
 |---|---|---|
 | Go | `go-implementer` | Custom agent with Go conventions front-loaded. Go code rules and style gates apply. |
-| TypeScript / JavaScript | `general-purpose` | No TS-specific implementer exists. Depend on deterministic gates (`tsc --strict`, `eslint`, `prettier`). |
-| Python | `general-purpose` | No Python-specific implementer exists. Depend on deterministic gates (`mypy --strict`, `ruff check`). |
-| Other / unknown | `general-purpose` | Fall back to project's own test/lint commands. Warn the orchestrator. |
+| TypeScript / JavaScript | `general` | Built-in general subagent. Deterministic gates (`tsc --strict`, `eslint`, `prettier`). |
+| Python | `general` | Built-in general subagent. Deterministic gates (`mypy --strict`, `ruff check`). |
+| Other / unknown | `general` | Fall back to project's own test/lint commands. Warn the orchestrator. |
 
 ### Hard rule
 

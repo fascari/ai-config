@@ -27,9 +27,9 @@ echo "stack=$STACK"
 | Stack | Logical role | Why |
 |---|---|---|
 | Go | `go-tester` | Dedicated test agent, explicitly forbidden from touching production files |
-| TypeScript / JavaScript | `general-purpose` | Run `npm test` + `npx jest` scoped to changed files |
-| Python | `general-purpose` | Run `pytest` scoped to changed packages |
-| Other / unknown | `general-purpose` | Fall back to project's own test command |
+| TypeScript / JavaScript | `general` | Run `npm test` + `npx jest` scoped to changed files |
+| Python | `general` | Run `pytest` scoped to changed packages |
+| Other / unknown | `general` | Fall back to project's own test command |
 
 ### Hard rule
 
