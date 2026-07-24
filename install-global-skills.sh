@@ -5,13 +5,16 @@ usage() {
   cat <<'EOF'
 Usage: install-global-skills.sh [--provider codex|copilot|claude|opencode|all]
 
-Install this repo's skills as global symlinks for the selected provider target(s).
+Install this repo's skills as global symlinks for the selected provider target.
 For Codex, this also installs the repo's custom subagents as global TOML files.
-Default: all providers.
+
+You MUST choose a provider explicitly. There is no default, so the installer
+never fans out to providers a machine must not use (e.g. compliance-restricted
+machines). Use 'all' only as a deliberate opt-in.
 EOF
 }
 
-provider="all"
+provider=""
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --provider)
@@ -46,10 +49,13 @@ if [[ ! -d "$skills_dir" ]]; then
 fi
 
 case "$provider" in
-  codex|opencode|copilot|claude)
+  codex|opencode|copilot|claude|all)
     ;;
-  all)
-    provider="all"
+  "")
+    echo "No provider selected." >&2
+    echo "Choose one explicitly: --provider codex|copilot|claude|opencode|all" >&2
+    usage >&2
+    exit 1
     ;;
   *)
     echo "Unknown provider: $provider" >&2

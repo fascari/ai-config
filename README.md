@@ -35,8 +35,8 @@ Each provider's entrypoint is a thin index that references `~/.ai-config/rules/`
 # 1. Clone anywhere
 git clone git@github.com:user/ai-config.git ~/dev/pessoal/ai-config
 
-# 2. Run setup (symlinks rules/skills/agents into ~/.ai-config/, installs global skills)
-~/dev/pessoal/ai-config/install.sh
+# 2. Run setup (symlinks rules/skills/agents into ~/.ai-config/; choose a provider to install its skills)
+~/dev/pessoal/ai-config/install.sh --provider copilot   # or opencode|codex|claude|all
 
 # 3. Restart shell
 ```
@@ -66,7 +66,7 @@ mkdir -p /path/to/project/.opencode
 cp ~/.ai-config/providers/opencode/opencode.jsonc /path/to/project/.opencode/opencode.jsonc
 ```
 
-Opencode agents are installed globally in `~/.config/opencode/agents/` via `install-global-skills.sh` and discovered automatically. No per-project duplication needed.
+Opencode agents are installed globally in `~/.config/opencode/agents/` via `install-global-skills.sh --provider opencode` and discovered automatically. No per-project duplication needed.
 
 ### Example: GitHub Copilot
 
@@ -78,11 +78,23 @@ ln -s ~/.ai-config/rules/*.md /path/to/project/.github/instructions/
 
 ## Global Skill Installation
 
-Skills are symlinked globally so every project can use them without per-project setup:
+Skills are symlinked globally so every project can use them without per-project setup.
+You must choose a provider explicitly. The installer has no default and never
+fans out to every provider on its own:
 
 ```bash
-~/.ai-config/install-global-skills.sh --provider all
+# Pick the provider(s) this machine is allowed to use:
+~/.ai-config/install-global-skills.sh --provider copilot    # Copilot-only machines
+~/.ai-config/install-global-skills.sh --provider opencode   # OpenCode machines
+~/.ai-config/install-global-skills.sh --provider all        # deliberate opt-in: every provider
 ```
+
+> **Machine profiles / compliance.** Some machines are restricted to a single
+> provider. For example, an MHE-managed machine is **Copilot-only** by compliance
+> (no Codex, Claude, or OpenCode may be installed), while a personal Linux machine
+> may be **OpenCode-only**. Because the installer has no default, you choose the
+> correct provider per machine and nothing leaks into a forbidden tool. Use
+> `--provider all` only when you deliberately want every provider on that machine.
 
 | Provider | Location | Link name |
 |----------|----------|-----------|

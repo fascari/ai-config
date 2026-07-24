@@ -33,7 +33,7 @@ Session persistence uses `$AI_MEMORY_HOME`. When unset, vault steps are skipped.
 
 ## Commands
 
-- `./install-global-skills.sh`: symlink skills for all providers
+- `./install-global-skills.sh --provider <name>`: symlink skills for the chosen provider (no default; pick copilot, codex, claude, opencode, or all)
 
 ## Hard Rules
 

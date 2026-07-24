@@ -1,6 +1,20 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+provider=""
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --provider) provider="${2:-}"; shift 2 ;;
+    --provider=*) provider="${1#*=}"; shift ;;
+    -h|--help)
+      echo "Usage: install.sh [--provider codex|copilot|claude|opencode|all]"
+      echo "Sets up ~/.ai-config and, when a provider is chosen, installs its global skills."
+      exit 0
+      ;;
+    *) echo "Unknown argument: $1" >&2; exit 1 ;;
+  esac
+done
+
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 AI_CONFIG_HOME="${AI_CONFIG_HOME:-$HOME/.ai-config}"
 
@@ -30,19 +44,20 @@ for script in install.sh install-global-skills.sh; do
 done
 echo ""
 
-# Step 2: Symlink skills globally for all providers
-echo "--- Installing global skills ---"
-"$script_dir/install-global-skills.sh" --provider all
+# Step 2: Install global skills for the chosen provider (no default fan-out)
+if [[ -n "$provider" ]]; then
+  echo "--- Installing global skills (provider: $provider) ---"
+  "$script_dir/install-global-skills.sh" --provider "$provider"
+else
+  echo "--- Skipping global skills install (no --provider given) ---"
+  echo "Choose a provider explicitly, e.g.:"
+  echo "  ./install.sh --provider copilot     # Copilot-only machines (e.g. compliance-restricted)"
+  echo "  ./install.sh --provider opencode    # OpenCode machines"
+  echo "  ./install.sh --provider all         # deliberate opt-in: every provider"
+fi
 echo ""
 
-# Step 3: Symlink opencode agents globally
-echo "--- Installing global opencode agents ---"
-mkdir -p ~/.config/opencode/agents
-ln -sf "$script_dir/providers/opencode/agents/"*.md ~/.config/opencode/agents/
-echo "Symlinked opencode agents to ~/.config/opencode/agents/"
-echo ""
-
-# Step 4: Add AI_CONFIG_HOME to shell rc if not present
+# Step 3: Add AI_CONFIG_HOME to shell rc if not present
 shell_rc=""
 if [[ -n "${BASH_VERSION:-}" && -f "$HOME/.bashrc" ]]; then
   shell_rc="$HOME/.bashrc"

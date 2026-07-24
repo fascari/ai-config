@@ -1,10 +1,17 @@
 [tasks."skills:install"]
-description = "Install this repo's skills globally for Codex, Copilot, Claude, and OpenCode; also installs Codex and OpenCode custom agents"
-run = "./install-global-skills.sh"
+description = "Show how to install skills (choose a provider explicitly; no default fan-out)"
+run = """
+echo 'Choose a provider explicitly (no default, by design):'
+echo '  mise run skills:install:copilot   # GitHub Copilot (Copilot-only machines)'
+echo '  mise run skills:install:codex     # Codex + custom agents'
+echo '  mise run skills:install:claude    # Claude'
+echo '  mise run skills:install:opencode  # OpenCode + custom agents'
+echo '  mise run skills:install:all       # every provider (deliberate opt-in)'
+"""
 
 [tasks."skills:install:all"]
-description = "Install this repo's skills globally for all providers (Codex, Copilot, Claude, OpenCode); also installs custom agents"
-run = "./install-global-skills.sh"
+description = "Install this repo's skills globally for EVERY provider (deliberate opt-in); also installs custom agents"
+run = "./install-global-skills.sh --provider all"
 
 [tasks."skills:install:codex"]
 description = "Install this repo's skills and custom agents globally for Codex"

@@ -172,10 +172,11 @@ The entrypoint triggers the automatic bootstrap described above. The provider re
 
 ## Step 4 - Install the Session Skills
 
-Two global skills manage the session lifecycle. Install them via `install-global-skills.sh`:
+Two global skills manage the session lifecycle. Install them for the provider this
+machine is allowed to use (the installer has no default, so choose explicitly):
 
 ```bash
-~/.ai-config/install-global-skills.sh --provider all
+~/.ai-config/install-global-skills.sh --provider copilot   # or: opencode | codex | claude | all
 ```
 
 This symlinks `recall` and `checkpoint` into the provider-specific skill directories:
