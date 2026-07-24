@@ -223,7 +223,8 @@ Default: no comments. Code should be self-explanatory through good naming.
 - Never comment WHAT the code does; the code already says that
 - Never comment HOW it does it; the code already says that
 - Delete any comment that restates the function/variable name
-- **No package doc comments beyond 1-2 lines.** Delete narrative descriptions, contracts, or caller-guidance.
+- **NEVER write package doc comments.** Delete every `// Package x ...` comment, including one-line summaries. Not "keep them short" — remove them entirely. The package name is the documentation.
+- **NEVER add a godoc just because a symbol is exported.** Being exported is not a reason to document; only a genuinely non-obvious purpose is.
 - **No inline comments in function bodies** unless the logic is genuinely surprising
 
 ```go
@@ -259,8 +260,7 @@ if product.Quantity > 100 { basePrice *= 0.85 }
 // Repository provides data access for user entities.
 type Repository struct { ... }
 
-// Good: 1-line package doc
-// Package goroutines demonstrates concurrent sum via goroutines.
+// Good: no package doc comment at all
 package goroutines
 ```
 
