@@ -27,7 +27,7 @@ Use the skill wrapper directly. This is the only profile where the literal
 examples in `task-types.md`, `gates.md`, and `dispatching.md` apply without
 translation.
 
-Example shape:
+Example shape (when the Go role is an installed native `agent_type`):
 
 ```unknown
 task(
@@ -36,6 +36,28 @@ task(
   model: "{provider-tier model}",
   mode: "background",
   prompt: "{task prompt}"
+)
+```
+
+**Missing native agent fallback.** `go-implementer`/`go-tester` are not
+built-in Copilot `agent_type`s and may not be installed. When the Go role is
+not an available native `agent_type`, do not fail and do not silently drop the
+Go rules: dispatch `agent_type: "general-purpose"` and carry the role plus the
+canonical contract in the prompt so the full Go rule set still loads:
+
+```unknown
+task(
+  skill: "implementing-feature",
+  agent_type: "general-purpose",
+  mode: "background",
+  prompt: """
+  Logical role: go-implementer   # go-tester for testing-implementation
+  Load and follow this canonical contract FIRST:
+  ~/.ai-config/agents/go-implementer.md   # go-tester: ~/.ai-config/agents/go-tester.md
+  The full Go rule set applies regardless of native agent availability.
+
+  {task prompt}
+  """
 )
 ```
 

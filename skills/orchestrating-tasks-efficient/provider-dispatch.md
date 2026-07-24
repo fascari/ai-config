@@ -35,6 +35,14 @@ task(
 )
 ```
 
+**Missing native agent fallback.** `go-implementer`/`go-tester` are not
+built-in Copilot `agent_type`s. When the Go role is not an available native
+`agent_type`, dispatch `agent_type: "general-purpose"`, put `Logical role:
+go-implementer` (or `go-tester`) in the prompt, and front-load the canonical
+contract from `~/.ai-config/agents/go-implementer.md` (or `go-tester.md`) so the
+full Go rule set still applies. See `orchestrating-tasks/provider-dispatch.md`
+for the full call shape.
+
 ### OpenCode
 
 OpenCode discovers skills globally from `~/.config/opencode/skills/` and agents from `~/.config/opencode/agents/`. Model selection is **agent-based**, not call-based: each agent defines its own `model` in its config. The orchestrator selects the right agent for the tier.

@@ -26,11 +26,43 @@ When dispatched by `orchestrating-tasks`, detect the stack first, then choose th
 ### Stack Detection
 
 ```bash
+# Detect the stack for THIS phase from the files it targets, not a single
+# repo-wide flag. A mixed repo (Go engine + React UI) has single-stack phases;
+# route each phase by the files it touches. Any Go file in scope means Go
+# governs, so the canonical Go rules always load for Go work.
+#
+# PHASE_FILES MUST be populated before detection. Derive it now, in order, from:
+#   1. the target file paths named in the dispatch prompt, or
+#   2. the CREATE/MODIFY file list of the current phase in
+#      {plan_root}/{slug}/implementation-plan.md (read that phase now).
+# Example: PHASE_FILES="internal/feedclient/client.go internal/feedclient/errors.go"
+PHASE_FILES="${PHASE_FILES:-}"
+
 STACK="unknown"
-[ -f "go.mod" ] && STACK="go"
-[ -f "package.json" ] && STACK="typescript"
-[ -f "pyproject.toml" ] && STACK="python"
-[ -f "setup.py" ] || [ -f "requirements.txt" ] && STACK="python"
+for f in $PHASE_FILES; do
+  case "$f" in
+    *.go)                  STACK="go"; break ;;   # a Go file in scope wins outright
+    *.ts|*.tsx|*.js|*.jsx) STACK="typescript" ;;
+    *.py)                  STACK="python" ;;
+  esac
+done
+
+# Empty scope is only safe in a single-manifest repo. In a mixed repo do NOT
+# guess from a root manifest: a Go module plus a root package.json would wrongly
+# force Go onto a React phase. Fail closed and request the phase's target files.
+if [ "$STACK" = "unknown" ]; then
+  manifests=0
+  [ -f "go.mod" ] && manifests=$((manifests + 1))
+  [ -f "package.json" ] && manifests=$((manifests + 1))
+  { [ -f "pyproject.toml" ] || [ -f "setup.py" ] || [ -f "requirements.txt" ]; } && manifests=$((manifests + 1))
+  if [ "$manifests" -gt 1 ]; then
+    echo "stack=ambiguous: populate PHASE_FILES from the phase scope (multi-manifest repo)" >&2
+    exit 1
+  fi
+  [ -f "go.mod" ] && STACK="go"
+  [ "$STACK" = "unknown" ] && [ -f "package.json" ] && STACK="typescript"
+  [ "$STACK" = "unknown" ] && { [ -f "pyproject.toml" ] || [ -f "setup.py" ] || [ -f "requirements.txt" ]; } && STACK="python"
+fi
 echo "stack=$STACK"
 ```
 
@@ -47,7 +79,7 @@ echo "stack=$STACK"
 
 **Never dispatch `go-implementer` for non-Go stacks.** The Go code rules and style gates only apply when `STACK=go`. For any other stack, skip the Go-specific sections below and use only the non-Go gates.
 
-In Copilot native mode `go-implementer` may map to `agent_type`. In Codex managed mode prefer a matching custom agent from `~/.codex/agents/` or `.codex/agents/`; otherwise bind the logical role in the prompt and treat the worker output as untrusted until the orchestrator accepts it.
+In Copilot native mode, `go-implementer` maps to an `agent_type` only when that agent is actually installed. When it is **not** an available native `agent_type`, do not fail and do not silently drop the Go rules: dispatch a real Copilot agent type (`general-purpose`), bind the logical role in the prompt (`Logical role: go-implementer`), and front-load the canonical contract from `~/.ai-config/agents/go-implementer.md` so the full Go rule set still applies. In Codex managed mode prefer a matching custom agent from `~/.codex/agents/` or `.codex/agents/`; otherwise bind the logical role in the prompt and treat the worker output as untrusted until the orchestrator accepts it.
 
 ---
 
@@ -211,7 +243,11 @@ After lint and style gate pass, prepare this handoff for `testing-implementation
 
 ## Go Code Rules (Go stack only)
 
-When `STACK=go`, apply these rules. Skip this entire section for non-Go stacks.
+When `STACK=go`, first load the complete canonical rule set via the `go-implementer` Pre-work
+(`~/.ai-config/agents/go-implementer.md`, which lists `go-style`, `design-principles`,
+`error-handling`, `clean-architecture`, `package-design`, and `writing-modern-go`). The list below is
+a fast working checklist, not a replacement. On any conflict the canonical rules win. Skip this
+entire section for non-Go stacks.
 
 - Grouped declarations: `type ( )`, `var ( )`, `const ( )`
 - No `else`: early returns only

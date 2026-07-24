@@ -148,6 +148,7 @@ Flow: `orchestrator -> implementation -> deterministic gates`
 1. Skip separate research and system design when files are known.
 2. Create or update `{plan_root}/{slug}/context-capsule.md` with objective, files, acceptance criteria, and constraints.
 3. Dispatch `implementing-feature` (Balanced). For very small docs/config changes, a single combined production + test dispatch is allowed only when all these conditions are true:
+   - the target is not a Go project (Go always splits production and test files into separate `implementing-feature` and `testing-implementation` dispatches so `go-tester` rules govern every `*_test.go` file);
    - Low Risk;
    - at most 1 production file;
    - at most 1 test file;

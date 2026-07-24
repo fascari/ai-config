@@ -33,6 +33,20 @@ cannot be repaired within the defined repair limit.
 | Complex change requiring independent research, design, or review agents | `orchestrating-tasks` |
 | Standard change where cost-aware delegation is appropriate | `orchestrating-tasks-efficient` |
 
+### What this tier deliberately omits
+
+This lean tier is for smaller, well-scoped features you can reach for any time, not only large
+efforts. It intentionally skips the heavy apparatus of the other tiers: no deterministic harness
+ceremony (`style-gate` grep battery, `cognition-lessons`, `## Harness Gates` bookkeeping), no
+multi-agent pipeline, and no repair re-looping beyond the single defined limit. It applies the Go
+agent Pre-work rule sets (referenced in the research rules below) but not the full
+`implementing-feature` harness workflow, unless you explicitly delegate a phase to the actual agent.
+Verification is the
+smallest command that proves the slice (e.g. `go test ./path/to/package`), escalating to broader
+gates only on failure. For a change that genuinely needs independent research, design, or review
+agents, use `orchestrating-tasks`. For a cost-aware middle ground, use
+`orchestrating-tasks-efficient`.
+
 ## Control flow
 
 | Phase | Required action | Pause only when |
@@ -56,25 +70,34 @@ cannot be repaired within the defined repair limit.
 - Before reading source code, discover and load the target project's applicable instructions:
   root and nested `AGENTS.md`, `CLAUDE.md`, provider instruction files, and any path-specific
   instruction files for the files being changed.
-- Follow the shared rules referenced by those instructions. When the target is a Go project, load
-  the available Go style, design, testing, error-handling, package-design, and clean-architecture
-  rules from the configured shared rules directory. Load text-sanitization rules before changing
-  Markdown or text.
+- Follow the shared rules referenced by those instructions. Stack detection is unconditional and
+  overrides silence in the project's own instructions. When `go.mod` is present, load the Go rule
+  sets defined in the agent Pre-work sections rather than re-listing them here: the production set
+  from `~/.ai-config/agents/go-implementer.md` and the test set from `~/.ai-config/agents/go-tester.md`
+  (the canonical location; `$AI_CONFIG_HOME` points here when set). Load them even when no `AGENTS.md`
+  or `CLAUDE.md` references them, so the lean loop stays drift-free without copying rule text. If those
+  agent files or any rule they list cannot be resolved, stop and report before editing (fail closed)
+  rather than proceeding without the rules. Load text-sanitization rules before changing Markdown or
+  text.
+- Project instructions win over shared rules on any direct conflict. Shared rules fill gaps only.
+  Scope each stack's rules to its own files: the Go rules above apply only to `.go` and `*_test.go`
+  files, so a mixed-stack repo (for example a Go service with a React `web/` app) follows the React
+  or TypeScript stack's own conventions and tests for its non-Go files, never the Go contracts.
 - Record the instruction files and shared rules loaded, plus any expected but unavailable rules, in
   the plan. If the target has no project-specific instructions, do not invent conventions: use the
-  available shared provider rules and the repository's existing patterns.
+  shared rules above and the repository's existing patterns.
 - Ask only questions that change behavior, architecture, contract, or acceptance criteria.
-- Inspect the codebase directly. Do **not** dispatch a separate research/explore agent for this —
-  the round-trip cost defeats the purpose of a single bounded loop. Reserve sub-agents (if any)
+- Inspect the codebase directly. Do **not** dispatch a separate research/explore agent for this.
+  The round-trip cost defeats the purpose of a single bounded loop. Reserve sub-agents (if any)
   for one narrow, read-only lookup in an unfamiliar codebase, never for open-ended exploration.
 - Keep stable behavior explicit; known gaps stay out of scope unless required by the task.
 - A plan is not approval. Do not edit production or test files while its status is `PROPOSED`.
-- Prompt in one language for the whole session (English recommended for AI prompts) — switching
+- Prompt in one language for the whole session (English recommended for AI prompts). Switching
   languages mid-session adds translation overhead at exactly the moment speed matters most.
 - High-risk behavior (auth, money/pricing, migrations, concurrency, public contracts) requires
   explicit risks and boundary tests regardless of diff size, but do not let this expand into an
-  exhaustive test matrix that blocks a first working slice — walking skeleton first, edge cases
-  after it is demonstrably working end to end.
+  exhaustive test matrix that blocks a first working slice. Build the walking skeleton first and add
+  edge cases after it is demonstrably working end to end.
 
 ## Execution rules
 
@@ -85,8 +108,16 @@ For each behavior:
 2. Implement the smallest production change that makes it pass.
 3. Refactor only while tests remain green.
 
+For a Go target, each phase is governed by the matching agent's contract so all phase rules hold.
+Running inline in the main conversation applies that agent's Pre-work rule set and Scope, so
+production edits follow `go-implementer` and never touch `*_test.go`, while test edits follow
+`go-tester` and never add production hooks. Delegating a phase to the actual `go-implementer` or
+`go-tester` agent is optional and, when chosen, runs that agent's complete Workflow including its
+Style Compliance Gate (one shot per phase, no re-looping). Inline execution is the faster default for
+a small slice.
+
 Follow local language/framework patterns and existing scripts. Do not add dependencies, broad
-catches, unrelated cleanup, or silent fallbacks — every change should map back to the approved
+catches, unrelated cleanup, or silent fallbacks. Every change should map back to the approved
 plan.
 
 ## Bounded execution rules
@@ -104,6 +135,6 @@ plan.
 - No unnecessary dependency, type escape, silent failure, or unrelated refactor.
 
 For genuinely high-risk behavior, do a single self-review pass reading the diff against the plan
-before marking `DONE` — this replaces a dispatched independent-reviewer agent, which this skill
-deliberately avoids when the change does not require independent review. Report delivered behavior, changed
-files, and remaining risks. Never commit or push without a separate explicit request.
+before marking `DONE`. This replaces a dispatched independent-reviewer agent, which this skill
+deliberately avoids when the change does not require independent review. Report delivered behavior,
+changed files, and remaining risks. Never commit or push without a separate explicit request.

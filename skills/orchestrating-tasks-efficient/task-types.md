@@ -51,6 +51,7 @@ Rules:
 - No critique gate.
 - No Output Judge.
 - Combined production + test dispatch allowed only when ALL these conditions are true:
+  - the target is not a Go project (Go always splits production and test into separate `implementing-feature` and `testing-implementation` dispatches so `go-tester` governs every `*_test.go`);
   - Low Risk;
   - at most 1 production file;
   - at most 1 test file;
@@ -66,6 +67,7 @@ Rules:
   - no externally observable error handling change;
   - all deterministic gates remain mandatory.
 - If any condition fails, split into separate `implementing-feature` and `testing-implementation` dispatches.
+- Every `implementing-feature` / `testing-implementation` dispatch prompt MUST list the phase's exact target file paths so the worker sets `PHASE_FILES` and detects the stack per phase (never from a root manifest). An empty scope in a multi-manifest repo fails closed.
 
 ### Standard
 

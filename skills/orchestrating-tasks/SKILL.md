@@ -98,6 +98,8 @@ Classify complexity, then delegate to the matching skill chain. See `task-types.
 | Standard | New endpoint, bug fix (≤3 layers) | researching-codebase → planning-implementation → implementing-feature → testing-implementation → [Gates] → reviewing-code |
 | Complex | New domain, cross-service, migrations | All skills, analyzing-system-design mandatory |
 
+For a Go Simple change that needs a test, escalate to Standard so `testing-implementation` (`go-tester`) governs the `*_test.go`. Never write Go test files through `implementing-feature`.
+
 `analyzing-system-design` is not optional for Standard and Complex tasks. The implementer must not start until `system-design-analysis.md` is approved.
 
 ---

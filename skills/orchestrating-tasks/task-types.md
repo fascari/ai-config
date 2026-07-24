@@ -73,6 +73,8 @@ Dispatch order:
 
 **A phase that touches both production files AND test files MUST be split into two dispatches**: `implementing-feature` for production files, then `testing-implementation` for tests. Never bundle both into one prompt, even when they are tightly coupled.
 
+**Phase target files (required in every `implementing-feature` / `testing-implementation` dispatch prompt).** List the exact file paths the phase will create or edit. The worker sets `PHASE_FILES` from this list to detect the stack per phase; without it a mixed Go+React repo cannot route Go work to the Go rules, and an empty scope in a multi-manifest repo is treated as ambiguous and fails closed. If paths are not in the prompt, the worker derives them from the phase's CREATE/MODIFY list in the plan.
+
 **Multi-turn anti-pattern**: NEVER send a "now write the integration test" follow-up via `write_agent` to an `implementing-feature` agent that just finished production code, nor to a `testing-implementation` agent that just finished unit tests. Each test phase (unit, integration, e2e) is a separate `testing-implementation` dispatch.
 
 ---

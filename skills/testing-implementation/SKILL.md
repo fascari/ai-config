@@ -14,11 +14,43 @@ When dispatched by `orchestrating-tasks`, detect the stack first, then choose th
 ### Stack Detection
 
 ```bash
+# Detect the stack for THIS phase from the test files it targets, not a single
+# repo-wide flag. A mixed repo (Go engine + React UI) has single-stack phases;
+# route each by the files it touches. Any *_test.go in scope means Go governs,
+# so the canonical Go test rules always load for Go work.
+#
+# PHASE_FILES MUST be populated before detection. Derive it now, in order, from:
+#   1. the target test file paths named in the dispatch prompt, or
+#   2. the test files for the current phase in
+#      {plan_root}/{slug}/implementation-plan.md (read that phase now).
+# Example: PHASE_FILES="internal/feedclient/client_test.go"
+PHASE_FILES="${PHASE_FILES:-}"
+
 STACK="unknown"
-[ -f "go.mod" ] && STACK="go"
-[ -f "package.json" ] && STACK="typescript"
-[ -f "pyproject.toml" ] && STACK="python"
-[ -f "setup.py" ] || [ -f "requirements.txt" ] && STACK="python"
+for f in $PHASE_FILES; do
+  case "$f" in
+    *.go)                  STACK="go"; break ;;   # a Go test file in scope wins outright
+    *.ts|*.tsx|*.js|*.jsx) STACK="typescript" ;;
+    *.py)                  STACK="python" ;;
+  esac
+done
+
+# Empty scope is only safe in a single-manifest repo. In a mixed repo do NOT
+# guess from a root manifest: a Go module plus a root package.json would wrongly
+# force Go onto a React test phase. Fail closed and request the target files.
+if [ "$STACK" = "unknown" ]; then
+  manifests=0
+  [ -f "go.mod" ] && manifests=$((manifests + 1))
+  [ -f "package.json" ] && manifests=$((manifests + 1))
+  { [ -f "pyproject.toml" ] || [ -f "setup.py" ] || [ -f "requirements.txt" ]; } && manifests=$((manifests + 1))
+  if [ "$manifests" -gt 1 ]; then
+    echo "stack=ambiguous: populate PHASE_FILES from the phase scope (multi-manifest repo)" >&2
+    exit 1
+  fi
+  [ -f "go.mod" ] && STACK="go"
+  [ "$STACK" = "unknown" ] && [ -f "package.json" ] && STACK="typescript"
+  [ "$STACK" = "unknown" ] && { [ -f "pyproject.toml" ] || [ -f "setup.py" ] || [ -f "requirements.txt" ]; } && STACK="python"
+fi
 echo "stack=$STACK"
 ```
 
@@ -35,7 +67,7 @@ echo "stack=$STACK"
 
 **Never dispatch `go-tester` for non-Go stacks.** The Go test commands and mock conventions only apply when `STACK=go`. For any other stack, skip the Go-specific sections below.
 
-In Copilot native mode `go-tester` may map to `agent_type`. In Codex managed mode prefer a matching custom agent from `~/.codex/agents/` or `.codex/agents/`; otherwise bind the logical role in the prompt and treat the worker output as untrusted until the orchestrator accepts it.
+In Copilot native mode, `go-tester` maps to an `agent_type` only when that agent is actually installed. When it is **not** an available native `agent_type`, do not fail and do not silently drop the Go rules: dispatch a real Copilot agent type (`general-purpose`), bind the logical role in the prompt (`Logical role: go-tester`), and front-load the canonical contract from `~/.ai-config/agents/go-tester.md` so the full Go test rule set still applies. In Codex managed mode prefer a matching custom agent from `~/.codex/agents/` or `.codex/agents/`; otherwise bind the logical role in the prompt and treat the worker output as untrusted until the orchestrator accepts it.
 
 ## When to use
 
@@ -128,6 +160,13 @@ Update `{plan_root}/{slug}/progress.md`:
 ```
 
 ---
+
+## Canonical rules first (Go)
+
+When `STACK=go`, load the complete canonical test rule set via the `go-tester` Pre-work
+(`~/.ai-config/agents/go-tester.md`, which lists `testing`, `go-style`, `error-handling`, and
+`writing-modern-go`) before writing tests. The patterns and checklist below are a fast working
+reference, not a replacement. On any conflict the canonical rules win.
 
 ## Test naming
 
