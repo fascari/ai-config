@@ -45,10 +45,6 @@ if [[ ! -d "$skills_dir" ]]; then
   exit 1
 fi
 
-# Map: provider -> target_dir -> prefix
-declare -A TARGETS
-declare -A PREFIXES
-
 case "$provider" in
   codex|opencode|copilot|claude)
     ;;
@@ -62,23 +58,6 @@ case "$provider" in
     ;;
 esac
 
-if [[ "$provider" == "all" || "$provider" == "codex" ]]; then
-  TARGETS["codex"]="$HOME/.agents/skills"
-  PREFIXES["codex"]=""
-fi
-if [[ "$provider" == "all" || "$provider" == "copilot" ]]; then
-  TARGETS["copilot"]="$HOME/.copilot/skills"
-  PREFIXES["copilot"]=""
-fi
-if [[ "$provider" == "all" || "$provider" == "claude" ]]; then
-  TARGETS["claude"]="$HOME/.claude/skills"
-  PREFIXES["claude"]=""
-fi
-if [[ "$provider" == "all" || "$provider" == "opencode" ]]; then
-  TARGETS["opencode"]="$HOME/.config/opencode/skills"
-  PREFIXES["opencode"]=""
-fi
-
 shopt -s nullglob
 skill_paths=("$skills_dir"/*/)
 if (( ${#skill_paths[@]} == 0 )); then
@@ -86,15 +65,16 @@ if (( ${#skill_paths[@]} == 0 )); then
   exit 1
 fi
 
-link_count=0
-for provider_key in "${!TARGETS[@]}"; do
-  target_dir="${TARGETS[$provider_key]}"
-  prefix="${PREFIXES[$provider_key]}"
+install_skill_links() {
+  local target_dir="$1"
+  local skill_path
+  local skill_name
+  local link_path
   mkdir -p "$target_dir"
+
   for skill_path in "${skill_paths[@]}"; do
     skill_name="$(basename "$skill_path")"
-    link_name="${prefix}${skill_name}"
-    link_path="$target_dir/$link_name"
+    link_path="$target_dir/$skill_name"
     if [[ -e "$link_path" && ! -L "$link_path" ]]; then
       echo "Skipping $link_path because it exists and is not a symlink." >&2
       continue
@@ -102,7 +82,29 @@ for provider_key in "${!TARGETS[@]}"; do
     ln -sfn "$skill_path" "$link_path"
     ((link_count += 1))
   done
-done
+}
+
+link_count=0
+case "$provider" in
+  all|codex)
+    install_skill_links "$HOME/.agents/skills"
+    ;;
+esac
+case "$provider" in
+  all|copilot)
+    install_skill_links "$HOME/.copilot/skills"
+    ;;
+esac
+case "$provider" in
+  all|claude)
+    install_skill_links "$HOME/.claude/skills"
+    ;;
+esac
+case "$provider" in
+  all|opencode)
+    install_skill_links "$HOME/.config/opencode/skills"
+    ;;
+esac
 
 echo "Installed $link_count skill link(s) from $repo_name for $provider."
 
@@ -121,7 +123,7 @@ if [[ "$provider" == "all" || "$provider" == "codex" ]]; then
   agent_link_count=0
   for agent_path in "${agent_paths[@]}"; do
     agent_name="$(basename "$agent_path")"
-    link_path="$codex_target_dir/${PREFIXES[codex]}${agent_name}"
+    link_path="$codex_target_dir/$agent_name"
     if [[ -e "$link_path" && ! -L "$link_path" ]]; then
       echo "Skipping $link_path because it exists and is not a symlink." >&2
       continue
@@ -137,13 +139,13 @@ fi
 if [[ "$provider" == "all" || "$provider" == "opencode" ]]; then
   opencode_agents_dir="$repo_root/providers/opencode/agents"
   opencode_target_dir="$HOME/.config/opencode/agents"
-  
+
   if [[ -d "$opencode_agents_dir" ]]; then
     shopt -s nullglob
     opencode_agent_paths=("$opencode_agents_dir"/*.md)
     if (( ${#opencode_agent_paths[@]} > 0 )); then
       mkdir -p "$opencode_target_dir"
-      
+
       opencode_link_count=0
       for agent_path in "${opencode_agent_paths[@]}"; do
         agent_name="$(basename "$agent_path")"
@@ -159,7 +161,7 @@ if [[ "$provider" == "all" || "$provider" == "opencode" ]]; then
       echo "Installed $opencode_link_count Opencode custom agent link(s) into $opencode_target_dir."
     fi
   fi
-  
+
   # Install opencode.jsonc template
   opencode_config_src="$repo_root/providers/opencode/opencode.jsonc"
   opencode_config_dst="$HOME/.config/opencode/opencode.jsonc"

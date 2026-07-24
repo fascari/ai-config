@@ -128,6 +128,8 @@ Standard workflow: orchestrating-tasks → researching-codebase → planning-imp
 
 See [`skills/README.md`](skills/README.md) for the full catalog.
 
+Use `orchestrating-single-loop` for production features and bug fixes where a single bounded workflow is preferable to a dispatched pipeline.
+
 ## Persistent Memory
 
 Two skills manage session persistence across AI providers:

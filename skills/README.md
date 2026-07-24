@@ -5,7 +5,7 @@ AI-assisted workflow skills for software engineering tasks. Each subdirectory co
 
 ## Entry Points
 
-Use **orchestrating-tasks** as the single entry point when maximum assurance is required, or **orchestrating-tasks-efficient** when cost-aware quality is preferred.
+Use **orchestrating-tasks** as the single entry point when maximum assurance is required, **orchestrating-tasks-efficient** when cost-aware quality is preferred, or **orchestrating-single-loop** for a bounded production vertical slice.
 
 `orchestrating-tasks` is split into focused sub-files for maintainability. Read `orchestrating-tasks/SKILL.md` first, then open the relevant sub-file:
 
@@ -36,6 +36,7 @@ Use **orchestrating-tasks** as the single entry point when maximum assurance is 
 |---|---|
 | [orchestrating-tasks](orchestrating-tasks/) | Single entry point for all AI-assisted tasks. Detects complexity, routes to the right skill chain, manages plan state, and dispatches parallel agents when possible. High Assurance reference. |
 | [orchestrating-tasks-efficient](orchestrating-tasks-efficient/) | Cost-aware entry point that preserves deterministic gates and cross-vendor review, but reduces dispatches, context repetition, and unnecessary Complex model usage. Offers Lean, Standard, and High Assurance modes. |
+| [orchestrating-single-loop](orchestrating-single-loop/) | Bounded workflow for production features and bug fixes that do not need a multi-agent pipeline. |
 | [compressing-context](compressing-context/) | Compresses the current session into `session-summary.md` so a new chat can resume where this one left off. Triggered manually or when context reaches 70%+. |
 | [resuming-context](resuming-context/) | Restores full working context from a compressed session summary and hands off to the correct skill to continue. |
 
