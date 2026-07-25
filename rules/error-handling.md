@@ -200,3 +200,47 @@ func (r Repository) FindByID(ctx context.Context, id string) (domain.Order, erro
 ```
 
 The rule: **when `err == nil`, the returned value must always be valid and usable.** Never make the caller guess.
+
+## Validate Numeric Input Before Narrowing at a Trust Boundary
+
+A **trust boundary** is any point where a value crosses from a source you do not control (an external feed, an HTTP request body, a message queue payload, a config file) into code that assumes the value is well-formed. Whenever such a value is about to undergo an **unchecked narrowing conversion** (`float64` → `int64`, `float64` → `int`, `int64` → `int32`, or any similar lossy/overflowing cast), validate it as finite and in range *before* the conversion, not after.
+
+An unchecked narrowing conversion silently produces garbage instead of failing loudly:
+
+- `NaN` and `+/-Inf` convert to implementation-defined or wraparound values, not an error
+- A magnitude that overflows the target type wraps or saturates silently
+- Negative values narrow into a type that later assumes non-negativity, corrupting downstream invariants (e.g., a value used as a map key, an array index, or a monotonic counter)
+
+```go
+// Bad: unchecked narrowing at the boundary. NaN, +/-Inf, negative, or an
+// overflowing value silently corrupts whatever this key feeds into.
+func levelKey(price float64) int64 {
+    return int64(math.Round(price * scale))
+}
+
+// Good: an exported pure predicate validates before the narrowing happens.
+// Representable reports whether price can be safely narrowed to the
+// internal key type: it must be finite, non-negative, and its scaled,
+// rounded value must fit in int64.
+func Representable(price float64) bool {
+    if math.IsNaN(price) || math.IsInf(price, 0) || price < 0 {
+        return false
+    }
+    scaled := math.Round(price * scale)
+    return scaled >= -math.MaxInt64 && scaled <= math.MaxInt64
+}
+
+func levelKey(price float64) int64 {
+    return int64(math.Round(price * scale)) // caller already validated
+}
+```
+
+### Where to Enforce It
+
+Call the predicate **at the trust boundary that owns rejection**, not inside the narrow, deep function that performs the conversion:
+
+- If the codebase already has a rejection mechanism for other malformed inputs at that boundary (an actor that rejects invalid messages, a handler that returns `400 Bad Request`, a decoder that returns a mapping error), reuse it. A new validation reason is usually a one-line addition next to the existing ones, not a new mechanism.
+- Do not push the check down into the deep function itself (e.g., changing its signature to return `(key, bool)` or `(key, error)` everywhere it's called). That spreads a boundary concern into code that should be able to assume its input is already valid, and forces every internal caller to re-handle a case that can only ever occur once, at the edge.
+- Do not defer the check "for later" once the unchecked path is identified. An unvalidated float-to-int narrowing at a trust boundary is a correctness bug, not a style nit — it can silently corrupt in-memory state with no error, no log, and no test failure until the corrupted state is read back.
+
+This generalizes beyond prices: any external numeric input that will be rounded, scaled, hashed into a key, used as a size/count/index, or otherwise narrowed into a smaller or integer type needs the same finite-and-in-range check before the narrowing, validated once at the boundary and trusted everywhere after.
