@@ -141,6 +141,37 @@ if [[ "$provider" == "all" || "$provider" == "codex" ]]; then
   echo "Installed $agent_link_count Codex custom agent link(s) into $codex_target_dir."
 fi
 
+# Install Copilot custom agents as markdown files (when copilot is included).
+# Copilot CLI discovers user agents in ~/.copilot/agents/ (project agents live
+# in .github/agents/). Registering go-implementer/go-tester here gives Copilot
+# native agent dispatch parity with the OpenCode and Codex runtimes.
+if [[ "$provider" == "all" || "$provider" == "copilot" ]]; then
+  copilot_agents_dir="$repo_root/providers/copilot/agents"
+  copilot_target_dir="$HOME/.copilot/agents"
+
+  if [[ -d "$copilot_agents_dir" ]]; then
+    shopt -s nullglob
+    copilot_agent_paths=("$copilot_agents_dir"/*.md)
+    if (( ${#copilot_agent_paths[@]} > 0 )); then
+      mkdir -p "$copilot_target_dir"
+
+      copilot_link_count=0
+      for agent_path in "${copilot_agent_paths[@]}"; do
+        agent_name="$(basename "$agent_path")"
+        link_path="$copilot_target_dir/$agent_name"
+        if [[ -e "$link_path" && ! -L "$link_path" ]]; then
+          echo "Skipping $link_path because it exists and is not a symlink." >&2
+          continue
+        fi
+        ln -sfn "$agent_path" "$link_path"
+        ((copilot_link_count += 1))
+      done
+
+      echo "Installed $copilot_link_count Copilot custom agent link(s) into $copilot_target_dir."
+    fi
+  fi
+fi
+
 # Install Opencode custom agents as markdown files (when opencode is included)
 if [[ "$provider" == "all" || "$provider" == "opencode" ]]; then
   opencode_agents_dir="$repo_root/providers/opencode/agents"
