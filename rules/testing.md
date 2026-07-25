@@ -4,12 +4,148 @@ applyTo: "**/*_test.go,**/testdata/**/*.go,**/factory/**/*.go"
 
 # Testing
 
+## Test Quality Properties (FIRST)
+
+Every unit test must satisfy all five FIRST properties:
+
+| Property | Rule |
+|---|---|
+| **Fast** | Unit tests run in milliseconds. No I/O, no sleep, no real HTTP calls. If a test needs a database, it is an integration test (tag with `//go:build integration`) |
+| **Independent** | Tests do not share state. Each test arranges its own mocks and data. Execution order must not matter |
+| **Repeatable** | Same result every run, regardless of time, environment, or external systems. Use testdata factories and inject clocks — never call `time.Now()` in production code under test |
+| **Self-validating** | Test passes or fails automatically. No human inspection of output. `require` (not `assert`) stops on first failure |
+| **Timely** | Tests are written with the code, not after |
+
+```go
+// Bad: not fast (sleeps), not repeatable (real clock)
+func TestPrice_ShouldApplyDiscount(t *testing.T) {
+    time.Sleep(100 * time.Millisecond)
+    result := calculateDiscount(time.Now())
+    require.Equal(t, 0.15, result)
+}
+
+// Good: fast, deterministic, injectable clock
+func TestPrice_ShouldApplyDiscount(t *testing.T) {
+    fixedTime := time.Date(2024, 1, 15, 0, 0, 0, 0, time.UTC)
+    result := calculateDiscount(fixedTime)
+    require.Equal(t, 0.15, result)
+}
+```
+
+## Identifiers and Naming
+
+**Never use ticket IDs (e.g. `PROJ-1234`, `TASK-5678`) as identifiers in test code, fixtures, or test data.** Tickets are transient project-management metadata; test names and seeds must describe the *behavior* or *scenario* under test so they remain meaningful long after the ticket is closed.
+
+Forbidden:
+- Test function or sub-test names: `TestPROJ52012BaselineGuard`, `"should fix TASK-1234 bug"`
+- Fixture identifiers: `id: PROJ52012-ORDER-A`, `name: "PROJ-52012 Regression Order"`
+- Payload filenames: `update-input-proj52012-status-change.json`
+- Variable/constant names: `proj52012Order`, `PROJ52012OrderID`
+
+Correct:
+- Use scenario descriptors: `TestUpdateOrderStatusBaselineGuard`, `"should not create a new draft when latest version is withdrawn"`
+- Fixture identifiers describe the role: `id: SCENARIO-ORDER-A`, `name: "Baseline Guard Regression Order"`
+- Payload filenames describe the scenario: `update-input-baseline-guard-status.json`
+
+If a real-world identifier (SKU, account, order) is essential to reproduce the scenario, put it in a code comment near the fixture, not in the identifier itself.
+
+### Real-world identifier formats (domain fields)
+
+When a test sets a domain field that has a known production format, use that format. Generic placeholders (`"party-A"`, `"source-1"`, `"acct-X"`, `"id-1"`, `"foo"`) are forbidden when a production format exists — they read as alien to anyone debugging a real incident and make the test ungreppable against production logs.
+
+Distinguish rows with a numeric or descriptive suffix that preserves the format.
+
+| Field | Production format | OK | NOT OK |
+|---|---|---|---|
+| `order_id`, foreign refs | UUID (RFC 4122) | `00000000-0000-0000-0000-000000000001`, `...000000000002` | `id-1`, `order-A` |
+| `account_id` | `ACCT` + digits | `ACCT001`, `ACCT002` | `acct-A`, `account-1` |
+| `customer_id` | `CUST` + digits | `CUST001`, `CUST002` | `cust-X`, `customer-1` |
+| Mocked UUIDs | RFC 4122 | `00000000-0000-0000-0000-000000000001` | `uuid-1`, `id-X` |
+
+This rule is distinct from scenario descriptors (`SCENARIO-ORDER-A`): scenario descriptors are explicit tags for fixture rows used only by tests and have no production counterpart, so the rule above does not apply to them. If unsure whether a field has a production format, grep the codebase for a populated example before inventing a placeholder.
+
+### Numeric primary key values
+
+Bare integer literals as primary keys, foreign keys, or any DB-mapped ID are forbidden. Use a named constant or derive the value from the factory output.
+
+| OK | NOT OK |
+|---|---|
+| `EntityID: testdata.OrderID` | `EntityID: 77` |
+| `VersionID: ruleset.Versions[0].ID` | `VersionID: 99` |
+| `ParentID: int(entity.Parent.ID)` | `ParentID: 55` |
+
+If the test does not care about the specific ID value, leave it zero — do not invent magic numbers. `1`, `2`, `55`, `77` as IDs are the integer equivalent of `"id-1"` or `"acct-A"`: ungreppable, semantically void, and they hide whether the test actually asserts something meaningful about the value or just stamped a placeholder.
+
 ## Test Naming Convention
 
 ```go
 func TestUseCaseName_ShouldDescribeExpectedBehavior(t *testing.T) { ... }
 // subtests: "should return error when entity not found"
 ```
+
+### Table-driven predicate must hold for every row
+
+The parent function's `ShouldVerb` must be true for ALL subtests in the table. If the table contains rows asserting opposite behaviors (one preserves, another overwrites; one creates, another skips), the predicate is invalid — either:
+
+- Split into two separate test functions (`Test_ShouldPreserveX`, `Test_ShouldOverwriteX`)
+- Or use a neutral predicate that holds for all rows (e.g. `Test_ShouldDispatchByAvailability`, `Test_ShouldHandleX`)
+
+Bad: `TestProcessOrders_ShouldUpdateStatusFields` with one row that preserves and another that overwrites — "ShouldUpdate" is false for the preserve row.
+
+Good: `TestProcessOrders_ShouldDispatchByAvailability` covering both branches, OR two separate functions.
+
+## Modern Go in tests — Boy Scout rule
+
+When editing a `*_test.go` file, replace any `writing-modern-go` violation you encounter in the file (even pre-existing) in the same edit. The canonical list lives in the `writing-modern-go` skill — do NOT duplicate it here. Read that skill once before the first test edit and apply every "Before → After" entry to the file you are touching.
+
+Leaving obsolete idioms in a file you just touched signals you didn't read the project's Go version and degrades the readability of the diff for reviewers comparing your new code to the surrounding style.
+
+## Test File Placement
+
+**Rule: match the test file to its source file; never invent feature-named test files.**
+
+| Source file | Existing test file | Correct approach |
+|---|---|---|
+| `foo.go` | none | `foo_test.go` (`package foo` or `package foo_test` as appropriate) |
+| `foo.go` | `foo_test.go` is `package foo_test` and you need whitebox access | add an `export_test.go` (`package foo`) that re-exports the internal symbol as a package-level var; test it from `foo_test.go` |
+| `foo.go` | `foo_test.go` is `package foo` | add to `foo_test.go` — **do not create a new file** |
+
+**`export_test.go` pattern (Go stdlib convention):**
+```go
+// export_test.go — compiled only during `go test`
+package foo
+
+var ExportedForTest = internalFunc
+```
+
+**Forbidden patterns:**
+- Creating `fooguard_test.go`, `foofixup_test.go`, or any file whose name encodes a feature, ticket, or implementation detail rather than the source file being tested.
+- Creating a new `_test.go` file when an existing file in the same package already covers the same source file.
+- Using `_internal_test.go` as a suffix — this is NOT a Go community convention; it has no stdlib precedent.
+
+**Why:** feature-named test files fracture test suites, orphan after refactors, and signal to reviewers that the author didn't know the `export_test.go` pattern.
+
+### Short, semantic names
+
+The predicate (`ShouldVerb`) must describe the observable outcome — not re-state what the subject already encodes, not add trailing qualifiers the group makes obvious.
+
+**Remove:**
+- Context implied by the test group: `ForHighPriority`, `WhenPriorityAndVIPCustomer`, `WhenScopesProvided`, `ForValidStatuses`
+- Impl-detail leakage: `ShouldCallFilteredRepoMethod`, `ShouldRouteThroughSaveOrder`
+- Double-negatives and filler: `EvenWhen`, `Chronologically`
+- Structural double-`Should`: `TestShouldSkip_ShouldEvaluate` → `TestSkip_ShouldEvaluate`
+
+**Rename examples:**
+
+| Too long | Correct |
+|---|---|
+| `TestCreateOrder_ShouldCreatePriorityOrderWhenFlagSetAndCustomerIsVIP` | `TestCreateOrder_ShouldCreatePriorityOrder` |
+| `TestProcessOrders_ShouldCallFilteredQueryWhenScopesProvided` | `TestProcessOrders_ShouldUseFilteredQuery` |
+| `TestFindLatestVersion_ShouldPreferChronologicallyLatestVersion` | `TestFindLatestVersion_ShouldPreferLatestVersion` |
+| `TestRouteOrder_ShouldRouteToPriorityPathWhenOrderTypeIsPriority` | `TestRouteOrder_ShouldRouteToPriorityPath` |
+| `TestShouldSkipOrder_ShouldEvaluateExclusionCriteria` | `TestSkipOrder_ShouldEvaluateCriteria` |
+
+**Target:** the full function name fits in ~70 characters without scrolling. If it doesn't, shorten the predicate.
 
 ## Table-Driven vs Individual Tests
 
@@ -159,25 +295,55 @@ func TestUseCase_ShouldReturnEntity(t *testing.T) {
 
 ## Mock Generation
 
+Mockery is configured with a single minimal root `.mockery.yaml` holding only global
+defaults. Do **not** enumerate packages or interfaces in it, and do **not** set per-package
+`dir`/`outpkg`. Each package that owns interfaces declares its own co-located directive, so
+adding an interface never requires editing central config.
+
+Root `.mockery.yaml` (the whole file):
+
+```yaml
+with-expecter: true
+case: snake
+disable-version-string: true
+issue-845-fix: true
+```
+
+Co-located directive at the top of the file that declares the interface(s):
+
 ```go
 //go:generate mockery --all --case=snake --disable-version-string --with-expecter
 ```
 
+- One directive per interface-owning file. `--all` mocks every interface in that package
+  into a local `mocks/` subpackage (`package mocks`).
+- Generate with `go generate ./...` (wire it as the `mocks` task; never a bespoke
+  `mockery` invocation that re-parses a `packages:` block).
+- This legacy `--all` mode names mocks **without** a `Mock` prefix and files in snake_case:
+  interface `Snapshotter` → `mocks/snapshotter.go`, type `mocks.Snapshotter`, constructor
+  `mocks.NewSnapshotter(t)`. Reference tests accordingly (`mocks.NewSnapshotter`, not
+  `mocks.NewMockSnapshotter`).
 - Always use `EXPECT()` builder: **never** `mock.On()`
 - Use `mock.Anything` for context parameters
 
 ## Assertions
 
-- `require` for ALL assertions: stops test on failure
-- **Never** use `assert`: test continues after failure and cascades panics
+- `require` for ALL assertions in standalone tests: stops test on failure
+- **Never** use `assert` in standalone tests: test continues after failure and cascades panics
+- **In testify suite tests**, use `cs.NoError`, `cs.Equal`, `cs.Require()`, etc. — suite methods internally call `require` and stop on failure. `cs.*` assertion methods are the correct pattern for integration suites and are NOT violations.
 
 ```go
-// Correct
+// Correct — standalone tests
 require.NoError(t, err)
 require.Equal(t, want, got)
 require.True(t, errors.Is(err, tt.wantErr))
 require.Len(t, results, 3)
 require.Empty(t, results)
+
+// Correct — testify suite tests
+cs.NoError(err)
+cs.Equal(want, got)
+cs.Require().Equal(want, got)
 ```
 
 ```go
@@ -187,6 +353,23 @@ assert.NoError(t, err)       // ← subsequent lines may panic on nil dereferenc
 ```
 
 This rule is absolute: **no exceptions, no `assert` anywhere in test files**, including handler tests, table-driven loops, and suite subtests.
+
+### Assert against full objects, not field by field
+
+Compare results against a complete expected value from `testdata/`. Field-by-field assertions are a test smell: they silently miss new fields, produce noisy failure messages, and obscure intent.
+
+```go
+// Wrong — field-by-field assertions hide missing fields
+require.Len(t, result, 1)
+require.Equal(t, "order-1", result[0].ID)
+require.Equal(t, 103.5, result[0].TotalPrice)
+require.Equal(t, "PENDING", result[0].Status)
+
+// Correct — assert the full slice/object in one call
+require.Equal(t, []domain.Order{testdata.PendingOrder()}, result)
+```
+
+This applies to all returned values: entities, DTOs, slices, and maps. Define the expected value in `testdata/` so it is reusable and self-documenting.
 
 ## Test Data
 
@@ -308,6 +491,38 @@ func (s *RepositorySuite) TestFindByID_ShouldReturnEntityWhenExists() {
 }
 ```
 
+### Fixture lifecycle (CRITICAL)
+
+`Suite.SetupTest()` reloads YAML fixtures **per `Test...` suite method**, NOT per `cs.Run` subtest. This means:
+
+- ✅ Each `Test{Name}` method starts with a clean DB state.
+- ❌ `cs.Run` subtests inside the same `Test...` method share state — mutations from row N persist into row N+1.
+
+**Implication for table-driven tests over mutating operations** (Create / Update / Delete):
+
+- Do NOT use a single `Test...` method with a table that mutates the same rows across iterations. The 2nd row will see the mutated state from the 1st row.
+- Either:
+  1. **Split into separate `Test...` methods** — one per scenario. Each gets fresh fixtures and can reuse the same fixture rows.
+  2. **Keep table-driven only when each row targets isolated rows** (different IDs, different codes, different regions). Cross-row independence must be explicit.
+- Read-only and rejected (errored) cases are safe in tables: they don't mutate state.
+
+```go
+// ❌ Wrong — table mutates the same record across rows; needs per-case isolation
+func (s *Suite) TestUpdate_ShouldAdjustRelatedRecord() {
+    tests := []struct{ ... }{
+        {input: updateOrderUS()},  // mutates US record
+        {input: updateOrderCA()},  // forced to CA only because US is dirty
+        {input: updateOrderMX()},  // forced to MX only because US/CA are dirty
+    }
+    for _, tt := range tests { s.Run(tt.name, func() { ... }) }
+}
+
+// ✅ Correct — separate methods, fresh fixtures, all reuse the same rows
+func (s *Suite) TestUpdate_ShouldAdjustWhenOverlapping()    { ... }
+func (s *Suite) TestUpdate_ShouldAdjustWhenAdjacent()       { ... }
+func (s *Suite) TestUpdate_ShouldNotAdjustWhenNoConflict()  { ... }
+```
+
 ### Database assertions in integration tests
 
 Never write raw DB queries inline inside a test function. Any assertion that requires querying the database to verify side effects belongs in a dedicated `assert/` sub-package under `testdata/`:
@@ -427,3 +642,49 @@ func TestActivateSubscription_ShouldSkipWhenTrialActive(t *testing.T) {
 - Error cases (each error type)
 - Edge cases (empty, nil, zero values)
 - Transaction rollback scenarios (for write operations)
+
+## What NOT to Test
+
+**Tautology tests** — tests that assert a value equals itself via a constant or that a library
+function works as documented. They add zero regression value and must never be written.
+
+### Enum round-trip tests (forbidden)
+
+Any test that verifies `ParseX("pending")` returns `StatusPending` is a tautology: you are
+asserting that a string constant is equal to itself. These tests do not protect against real
+bugs; if the E2E or integration tests run, any parse failure is caught there.
+
+```go
+// FORBIDDEN — tautology test, adds no value
+func TestParseOrderStatus_ShouldAcceptAllValidStatuses(t *testing.T) {
+    tests := []struct {
+        input string
+        want  domain.OrderStatus
+    }{
+        {input: "pending",   want: domain.Pending},
+        {input: "completed", want: domain.Completed},
+        // ...
+    }
+    // This just verifies string("pending") == "pending" via the constant. Remove it.
+}
+```
+
+The only valid reason to test a `ParseX` function is when it does non-trivial transformation
+beyond membership validation (e.g., case normalization, alias resolution, format parsing).
+Membership-only validators (`enum.Validate(...)`) are not worth testing in isolation.
+
+### Library behavior tests (forbidden)
+
+Do not test that standard library or project-utility behavior works as documented. Tests must
+cover **your** code's logic, not the library's contract.
+
+```go
+// FORBIDDEN — tests that json.Unmarshal populates a struct, not your logic
+// FORBIDDEN — tests that a database driver correctly saves a record you passed to it
+// FORBIDDEN — tests that a mockery mock returns what you told it to return
+```
+
+### Anti-pattern signal
+
+If a test would still pass even if you replaced the entire implementation with a stub that
+returns the hardcoded expected value, the test is a tautology. Delete it.

@@ -84,6 +84,26 @@ Instead, name packages by what they provide:
 | `common/clock.go` | `clock/` | Provides time abstraction |
 | `types/pagination.go` | `paginator/` | Provides pagination logic |
 
+## File organization within a package
+
+A package is one unit; its files are how you keep that unit readable. Do not let
+a single file grow into a catch-all. When a `.go` file gets large or mixes
+distinct roles, split it into cohesive files **in the same package**, each named
+for the role it holds:
+
+- One file per cohesive role, not one type per file for its own sake. Group a
+  type with the methods and helpers that belong to it.
+- Name files by what they provide, mirroring the package rule: `actor.go`
+  (actor-owned state and its mutations), `snapshot.go` (snapshot building),
+  `api.go` (the public methods), not `misc.go`, `helpers.go`, or `types.go`.
+- Keep the public handle and its lifecycle in the file that shares the package
+  name (`state.go`, `poller.go`).
+- Splitting files never changes behavior, exported symbols, or imports for
+  callers, it only improves navigation.
+
+If you cannot name a file for a single role, that logic probably belongs in a
+different package (see Forbidden Package Names).
+
 ## Dependency Direction
 
 Dependencies flow inward. Outer layers depend on inner layers, never the reverse:
@@ -98,6 +118,8 @@ Cross-domain imports within `internal/app/` are forbidden. If two domains need t
 
 1. Extract the shared concept into an `internal/` infrastructure package
 2. Or define interfaces at the consumer side and let the wiring layer connect them
+
+An orchestration loop that coordinates a low-level adapter with application state (for example a feed poller driving an HTTP adapter and the engine actor) belongs in its OWN package, not inside the adapter. It depends downward on the adapter and inverts its dependency on the app through consumer-side interfaces. Embedding it in the adapter couples infrastructure to the app layer and breaks the direction above. A provisional file path in a plan or design analysis does not override this: package boundaries follow provide-not-contain and dependency direction.
 
 ## Preventing Single Points of Dependency
 

@@ -59,6 +59,28 @@ userSlice, fetchErr := repo.FindAll(ctx)
 userCount := len(userSlice)
 ```
 
+### Functions
+
+Prefer short names over long, descriptive ones — this is the Go community convention
+(`gofmt`/stdlib idiom: name length should scale with distance between declaration and use,
+not with how much the name can explain). This is a deliberate departure from Clean Code's
+preference for long, self-documenting names; in Go, a short name plus a clear signature and
+a tight scope beats a long, sentence-like name. Do not chain adjectives/qualifiers onto a
+predicate name to describe every condition it checks — the implementation is the source of
+truth for that.
+
+```go
+// Bad — long, describes every branch of the condition in the name itself
+func isPriorityOrderEligibleForExpedited(order Order) bool { ... }
+
+// Good — short, scope and doc comment (if exported) carry the precision
+func isPriorityOrder(order Order) bool { ... }
+```
+
+Unexported helpers with a narrow, single-package scope should read close to a single word or
+short phrase. Reserve longer, fully-qualified names for exported symbols whose callers are far
+from the declaration and need the name alone to disambiguate.
+
 ### Constants & Initialisms
 
 MixedCaps only. Never `ALL_CAPS` or `k`-prefix:
@@ -145,6 +167,26 @@ if err != nil {
 } else {
     doHappyPath()
 }
+```
+
+### Explanatory variables
+
+When a conditional has more than one clause or encodes a business decision, extract it into a named boolean or a domain method. Never force the reader to reverse-engineer intent from raw comparisons.
+
+```go
+// Bad: reader must decode intent from raw comparisons
+if order.Status == domain.StatusPending && order.ScheduledAt.Before(cutoff) && !order.IsCancelled {
+    ...
+}
+
+// Good: intent is explicit via explanatory variable
+isReadyForFulfillment := order.Status == domain.StatusPending &&
+    order.ScheduledAt.Before(cutoff) &&
+    !order.IsCancelled
+if isReadyForFulfillment { ... }
+
+// Better: extract to domain method when the rule belongs to the domain type
+if order.IsReadyForFulfillment() { ... }
 ```
 
 ## Interfaces

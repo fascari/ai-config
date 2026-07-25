@@ -72,11 +72,14 @@ return fmt.Errorf("finding user by id %s: %w", id, err)
 
 ## Handler Error Mapping
 
-Every domain handler package has an `error_mapping.go` that maps domain error codes to HTTP status codes.
+Every domain has ONE error mapping from domain error codes to HTTP status codes, rendered through the reusable `pkg/httperror.Render` (kit). There is never a per-operation error-mapping file duplicated across `handler/{op}/` packages.
 
 ### Structure
 
-File location: `internal/app/{domain}/handler/error_mapping.go`
+File location depends on the handler layout:
+
+- **Per-operation handlers** (`handler/{operation}/` packages): the single `Mapping` lives at the domain root, `internal/app/{domain}/errormapping.go`, in the domain's app package.
+- **Single handler package**: `internal/app/{domain}/handler/error_mapping.go`.
 
 ```go
 package handler
@@ -171,3 +174,29 @@ return fmt.Errorf("finding entity: %w", err)
 // Good: OR log only (fire and forget, e.g., background jobs)
 log.Error("background job failed", "error", err)
 ```
+
+## Never Return Silent Zero Values
+
+If a function's contract guarantees a result when `err == nil`, never return `Entity{}, nil` in a code path that should be `ErrNotFound`. Go's zero-value structs are structurally identical to a valid empty entity — returning one silently forces defensive nil/zero-checking everywhere downstream and creates a class of bugs the compiler cannot catch.
+
+```go
+// Bad: caller cannot distinguish "not found" from "valid empty entity"
+func (r Repository) FindByID(ctx context.Context, id string) (domain.Order, error) {
+    order, err := r.store.FindByID(ctx, id)
+    if errors.Is(err, store.ErrRecordNotFound) {
+        return domain.Order{}, nil // ← silent zero value
+    }
+    return order, err
+}
+
+// Good: explicit sentinel error
+func (r Repository) FindByID(ctx context.Context, id string) (domain.Order, error) {
+    order, err := r.store.FindByID(ctx, id)
+    if errors.Is(err, store.ErrRecordNotFound) {
+        return domain.Order{}, apperror.New(domain.ErrCodeEntityNotFound, "order %s not found", id)
+    }
+    return order, err
+}
+```
+
+The rule: **when `err == nil`, the returned value must always be valid and usable.** Never make the caller guess.
