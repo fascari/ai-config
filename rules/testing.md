@@ -190,11 +190,25 @@ This rule is absolute: **no exceptions, no `assert` anywhere in test files**, in
 
 ## Test Data
 
-Never define complex test data inline in test files.
+**HARD RULE — `testdata/` is mandatory, always.** Every test package that
+constructs a domain entity, DTO, message, or any composite value MUST build it
+through a `testdata/` factory package. Defining that data inline inside a
+`*_test.go` file is a violation, regardless of the layer under test — domain,
+engine, actor/state, use case, handler, or integration. This applies even when
+the test is a single function or a table-driven test. There is no "small enough
+to inline" exception for composite types.
+
+The only values permitted inline are trivial scalars with no domain meaning
+(e.g. a loop bound, a single `int`/`string`/`bool` flag). The moment a test
+needs a struct literal for a domain type, that literal belongs in a factory
+function under `testdata/`, named after the state it represents.
+
+Never define test data inline in test files.
 
 ### testdata/ package (per feature)
 
-For use case and handler tests, create `testdata/` within the package. Each file is named after the domain entity it constructs, **never by role** (`inputs.go`, `expected.go`, `errors.go` are wrong):
+For **every** test package (domain, engine, state, use case, handler,
+integration alike), create `testdata/` within the package. Each file is named after the domain entity it constructs, **never by role** (`inputs.go`, `expected.go`, `errors.go` are wrong):
 
 ```
 pkg/{feature}/
