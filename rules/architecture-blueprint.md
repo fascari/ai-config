@@ -95,7 +95,7 @@ reviewers know a choice is deliberate. When used, they must be wired correctly.
 | Logging | one structured logger (`log/slog`, zap, zerolog, or `pkg/logger`) |
 | Dependency injection | `cmd/{app}/modules` constructor wiring, or uber/fx — consistent across domains |
 | Persistence (DB) | `repository/` layer; repository tests are integration (`//go:build integration`) with YAML fixtures; DB side effects asserted via an `assert/` sub-package |
-| External HTTP | a typed client in `internal/{svc}client`, tested through the httptest **upstream stub** integration suite with golden fixtures |
+| External HTTP | a typed client in `internal/{svc}client`, tested through the httptest **upstream stub** integration suite with golden fixtures, under `internal/app/{domain}/test/e2e/{operation}/` (never a loose package directly under the domain) |
 | Events / async | only when the objective requires it — never speculative |
 
 ## Test-suite baseline
@@ -112,10 +112,15 @@ tests dominate; integration/e2e cover wiring and external contracts.
   that records requests and serves per-route golden bodies. This is the modern,
   dependency-free alternative to `gock`/transport monkeypatching, which the gate
   forbids (U9).
-- **Integration/e2e** — a generic `internal/testing/integration` suite drives
-  the assembled router against the upstream stub (and a real DB with YAML
-  fixtures when persistence is in scope), comparing golden request/response
-  files. Tag with `//go:build integration`.
+- **Integration/e2e**: a generic `internal/testing/integration/suite` harness
+  (stdlib `httptest` + `require.JSONEq`, no `httpexpect`) drives the assembled
+  router against the upstream stub (and a real DB with YAML fixtures when
+  persistence is in scope). One package per HTTP operation under
+  `internal/app/{domain}/test/e2e/{operation}/`, each backed by a domain suite
+  under `internal/app/{domain}/test/{domain}suite/` that embeds the generic
+  harness. Golden request/response files live in
+  `testdata/{upstream,response,payload}/`. Tag every file with
+  `//go:build integration`.
 
 ## How the harness runs
 

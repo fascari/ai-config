@@ -600,6 +600,76 @@ The non-negotiable rule is: **never inline raw DB queries in the test**. Always 
   email: user@example.com
 ```
 
+## End-to-End (HTTP) Tests
+
+An E2E test drives the assembled HTTP router (real handlers, real use cases, a real
+downstream client) against a stubbed upstream. It exercises the full request path that a
+production caller sees; it never reaches into actor/service internals to assert state.
+
+**Location is per-operation**, one package per HTTP operation, never one monolithic suite file:
+
+```
+internal/app/{domain}/test/
+├── {domain}suite/
+│   └── suite.go              ← domain suite: wires the router + upstream stub + drive helpers
+└── e2e/
+    └── {operation}/
+        ├── {operation}_test.go
+        └── testdata/
+            ├── upstream/     ← what the stubbed upstream serves
+            ├── response/     ← golden HTTP response body
+            └── payload/      ← request body, for write operations
+```
+
+A generic, dependency-free harness lives once per repository under
+`internal/testing/integration/suite/{suite.go,upstream.go}` and is reused by every domain
+suite. It wraps `net/http/httptest` with an upstream stub server (`Stub`, `StubHandler`,
+`LastRequest`) plus an API server (`StartAPI`), and exposes `GET`/`POST` helpers returning a
+`Response{Status, Body}`, and `RequireJSON(status, goldenBody, response)` for the assertion.
+Do not add `gavv/httpexpect` or any other HTTP-assertion library: the shared harness absorbs
+the boilerplate so stdlib stays as terse as a fluent client, while remaining transparent and
+free of a new dependency (see U9 in the architecture gate).
+
+Every file in this tree is tagged:
+
+```go
+//go:build integration
+```
+
+```go
+//go:build integration
+
+package quote_test
+
+type QuoteSuite struct {
+    quotesuite.Suite
+}
+
+func TestQuoteSuite(t *testing.T) { suite.Run(t, new(QuoteSuite)) }
+
+func (s *QuoteSuite) TestQuote_ShouldReturnQuote() {
+    s.UpstreamServes(s.ReadFile("testdata/upstream/rate.json"))
+
+    resp := s.GET("/v1/quote?in=NEX&out=ETH&amount=10")
+
+    s.RequireJSON(http.StatusOK, s.ReadFile("testdata/response/quote.json"), resp)
+}
+```
+
+**Assert the whole HTTP body against a `testdata/response/` golden, never field by field.**
+This is the same rule as [Assert against full objects, not field by field](#assert-against-full-objects-not-field-by-field),
+applied at the HTTP boundary instead of a return value. A test that reads a domain snapshot or
+in-memory state to check individual fields has bypassed the handler/DTO layer and is not an E2E
+test. Move that assertion into a unit test of the layer it actually exercises.
+
+For an async pipeline (a poller, a queue consumer) driving the state under test, wait at the
+HTTP boundary too: poll a read endpoint until it reflects the expected state, bounded by a
+deadline, using a ticker, never a fixed `time.Sleep`.
+
+An E2E suite for a domain whose behavior includes replaying or retrying upstream messages must
+include an idempotent-replay test: re-deliver the same upstream payload and assert the
+observable HTTP response is unchanged (no duplicate side effect).
+
 ## Comments in Tests
 
 Test code is self-describing. The function name, subtest strings, and variable names are the documentation.

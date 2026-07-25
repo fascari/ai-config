@@ -23,6 +23,15 @@ counterpart to `style-gate` (which checks micro style on changed files).
 Run `style-gate` on changed files every phase (fast subset); run this full
 harness when validating a whole domain or a fresh scaffold.
 
+## Scope
+
+This gate enforces Go backend architecture only (`rules/architecture-blueprint.md`
+is Go-specific). The single frontend-touching check (`checks-frontend.sh`, W8)
+is a repo-layout convention only: it confirms `web/` holds a self-contained
+frontend project, nothing about React code quality. There is no React/frontend
+conformance rule set or gate yet; do not read a PASS here as validating
+frontend code.
+
 ## How to run
 
 ```bash
