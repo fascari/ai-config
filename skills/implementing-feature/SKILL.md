@@ -283,6 +283,8 @@ No language-specific code rules are prescribed. Defer to:
 - [ ] Value receivers · pure functions where possible
 - [ ] `errors.Is()`: never `==`
 - [ ] No magic strings (typed constants)
+- [ ] **DRY**: no statement block duplicated across branches of one function (common tail runs once)
+- [ ] **One responsibility per function**: reusable select/build-a-collaborator logic is extracted (deep helper), not inlined beside its mutation
 - [ ] Backward compatibility verified
 
 **Non-Go stacks:**

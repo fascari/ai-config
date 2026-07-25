@@ -168,6 +168,32 @@ When `STACK=go`, load the complete canonical test rule set via the `go-tester` P
 `writing-modern-go`) before writing tests. The patterns and checklist below are a fast working
 reference, not a replacement. On any conflict the canonical rules win.
 
+## Test-suite strategy (cost/benefit)
+
+Pick the cheapest tier that proves the behavior. Tokens and CI time are budgets:
+most coverage should be fast unit tests; reserve heavier tiers for wiring and
+external contracts. See `rules/architecture-blueprint.md` for the baseline.
+
+| Tier | Proves | Cost | Use when |
+|------|--------|------|----------|
+| Unit | pure logic, one collaborator mocked | cheapest | default — the bulk of tests |
+| Handler | HTTP parse → use case → response shape | cheap | every endpoint; real use case + mocked collaborators + `pkg/handlertest` + `go:embed` golden JSON |
+| External-HTTP interception | a typed client against a recorded upstream | medium | any outbound HTTP; use an `httptest.Server` **upstream stub**, never `gock`/transport monkeypatching |
+| Integration / e2e | assembled router + real DB/upstream | most | wiring and contracts; tag `//go:build integration`, drive golden request/response fixtures; DB uses YAML fixtures + an `assert/` sub-package |
+
+**Interception strategy:** the httptest upstream stub is the modern,
+dependency-free default. It records requests and serves per-route golden bodies,
+works with any client, and needs no `http.DefaultTransport` patching. Do not
+introduce `gock`; the architecture gate fails on it (U9).
+
+**When there is a database:** repository tests are integration tests backed by
+YAML fixtures reloaded per suite method; never mock the DB; assert side effects
+through a dedicated `assert/` sub-package, never raw inline queries.
+
+Before reporting a phase done, run the deterministic gates: `style-gate`
+architectural greps and, for a whole domain or fresh scaffold, the full
+`skills/architecture-gate` harness. Any ERROR = not done.
+
 ## Test naming
 
 Follow the project's naming convention. General pattern:
@@ -215,6 +241,9 @@ time.Sleep(10 * time.Microsecond)
 **Go stack:**
 - [ ] Fail-fast assertions: never soft assertions
 - [ ] Project mock builder (`EXPECT()`, never `mock.On()`)
+- [ ] Mocks are **mockery-generated only** — no hand-written `fake*/stub*/mock*` structs
+- [ ] Handler tests assert the **whole** response object vs golden `testdata/` — no field-by-field or `InDelta`/`InEpsilon` float asserts
+- [ ] External HTTP tested via an `httptest.Server` upstream stub — never `gock`/transport monkeypatching
 - [ ] `//go:generate` or equivalent on all mocked interfaces
 - [ ] Test names: `TestFoo_ShouldDoX` / `"should do x"`: predicate holds for ALL rows
 - [ ] Test data via factory/fixture helpers: never inline complex structs

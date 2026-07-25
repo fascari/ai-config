@@ -101,6 +101,28 @@ git diff --name-only --diff-filter=AM HEAD | grep '\.go$' | xargs grep -nE \
 
 **Pass criteria**: no output from any grep.
 
+### 6. Architectural Shape Greps (Go clean-architecture)
+
+Run deterministic structural checks on the `internal/app` tree:
+
+```bash
+# Handler must use the concrete use case — never a handler-local interface (enables wrong-layer mocking)
+grep -rnE --include='handler.go' '^[[:space:]]*(type[[:space:]]+)?(service|useCase|UseCase)[[:space:]]+interface[[:space:]]*\{' internal/app 2>/dev/null
+
+# No hand-written test doubles — mocks come from mockery
+grep -rnE --include='*_test.go' '^[[:space:]]*(type[[:space:]]+)?(fake|stub|mock)[A-Za-z0-9_]*[[:space:]]+struct[[:space:]]*\{' internal/app 2>/dev/null
+
+# Handler tests assert whole objects vs golden testdata — no field-by-field float asserts
+grep -rlnE --include='*_test.go' 'InDelta|InEpsilon' internal/app/*/handler 2>/dev/null
+
+# Use case must be per-operation — no monolithic files directly under usecase/
+for d in internal/app/*/usecase; do [ -d "$d" ] && ls "$d"/*.go 2>/dev/null; done
+```
+
+**Pass criteria**: no output from any grep.
+
+> These are the fast subset. The full construction harness (`skills/architecture-gate/scripts/conformance.sh`) runs the complete structure/test-suite conformance check at scaffold time and per phase; run it when validating a whole domain or a fresh scaffold.
+
 ## Execution
 
 Run gates in order. Stop at first failure:
@@ -110,6 +132,7 @@ Run gates in order. Stop at first failure:
 3. Typecheck → if fail, fix and re-run
 4. Style greps → if fail, fix and re-run
 5. Tests (testing phase) → if fail, fix and re-run
+6. Architectural shape greps → if fail, fix and re-run
 
 ## Output
 
@@ -122,6 +145,7 @@ Report gate results:
 - Typecheck: PASS / FAIL ({errors})
 - Style greps: PASS / FAIL ({patterns})
 - Tests: PASS / FAIL ({count}) / SKIPPED
+- Architectural shape greps: PASS / FAIL ({patterns})
 ```
 
 ## Rules

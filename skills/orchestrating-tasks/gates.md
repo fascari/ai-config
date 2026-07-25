@@ -2,7 +2,41 @@
 
 > Sub-file of `skills/orchestrating-tasks/SKILL.md`. Read SKILL.md first for Critical Rules and Pre-Dispatch Checklist.
 
-This file covers the two quality gates the orchestrator runs at specific points in the workflow: Critique Gate and Output Judge Gate.
+This file covers the quality gates the orchestrator runs at specific points in the workflow: the Architecture Gate (deterministic), the Critique Gate, and the Output Judge Gate.
+
+Cost/benefit ordering: run the **deterministic** gates first (zero LLM tokens), then spend model tokens on the LLM gates only once the mechanical shape is clean.
+
+---
+
+## Architecture Gate (deterministic, zero tokens)
+
+The construction harness. Validates that the built service conforms to
+`rules/architecture-blueprint.md` — structure, layering, use-case/handler shape,
+mock strategy, and test-suite baseline. See `skills/architecture-gate/SKILL.md`.
+
+**Run it:**
+
+- **At scaffold time** — immediately after generating a project from the
+  scaffold, before the first feature phase. A fresh scaffold must pass with zero
+  ERRORs.
+- **After every production and test phase** — together with `style-gate`, before
+  the Output Judge. Both are deterministic; run them first.
+
+```bash
+bash "$AI_CONFIG_HOME/skills/architecture-gate/scripts/conformance.sh" .
+```
+
+- **Exit 0** — no universal invariant violated; proceed to the LLM gates.
+- **Exit 1 (any ERROR)** — a universal invariant is broken (monolithic use case,
+  handler-local interface, hand-written fakes, field-by-field asserts, gock, …).
+  Do NOT proceed. Send the offending files as a targeted repair to
+  `implementing-feature` (production) or `testing-implementation` (tests) — never
+  patch in the main conversation. Re-run until green.
+- **WARN** — an objective-varying concern looks missing; confirm it is
+  intentional or wire it per the blueprint. WARN does not block.
+
+Only after the Architecture Gate and `style-gate` are green does the Output Judge
+Gate run.
 
 ---
 

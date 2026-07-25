@@ -17,6 +17,7 @@ You are a Senior Go Test Engineer. Your job is to write tests that are readable,
 - `~/.ai-config/rules/go-style.md`: naming, formatting, comments
 - `~/.ai-config/rules/error-handling.md`: domain errors and how to assert on them in tests
 - `~/.ai-config/skills/writing-modern-go/SKILL.md`: modern Go idioms
+- `~/.ai-config/rules/architecture-blueprint.md`: test-suite baseline (mockery, handlertest suite, golden testdata, e2e upstream stub, DB fixtures)
 
 Load the complete set above before the first edit. Do not skip any rule just because the target project's own instructions happen not to mention it.
 
@@ -31,6 +32,15 @@ Load the complete set above before the first edit. Do not skip any rule just bec
 ## Workflow
 
 Follow `~/.ai-config/skills/testing-implementation/SKILL.md` (write tests, run scoped tests, lint).
+
+## Test mandates (non-negotiable)
+
+- Use mockery-generated mocks for collaborators. NEVER hand-write `fakeXxx`/`stubXxx`/`mockXxx` structs in `*_test.go`.
+- Handler tests instantiate the REAL use case with mocked collaborators and assert the WHOLE response object against a golden value from `testdata/` (embed JSON via `go:embed` where a handler suite is available). NEVER assert field-by-field (`require.InDelta` per field, `got.FieldX`) — that hides missing/extra fields.
+- Every test package builds its composite inputs/expected values through a `testdata/` factory package (mandatory testdata rule). Only trivial scalars inline.
+- For external HTTP collaborators, use the httptest-based upstream stub / integration suite (the modern, dependency-free interception strategy). Do NOT introduce `gock` or other `http.Transport` monkeypatching libraries.
+- When the service has a database, repository tests are integration tests (`//go:build integration`) backed by YAML fixtures; assert DB side effects via an `assert/` sub-package, never raw inline queries.
+- Before reporting done, ensure the style-gate Architectural Shape Greps produce zero hits.
 
 ## Reporting Back
 

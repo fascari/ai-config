@@ -56,6 +56,26 @@ Then apply all rules from the active provider-native project instruction files: 
 - [ ] API layer maps errors to correct HTTP status codes (or appropriate transport codes)
 - [ ] Public API endpoints are documented
 
+### Design principles
+
+Confront every non-trivial function against `rules/design-principles.md`. These
+are design smells the complexity linters (gocyclo/cognitive/cyclomatic) do NOT
+catch, so the reviewer is the gate. Each is BLOCKER-eligible:
+
+- [ ] **DRY**: no duplicated statement block (the same 2+ lines repeated across
+  branches of one function, e.g. a tail written once inside a loop and again
+  after it). Compute the varying part, run the common part once.
+- [ ] **Single responsibility per function**: a function does not both select/
+  build a collaborator AND mutate it inline when the selection is reusable
+  (e.g. find-or-create a level, then insert). Extract the reusable part when it
+  yields a deeper interface than its body (extraction guardrails, rule 3).
+- [ ] **No entanglement**: a helper's correctness must not depend on an
+  undocumented invariant of its caller (rule 2). If it does, keep it inline.
+- [ ] **Deep, not shallow**: reject single-line wrappers that add a name but hide
+  nothing; reject an extraction whose signature is as complex as its body.
+- [ ] **Interface comments** exist where the signature is insufficient (contract,
+  ordering, side effects); implementation comments default to none (rule 4).
+
 ---
 
 ## Requirements Traceability Review
