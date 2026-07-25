@@ -29,18 +29,3 @@ run = "./install-global-skills.sh --provider claude"
 description = "Install this repo's skills and custom agents globally for OpenCode"
 run = "./install-global-skills.sh --provider opencode"
 
-[tasks."project:install:codex"]
-description = "Install or refresh Codex-native project rules into a target repo"
-run = "./install-provider-rules.sh --provider codex --force"
-
-[tasks."project:install:copilot"]
-description = "Install or refresh Copilot-native project rules into a target repo"
-run = "./install-provider-rules.sh --provider copilot --force"
-
-[tasks."project:install:claude"]
-description = "Install or refresh Claude-native project rules into a target repo"
-run = "./install-provider-rules.sh --provider claude --force"
-
-[tasks."project:install:all"]
-description = "Install or refresh Codex, Copilot, and Claude project rules into a target repo"
-run = "./install-provider-rules.sh --provider all --force"

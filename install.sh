@@ -59,11 +59,10 @@ echo ""
 
 # Step 3: Add AI_CONFIG_HOME to shell rc if not present
 shell_rc=""
-if [[ -n "${BASH_VERSION:-}" && -f "$HOME/.bashrc" ]]; then
-  shell_rc="$HOME/.bashrc"
-elif [[ -n "${ZSH_VERSION:-}" && -f "$HOME/.zshrc" ]]; then
-  shell_rc="$HOME/.zshrc"
-fi
+case "$(basename "${SHELL:-}")" in
+  zsh)  shell_rc="$HOME/.zshrc" ;;
+  bash) shell_rc="$HOME/.bashrc" ;;
+esac
 
 if [[ -n "$shell_rc" ]]; then
   if ! grep -qF "export AI_CONFIG_HOME" "$shell_rc" 2>/dev/null; then
