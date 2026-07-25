@@ -213,3 +213,31 @@ func Declare(opts DeclareOptions) (Queue, error)
 ```
 
 The struct gives: named fields (no positional confusion), default zero values (omit what you don't need), and extensibility (add fields without breaking callers).
+
+## 10. Poison-Message Progress at a Sequential Feed Boundary
+
+When you consume an ordered, cursor-based feed (poll `since=cursor`, apply in order, advance the cursor), distinguish two failure kinds and treat them **oppositely**:
+
+- **Sequence gap** (the next message id is not `cursor + 1`): a message you need is missing. **Halt without advancing the cursor** so the next poll retries from the same position. Advancing here would silently skip data.
+- **Content rejection** (the in-order message is malformed: unknown enum, out-of-range number, unsupported kind): the message will *never* become valid no matter how many times you re-poll. **Record the rejection and advance the cursor**, then continue the batch. Not advancing turns one bad message into a permanent stall that blocks every later message forever (a poison message).
+
+```go
+for _, m := range messages {
+    if m.ID <= cursor {
+        continue // already applied; idempotent replay
+    }
+    if m.ID != cursor+1 {
+        reject(m, "sequence gap")
+        return // HALT: do not advance, retry this position next poll
+    }
+    if !valid(m) {
+        reject(m, "malformed")
+        // fall through to advance: consume the poison message exactly once
+    } else {
+        apply(m)
+    }
+    cursor = m.ID // single advance point, reached by every non-gap path
+}
+```
+
+Keep **exactly one** cursor-advance statement, at the bottom of the loop body, reached by both the applied and the content-rejected paths; only the sequence-gap path returns early. A regression test must prove a content-rejected in-order message advances the cursor, that a later valid message in the same batch still applies, and that a true gap still halts.

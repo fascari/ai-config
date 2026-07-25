@@ -33,7 +33,7 @@ Exit `0` = no universal invariant violated. Exit `1` = at least one ERROR.
 
 ## Reading the report
 
-- **ERROR** — a universal invariant (U1–U9 in the blueprint) is violated. Blocks
+- **ERROR** — a universal invariant (U1–U10 in the blueprint) is violated. Blocks
   the phase. Fix by re-dispatching the offending files through `go-implementer`
   (production) or `go-tester` (tests) — never patch in the main conversation.
 - **WARN** — an objective-varying concern (router/logger/DI/DB/external-HTTP/

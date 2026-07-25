@@ -226,14 +226,32 @@ func Representable(price float64) bool {
     if math.IsNaN(price) || math.IsInf(price, 0) || price < 0 {
         return false
     }
+    // 0x1p63 is 2^63 exactly as a float64. The bound is EXCLUSIVE: a
+    // scaled value equal to 2^63 overflows int64. See the pitfall below.
     scaled := math.Round(price * scale)
-    return scaled >= -math.MaxInt64 && scaled <= math.MaxInt64
+    return scaled < 0x1p63
 }
 
 func levelKey(price float64) int64 {
     return int64(math.Round(price * scale)) // caller already validated
 }
 ```
+
+### Pitfall: `math.MaxInt64` Compared as a `float64` Is Off by One
+
+`math.MaxInt64` is `2^63 - 1`, but the moment it is used in a comparison against a `float64` it is **converted to `float64`**, and `2^63 - 1` is not representable in a `float64` (which has 53 bits of mantissa). It rounds **up** to `2^63`. So:
+
+```go
+// Bad: looks like an in-range check, but math.MaxInt64 becomes the float64
+// 2^63, so this admits a scaled value of exactly 2^63, which overflows
+// int64 the instant it is narrowed.
+return math.Round(price*scale) <= math.MaxInt64
+
+// Good: compare against the exact float64 power of two with a strict <.
+return math.Round(price*scale) < 0x1p63
+```
+
+The same trap applies to `int32` (`< 0x1p31`), `uint64` (`< 0x1p64`), and any other max-value constant compared against a floating-point value: never write `floatValue <= SomeIntMax`. Use the exact power-of-two float literal (`0x1pN`) with a strict `<`. A regression test must assert the boundary value itself is rejected (the largest input whose scaled result equals `2^N` returns `false`), not just a value comfortably below it.
 
 ### Where to Enforce It
 
@@ -244,3 +262,31 @@ Call the predicate **at the trust boundary that owns rejection**, not inside the
 - Do not defer the check "for later" once the unchecked path is identified. An unvalidated float-to-int narrowing at a trust boundary is a correctness bug, not a style nit — it can silently corrupt in-memory state with no error, no log, and no test failure until the corrupted state is read back.
 
 This generalizes beyond prices: any external numeric input that will be rounded, scaled, hashed into a key, used as a size/count/index, or otherwise narrowed into a smaller or integer type needs the same finite-and-in-range check before the narrowing, validated once at the boundary and trusted everywhere after.
+
+## Do Not Return `error` as Informational Data
+
+`error` in a return signature is a **failure channel**, not a data field. Every reader and linter expects `x, err := f(); if err != nil { return }`. So do not use the `error` position to carry a value that is merely *state* the caller will read and keep, rather than a failure it must handle:
+
+```go
+// Bad: Status never fails; the error is the poller's cached lastError as data.
+// Callers must NOT `if err != nil { return }` here, which contradicts the signature.
+type StatusSource interface {
+    Status() (bool, error)
+}
+
+// Good: a value type names both fields; the reader knows nothing "failed".
+type ConnectionStatus struct {
+    Connected bool
+    LastError error // observed state, deliberately a field, not a return channel
+}
+
+type StatusSource interface {
+    Status() ConnectionStatus
+}
+```
+
+The same rule rejects boolean-blind pairs like `(bool, error)` or `(value, bool)` where the extra return is really a named attribute of one result. Group them into a small value type.
+
+### Watch the Boundary When You Do This
+
+The value type must live where its **consumer** owns it (the use case / port), not be forced onto an infrastructure adapter that must stay dependency-free. If a lower infra type (an HTTP poller, a driver wrapper) already returns primitives specifically to avoid importing the app/domain layer, keep it that way and bridge to the richer value type in the **composition root** (the `cmd/{app}/modules` wiring) with a tiny unexported adapter. Do not "fix" the signature by making infrastructure import an app-layer struct — that trades a readability smell for a dependency-direction violation.

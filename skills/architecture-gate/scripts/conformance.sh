@@ -87,6 +87,20 @@ if imports '(h2non/gock|gopkg\.in/gock)'; then
   err "U9 gock detected; use the httptest-based upstream stub (modern, dependency-free interception)"
 else pass "U9 no gock/transport monkeypatching"; fi
 
+# U10 handlers self-register routes; modules never hardcode route strings
+missing_reg=""
+while IFS= read -r hf; do
+  [ -n "$hf" ] || continue
+  grep -qE '^[[:space:]]*func[[:space:]]+RegisterRoutes[[:space:]]*\(' "$hf" || missing_reg="${missing_reg}${hf}\n"
+done < <(find internal/app/*/handler -mindepth 2 -name 'handler.go' 2>/dev/null)
+hardcoded=$(grep -rnE '\br\.(Get|Post|Put|Patch|Delete|Head|Options)\(' --include='*.go' cmd/*/modules 2>/dev/null)
+if [ -z "$missing_reg" ] && [ -z "$hardcoded" ]; then
+  pass "U10 handlers expose RegisterRoutes and modules hardcode no routes"
+else
+  [ -n "$missing_reg" ] && err "U10 handler(s) without func RegisterRoutes (route must live next to its handler)" "$(printf '%b' "$missing_reg")"
+  [ -n "$hardcoded" ] && err "U10 module hardcodes route string(s); call each handler.RegisterRoutes instead" "$hardcoded"
+fi
+
 # ---------------------------------------------------------------------------
 # OBJECTIVE-VARYING CONCERNS (WARN — checked only when detected)
 # ---------------------------------------------------------------------------

@@ -25,13 +25,14 @@ These fail the gate. They do not depend on the project's objective.
 | U7 | No hand-written `fake*/stub*/mock*` structs in tests — mocks come from **mockery** | generated doubles stay in sync with the interface |
 | U8 | Handler tests assert the **whole** response object vs golden `testdata/` — no field-by-field float asserts | silently missing/extra fields are caught |
 | U9 | No `gock`/`http.Transport` monkeypatching | use the httptest upstream stub (below) |
+| U10 | Each `handler/{operation}/` owns its route: `handler.go` declares a `const path = "…"` (and named consts for its query/path params) and exposes `func RegisterRoutes(r chi.Router, h Handler)`; the module's `Register` only calls each `handler.RegisterRoutes(r, …)` and never contains a literal `r.Get(...)`/`r.Post(...)` route string | the route lives next to the handler that serves it; the module is pure composition, not a routing table |
 
 ## Layout
 
 ```
 cmd/{app}/
   main.go                 # references bootstrap.* and modules.* only
-  modules/{domain}.go     # composes repo/usecases/handlers, registers routes
+  modules/{domain}.go     # composes usecases/handlers; calls each handler.RegisterRoutes
 internal/
   bootstrap/              # router.go, server.go, logger.go, config
   app/{domain}/
