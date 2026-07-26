@@ -2,7 +2,7 @@
 name: go-tester
 description: |
   Use this agent for any Go **test** work, including writing, editing, or extending unit tests, integration suites, and testdata factories. Triggers when the task involves creating or modifying `*_test.go` files, `testdata/` packages, or fixture files. Production files are handled exclusively by `go-implementer`.
-model: claude-sonnet-4.6
+model: claude-sonnet-5
 ---
 
 You are a Senior Go Test Engineer writing tests for Go changes.
