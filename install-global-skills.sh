@@ -172,6 +172,37 @@ if [[ "$provider" == "all" || "$provider" == "copilot" ]]; then
   fi
 fi
 
+# Install Claude custom agents as markdown files (when claude is included).
+# Claude Code discovers user-level subagents in ~/.claude/agents/. Registering
+# go-implementer/go-tester here gives Claude Code native agent dispatch parity
+# with the OpenCode, Codex, and Copilot runtimes.
+if [[ "$provider" == "all" || "$provider" == "claude" ]]; then
+  claude_agents_dir="$repo_root/providers/claude/agents"
+  claude_target_dir="$HOME/.claude/agents"
+
+  if [[ -d "$claude_agents_dir" ]]; then
+    shopt -s nullglob
+    claude_agent_paths=("$claude_agents_dir"/*.md)
+    if (( ${#claude_agent_paths[@]} > 0 )); then
+      mkdir -p "$claude_target_dir"
+
+      claude_link_count=0
+      for agent_path in "${claude_agent_paths[@]}"; do
+        agent_name="$(basename "$agent_path")"
+        link_path="$claude_target_dir/$agent_name"
+        if [[ -e "$link_path" && ! -L "$link_path" ]]; then
+          echo "Skipping $link_path because it exists and is not a symlink." >&2
+          continue
+        fi
+        ln -sfn "$agent_path" "$link_path"
+        ((claude_link_count += 1))
+      done
+
+      echo "Installed $claude_link_count Claude custom agent link(s) into $claude_target_dir."
+    fi
+  fi
+fi
+
 # Install Opencode custom agents as markdown files (when opencode is included)
 if [[ "$provider" == "all" || "$provider" == "opencode" ]]; then
   opencode_agents_dir="$repo_root/providers/opencode/agents"

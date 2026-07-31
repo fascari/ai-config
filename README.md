@@ -108,17 +108,20 @@ Opencode also discovers skills from `~/.agents/skills/` and `~/.claude/skills/`.
 
 ## Global Agent Installation
 
-Opencode agents are symlinked globally via `install-global-skills.sh` so every project can use them without per-project setup:
+`go-implementer`/`go-tester` are symlinked globally via `install-global-skills.sh` (one canonical, provider-neutral definition in `agents/`, thin per-provider bundles under `providers/<name>/agents/` that just set runtime frontmatter and point back at the canonical contract) so every project can use them without per-project setup:
 
 ```bash
-~/.ai-config/install-global-skills.sh --provider opencode
+~/.ai-config/install-global-skills.sh --provider codex     # or copilot|claude|opencode|all
 ```
 
-| Provider | Location |
-|----------|----------|
-| Opencode | `~/.config/opencode/agents/` |
+| Provider | Location | Link name |
+|----------|----------|-----------|
+| Codex agents | `~/.codex/agents/` | `<agent>.toml` |
+| GitHub Copilot | `~/.copilot/agents/` | `<agent>.md` |
+| Claude Code | `~/.claude/agents/` | `<agent>.md` |
+| Opencode | `~/.config/opencode/agents/` | `<agent>.md` |
 
-Opencode discovers agents from `~/.config/opencode/agents/` automatically. No per-project duplication needed.
+Each runtime discovers agents from its own directory automatically. No per-project duplication needed.
 
 ## Rules
 
