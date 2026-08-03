@@ -37,6 +37,29 @@ This is non-negotiable. No exceptions:
 
 ## Steps
 
+### Step 0: Detect Project Convention
+
+Different teams have different real conventions. Before drafting anything, sample recent history on the repo's base branch instead of assuming Chris Beams' rules apply verbatim everywhere.
+
+```bash
+git --no-pager log --oneline -30 origin/HEAD 2>/dev/null || git --no-pager log --oneline -30 main
+```
+
+Check two things from the sample:
+
+1. **Squash-merge norm**: what fraction of subjects end with `(#\d+)`? If most do, this repo squash-merges PRs: the final base-branch history is one commit per PR, built from the **PR title**, not from local commit messages or bodies. Set `SQUASH_MERGE_NORM=true`.
+2. **Message format**: look for a dominant pattern:
+   - `type(scope): description` (Conventional Commits, e.g. `feat(billing): add invoice export`) → `MESSAGE_STYLE=conventional-scoped`
+   - `scope: description` with no type (e.g. `flag: enable stores.x`) → `MESSAGE_STYLE=plain-scoped`
+   - Neither dominant → `MESSAGE_STYLE=freeform` (default Chris Beams style below applies as-is)
+
+If `SQUASH_MERGE_NORM=true`:
+- Local commit **bodies are discarded at merge**: only the PR title survives as the permanent message. Keep local commits **subject-only** (see Step 3.5) and move the "what and why" narrative into the PR description instead (hand off to `creating-pull-request`).
+- Atomic, well-grouped commits (Step 3) still matter, not for the base branch's log, but so the PR is reviewable commit-by-commit while it is open.
+- Match the detected `MESSAGE_STYLE` in the subject line. Never add the `(#PR)` suffix yourself: the forge appends it automatically on squash-merge.
+
+If `SQUASH_MERGE_NORM=false`: default Chris Beams subject + body rules apply as written below, adapted to whatever `MESSAGE_STYLE` was detected.
+
 ### Step 1: Get Branch Context
 
 ```bash
@@ -91,7 +114,9 @@ Rare exceptions where multiple layers may share a commit:
 
 ### Step 3.5: Self-Check Each Commit Message
 
-Before presenting the plan, verify every drafted commit message against Chris Beams' seven rules:
+If `SQUASH_MERGE_NORM=true` (Step 0): write **subject-only** messages, no body. Format the subject per the detected `MESSAGE_STYLE` (e.g. `feat(scope): description` for `conventional-scoped`, `scope: description` for `plain-scoped`). Move any "what and why" narrative to the PR description handoff instead of a commit body: it would be discarded at merge anyway.
+
+Otherwise, before presenting the plan, verify every drafted commit message against Chris Beams' seven rules:
 
 | # | Rule | Check |
 |---|---|---|
@@ -164,6 +189,8 @@ Present the summary to the user.
 
 ## Commit Message Structure
 
+> Applies when `SQUASH_MERGE_NORM=false` (Step 0). When `SQUASH_MERGE_NORM=true`, skip straight to subject-only messages per Step 3.5 and put this narrative in the PR description instead.
+
 ```
 <subject>
 
@@ -231,11 +258,26 @@ git commit \
 routing after max attempts."
 ```
 
+## Rebasing and Force-Push
+
+Whether it's safe to rewrite already-pushed commits depends on **review activity**, not on personal preference or on whether the repo squash-merges:
+
+```bash
+gh pr view --json reviews,comments -q '(.reviews | length) + (.comments | length)' 2>/dev/null
+```
+
+- **No open PR yet, or a PR open with zero reviews/comments**: rebase, amend, and force-push freely to present a clean, well-organized commit set. `git push --force-with-lease` is the right tool here: nobody has reviewed anything yet, so there is nothing to invalidate.
+- **The PR has at least one review or comment**: do NOT rebase or force-push. A force-push after review has started resets the forge's "viewed" file checkmarks and hides what changed since the reviewer's last pass, forcing a full re-review. Add plain new commits instead:
+  - Under `SQUASH_MERGE_NORM=true`: just commit normally and `git push` (no `--fixup`, no `--autosquash`, no force). The eventual squash-merge absorbs every follow-up commit into one regardless of how many you added, so there is no history to keep tidy.
+  - Under `SQUASH_MERGE_NORM=false`: use `git commit --fixup=<sha>` (below) but leave it unsquashed and un-rebased until the reviewer approves; only run `rebase -i --autosquash` + force-push once review is complete, and only with explicit user confirmation.
+
+This rule protects the reviewer's time. It applies regardless of company or team.
+
 ### Fixing mistakes in already-committed files
 
-**Never create a standalone "fix" commit** for a file that was already committed earlier (e.g. `Fix linter violations`, `Fix typo`, `Address review`). This pollutes history with noise commits that have no standalone meaning.
+**Never create a standalone "fix" commit** for a file that was already committed earlier (e.g. `Fix linter violations`, `Fix typo`, `Address review`). This pollutes history with noise commits that have no standalone meaning, unless review has already started (see "Rebasing and Force-Push" above), in which case a plain new commit is correct and rebasing is what you must avoid.
 
-Instead, use `fixup` to absorb the correction into the original commit:
+Before review has started, use `fixup` to absorb the correction into the original commit:
 
 ```bash
 # 1. Stage only the corrected file(s)
@@ -272,4 +314,8 @@ The `--autosquash` flag automatically moves `fixup!` commits immediately after t
 | Commit without user approval | Always wait for `[Y/N]` |
 | Sub-agent instructed to commit by orchestrator | Still requires explicit user approval: orchestrator cannot authorize commits |
 | Add `Co-authored-by: Copilot` or any AI trailer | Commits reflect only the human author: never add Copilot/AI trailers |
+| Force-push after a review or comment exists on the PR | Add a plain new commit instead; only rebase+force-push before review activity starts |
+| Write elaborate commit bodies when `SQUASH_MERGE_NORM=true` | Subject-only commits; put the "what and why" in the PR description |
+| Add `(#PR)` to a commit subject yourself | Let the forge append it automatically on squash-merge |
+| Assume Chris Beams' body rules apply in every repo | Run Step 0 first: detect the repo's actual convention from its history |
 
