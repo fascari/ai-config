@@ -26,6 +26,24 @@ via GitHub CLI after explicit user approval.
 
 
 
+### Step 0: Verify Branch Name Is CI-Safe
+
+Before naming a branch (or before pushing further work to one already named), check whether this repo's CI derives any artifact name directly from the branch name: Docker image tags, Kubernetes resource names, Cloud Build tags, etc.
+
+```bash
+grep -rn "BRANCH_NAME\|branch_name\|\$BRANCH" cloudbuild*.yml .github/workflows/ 2>/dev/null
+```
+
+If found, assume special characters are unsafe until proven otherwise. The most common failure: a branch name containing `/` gets embedded into a Docker tag, and Docker tags cannot contain `/` (only the repository/path portion before the final `:` can). A branch like `service/some-change` will build fine locally but fail in CI with `invalid reference format`.
+
+If the current branch already has this problem (build fails with a tag/reference format error referencing the branch name):
+1. Rename locally: `git branch -m new-name-without-slashes`
+2. Push the renamed branch: `git push -u origin new-name-without-slashes`
+3. GitHub does not let you change a PR's head branch. If a PR is already open on the old name, close it and open a new one on the renamed branch (only do this with zero review activity, see `committing-changes`'s Rebasing and Force-Push section); otherwise ask the user how they want to proceed.
+4. Delete the orphaned old remote branch once the new PR is confirmed working: `git push origin --delete old-branch-name`.
+
+When in doubt about the safe format for a given repo, use hyphens instead of slashes: it is universally safe and often matches the team's real convention anyway.
+
 ### Step 1: Gather Branch Context
 
 ```bash
@@ -262,6 +280,7 @@ Labels are not mutually exclusive, combine freely (e.g., `feature` + `enhancemen
 | Run `git push` for pure docs/config changes when pre-push hooks don't apply | `git push --no-verify`: hooks are not relevant |
 | Use `--no-verify` when project validation hooks must run | Always `git push` (no `--no-verify`) when hooks are mandatory |
 | Add `Co-authored-by: Copilot` to the PR body | The `Co-authored-by` trailer belongs only in **git commit messages**: never in the PR description or any GitHub comment |
+| Assume any branch name is CI-safe | Run Step 0: check whether CI derives Docker tags or other artifact names from the branch name before naming or pushing |
 
 
 
