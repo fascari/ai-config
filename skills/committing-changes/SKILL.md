@@ -39,11 +39,64 @@ This is non-negotiable. No exceptions:
 
 ### Step 0: Detect Project Convention
 
-Different teams have different real conventions. Before drafting anything, sample recent history on the repo's base branch instead of assuming Chris Beams' rules apply verbatim everywhere.
+Different teams have different real conventions. Before drafting anything, find out
+what THIS repo requires. Chris Beams is the fallback, not the law.
+
+#### 0a. Look for an ENFORCED spec first — it outranks everything below
+
+A repo that validates commit messages has an authoritative spec. Read it; do not
+infer it from history.
+
+```bash
+ls githooks/ .githooks/ 2>/dev/null            # hook scripts kept in-repo
+cat githooks/commit-msg 2>/dev/null             # the actual rules, verbatim
+ls .commitlintrc* commitlint.config.* 2>/dev/null
+cat .gitmessage 2>/dev/null
+grep -rn "commit-msg\|validate-commit\|commitlint" bin/ .github/workflows/ cloudbuild*.yml 2>/dev/null | head
+```
+
+Where a spec exists, **its limits win over the Beams defaults in Step 3.5**. Real
+example: a repo whose `githooks/commit-msg` requires the subject to contain `': '`,
+be ≤50 chars, and body lines ≤72 — there, `Add thing` fails and `service: add thing`
+passes, and Beams' "capitalize the subject" is wrong after the prefix.
+
+**The hook may not be active locally.** `core.hooksPath` is opt-in, so a repo can
+enforce in CI while committing succeeds locally:
+
+```bash
+git config core.hooksPath   # empty means in-repo hooks are NOT running
+```
+
+If it is empty but a hook script exists, validate the message yourself before
+committing rather than discovering it in CI:
+
+```bash
+printf '%s\n' "$MSG" > /tmp/msg.txt && bash githooks/commit-msg /tmp/msg.txt
+```
+
+Do not enable `core.hooksPath` to "fix" this without asking: in a worktree setup that
+config is shared with the main checkout.
+
+#### 0b. Then sample the history
 
 ```bash
 git --no-pager log --oneline -30 origin/HEAD 2>/dev/null || git --no-pager log --oneline -30 main
 ```
+
+```bash
+git --no-pager log --format='%s' -30 | awk '{ print length($0) }' | sort -rn | head -3
+```
+
+**History is evidence, not permission.** Three tiers, in order:
+
+1. **Enforced spec** (Step 0a) — authoritative. Follow it even where it contradicts Beams.
+2. **Deliberate convention** — a pattern in the clear majority of commits (`scope:` prefixes,
+   consistently longer subjects). Follow it: it is a team decision.
+3. **Drift** — a handful of long or sloppy subjects with no pattern. **Ignore it.** Beams
+   stands. Never lower the bar just because some past commits did.
+
+So a repo whose subjects run 45-64 chars with no hook has a *convention* of longer
+subjects; a repo at ~45 chars with two 70-char outliers has *drift*, and 50 still applies.
 
 Check two things from the sample:
 
@@ -83,9 +136,15 @@ Read each modified file to understand the nature of changes:
 
 ### Step 3: Group Changes Into Commits
 
-**Hard rule: one file per commit.** A file must appear in exactly one commit.
+**Hard rule: a file appears in exactly one commit.** (This is about not splitting one
+file across commits — it is not "one commit per file", which the next rule forbids.)
 
-Standard grouping strategy:
+The layer table below assumes a layered application. **In a repo that has no layers**
+— a docs site, a config/skills repo, infrastructure, a design system — group by
+cohesive concern instead: one commit per idea a reviewer would evaluate on its own.
+Do not invent a domain/service/handler split where none exists.
+
+Standard grouping strategy, for repos that are layered:
 | Change type | Commit boundary |
 |---|---|
 | DB migration / schema | Separate commit |
@@ -116,19 +175,33 @@ Rare exceptions where multiple layers may share a commit:
 
 If `SQUASH_MERGE_NORM=true` (Step 0): write **subject-only** messages, no body. Format the subject per the detected `MESSAGE_STYLE` (e.g. `feat(scope): description` for `conventional-scoped`, `scope: description` for `plain-scoped`). Move any "what and why" narrative to the PR description handoff instead of a commit body: it would be discarded at merge anyway.
 
-Otherwise, before presenting the plan, verify every drafted commit message against Chris Beams' seven rules:
+Otherwise, verify every drafted message against Chris Beams' seven rules — **as
+overridden by anything Step 0a found**:
 
-| # | Rule | Check |
-|---|---|---|
-| 1 | Subject and body separated by a blank line | `-m` flags handle this automatically: never put body inline |
-| 2 | Subject line ≤ 50 characters | Count every character |
-| 3 | Subject line is capitalized | First word after `\| ` is uppercase |
-| 4 | Subject line does not end with a period | No trailing `.` |
-| 5 | Subject uses imperative mood | "Add", "Fix", "Remove": not "Added" / "Adding" |
-| 6 | Body lines wrap at 72 characters | Break long lines manually |
-| 7 | Body explains what and why, not how | Remove any lines that describe implementation details |
+| # | Rule | Check | Overridden when |
+|---|---|---|---|
+| 1 | Subject and body separated by a blank line | `-m` flags handle this: never put body inline | never |
+| 2 | Subject line ≤ 50 characters | Count every character | a hook or the repo's own history sets a different ceiling — use that number |
+| 3 | Subject line is capitalized | First word is uppercase | the repo uses `scope: description`; then lowercase after the prefix is correct |
+| 4 | Subject does not end with a period | No trailing `.` | never |
+| 5 | Subject uses imperative mood | "Add", "Fix", "Remove": not "Added" / "Adding" | never |
+| 6 | Body lines wrap at 72 characters | Break long lines manually | a hook specifies a different width |
+| 7 | Body explains what and why, not how | Cut lines describing implementation detail | never |
 
-If any rule is violated, fix the message before proceeding to Step 4.
+Rules 1, 4, 5 and 7 are universal. Rules 2, 3 and 6 are conventions that a repo may
+legitimately set differently — follow the repo, not the table.
+
+**Chris Beams is the default, and it wins by absence.** With no enforced spec and no
+deliberate divergent convention, apply all seven rules verbatim: ≤50, capitalized,
+72-char body. That is the normal case for a personal project. An override requires
+positive evidence (a hook, or a clear majority pattern), never a few stray commits.
+
+If the user states a preference for a repo ("I want Beams here"), that is the
+convention — record it in that repo's `CLAUDE.md`/`AGENTS.md` or a `.gitmessage` so
+the next session detects it in Step 0a instead of re-deriving it.
+
+If a hook script exists, run the drafted message through it (Step 0a) rather than
+eyeballing the limits. Fix any violation before Step 4.
 
 ### Step 4: Present Plan (REQUIRED before any commit)
 
@@ -318,4 +391,8 @@ The `--autosquash` flag automatically moves `fixup!` commits immediately after t
 | Write elaborate commit bodies when `SQUASH_MERGE_NORM=true` | Subject-only commits; put the "what and why" in the PR description |
 | Add `(#PR)` to a commit subject yourself | Let the forge append it automatically on squash-merge |
 | Assume Chris Beams' body rules apply in every repo | Run Step 0 first: detect the repo's actual convention from its history |
+| Infer the message format from history when `githooks/commit-msg` exists | Read the hook: it is the enforced spec, history is only evidence |
+| Trust that committing locally means CI will accept the message | `core.hooksPath` is opt-in; run the hook script manually on the drafted message |
+| Capitalize after a `scope: ` prefix because Beams says so | Follow the repo: `service: add thing`, lowercase, is correct there |
+| Force a domain/service/handler split in a repo with no layers | Group by cohesive concern instead |
 

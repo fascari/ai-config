@@ -22,7 +22,56 @@ via GitHub CLI after explicit user approval.
 ### Prerequisites
 
 - GitHub CLI (`gh`) must be authenticated: `gh auth status`
-- You must be on a feature/bugfix/hotfix branch (not `main` or `develop`)
+- You must be on a feature branch, not the repo's default branch
+
+### Step -1: Calibrate against this repo, do not assume
+
+Conventions below are defaults, not truth. Before writing anything, read what this
+repo actually does — every assumption in this skill has been wrong in some repo.
+
+```bash
+# default branch (may be master, main, develop, trunk...)
+gh repo view --json defaultBranchRef --jq .defaultBranchRef.name
+
+# the template this repo actually uses
+cat .github/pull_request_template.md 2>/dev/null || ls .github/PULL_REQUEST_TEMPLATE* 2>/dev/null
+
+# how long real PR bodies are, and how much the Test section gets
+for n in $(gh pr list --state merged --limit 8 --json number --jq '.[].number'); do
+  b=$(gh pr view $n --json body --jq .body)
+  printf "#%-6s %3s lines (Test: %2s)\n" "$n" "$(echo "$b" | wc -l)" \
+    "$(echo "$b" | sed -n '/## Test/,$p' | wc -l)"
+done
+
+# read two or three in full to catch tone and depth
+gh pr view <n> --json body --jq .body
+
+# labels that exist here
+gh label list --limit 40
+```
+
+**Match the observed length.** If merged PRs run ~15 lines with a one-line Test
+section, a 60-line body with a table is wrong no matter how good the content is.
+Include only what a reviewer or merger needs and cannot get from the diff:
+cross-repo merge ordering, silent behavioural changes, production risk. Cut
+anything the diff already shows.
+
+### Step -0.5: Issue tracker is not always JIRA
+
+The template's tracker section may expect Asana, Linear, GitHub Issues, JIRA, or
+nothing. Read the template heading and match the repo's own habit.
+
+Trackers with a short human key (JIRA `PROJ-123`, Linear `ENG-45`) read well inline.
+Trackers with a long numeric GID (Asana) do not — prefer a named link:
+
+```markdown
+## Asana
+
+[task](https://app.asana.com/1/<workspace>/project/<project>/task/<gid>)
+```
+
+Ask the user if the repo's habit and this guidance disagree; do not silently
+"improve" an established convention.
 
 
 
@@ -54,21 +103,26 @@ git --no-pager diff main --stat
 git --no-pager diff develop --stat
 ```
 
-Parse the branch name to extract:
-- **Type**: `feature` | `bugfix` | `hotfix`
-- **Base branch**: see table below
+Substitute the real default branch from Step -1 for `main`/`develop` above.
 
-| Branch prefix | Base branch | Default label |
+**Branch naming is repo-specific.** A `feature/`-`bugfix/`-`hotfix/` scheme is one
+convention among several; many repos use `service-topic` with no prefix, and some
+**forbid** `/` outright because CI derives Docker tags from the branch name (Step 0).
+Derive the type from the commits and the diff, not from a prefix that may not exist.
+
+| Branch prefix, where the repo uses one | Base branch | Default label |
 |---|---|---|
-| `feature/` | `develop` or `main` | `feature` |
-| `bugfix/` | `develop` or `main` | `bug` |
-| `hotfix/` | `main` | `bug`, `hotfix` |
+| `feature/` | default branch, or `develop` where that exists | `feature` |
+| `bugfix/` | default branch, or `develop` where that exists | `bug` |
+| `hotfix/` | default branch | `bug`, `hotfix` |
+| no prefix | default branch | infer from the change |
 
-If base branch is ambiguous, check which remote branch has fewer divergent commits:
+If the base branch is ambiguous, compare divergence against each candidate:
 
 ```bash
-git --no-pager rev-list --count HEAD ^origin/develop 2>/dev/null
-git --no-pager rev-list --count HEAD ^origin/main
+for b in $(git branch -r --format='%(refname:short)' | grep -E 'origin/(main|master|develop|trunk)$'); do
+  echo "$b: $(git rev-list --count HEAD ^$b)"
+done
 ```
 
 ### Step 2: Analyze Commits and Changed Files
@@ -113,32 +167,48 @@ gh api user --jq '.login'
 
 Labels are **not mutually exclusive**, a `feature` PR that also improves existing behaviour should have both `feature` and `enhancement`.
 
+**The table above is a suggestion, not an inventory.** Many repos have none of these
+labels; some auto-apply labels by path with a bot (`go`, `javascript`, `dependencies`),
+making manual ones redundant. Use `gh label list` from Step -1, apply only labels that
+exist, and **apply none** when recent merged PRs carry none. Do not create labels to
+satisfy this table.
+
 **Reviewers**: do NOT set automatically, user will assign.
 
 ### Step 4: Generate PR Body
 
-Use EXACTLY the project template structure from `.github/pull_request_template.md`.
+**Use the repo's own template, whatever its sections are.** Do not impose the
+section names below; they are illustrative. Common shapes seen in the wild:
 
-Fill in each section:
+- `Description` / `Checklist` / `References`
+- `Asana` / `Before` / `After` / `Test`
+- no template at all — then match the shape of recent merged PRs
 
-**Description section**: write 2–5 sentences explaining:
-1. **Context**: what problem this solves or what feature this adds
-2. **What changed**: the key technical changes (domains, use cases, handlers, migrations)
-3. **Impact**: any side effects, breaking changes, or things reviewers should pay special attention to
+Write at the observed length from Step -1. Aim for high level: what problem this
+solves, what changed, what a reviewer must watch for. The diff carries the detail;
+the body carries the judgement.
 
-Use the commit messages and changed file list as primary source.
+**What earns space in a body:**
 
-**Author checklist**: pre-check items that are clearly satisfied based on analysis:
-- ✅ Commit logs reviewed → always check if commits follow convention
-- ✅ PR matches title/description → always check
-- ✅ Test coverage → check only if test files were added/modified
-- ✅ Documentation → check only if docs were updated
-- ✅ API spec validated → check only if API spec files were modified
-- ✅ Performance → check only if no unnecessary loops identified in diff
-- ✅ Code clarity → check only if code follows project standards
-- ✅ Tests assert correctly → check only if tests were written
+- Cross-repo or cross-PR **merge/deploy ordering**, when getting it wrong breaks production
+- Behaviour that changes for someone **without their code changing** (name the owners)
+- A measurement that justifies the change, when one exists
+- Rollback caveats that are not obvious (e.g. "reverting this alone is unsafe")
 
-**References section**: keep as-is from template.
+**What does not:**
+
+- Restating the diff file by file
+- Test commands, when the repo's habit is "CI is enough"
+- Tables and formatting the team never uses
+- Implementation detail a reviewer reads faster in the code
+
+**Checklist sections**, where the template has one: pre-check only items the analysis
+actually verified. Leave the rest `[ ]` rather than checking optimistically — an
+untruthful checklist is worse than an unchecked one.
+
+**Test section**: match the repo's habit exactly. Many teams write one line
+("CI is enough", "- Test suite"). Give real steps only when there is a UI or manual
+flow a reviewer must exercise themselves.
 
 ### Step 5: Present Plan for Approval
 
@@ -181,16 +251,17 @@ Open this PR? [Y/N]: or type 'draft' to open as Draft PR
 
 ### Step 6: Write Body to Temp File and Open PR
 
-**ALWAYS use the `create_file` tool** to write the PR body, never use shell heredoc (`cat > file << 'EOF'`) or inline Python.
-Shell heredocs lock the terminal and corrupt multi-line content in zsh. The `create_file` tool is safe, reliable, and produces correct Markdown.
+**ALWAYS use the file-writing tool** (`Write`, `create_file`, or whatever the harness
+calls it) to write the PR body. Never use a shell heredoc (`cat > file << 'EOF'`) or
+inline Python: heredocs lock the terminal and corrupt multi-line content in zsh.
 
-#### Body formatting rules (enforced via `create_file`)
+#### Body formatting rules
 
 - Every Markdown section (`## Title`) must be preceded by a **blank line**
-- Every paragraph inside `## Description` must be separated by a **blank line**
+- Every paragraph must be separated by a **blank line**
 - Each sentence/paragraph must be on a **single unbroken line**: no mid-sentence line wraps
 - Blockquotes (`>`) must have a blank line before and after them
-- Checklist items must have a blank line after the section header (`## Author' checklist`)
+- Checklist items must have a blank line after their section header
 
 #### Example: correct body file content
 
@@ -202,12 +273,11 @@ This PR adds the get user endpoint that retrieves a user profile by ID.
 The new handler reads the user ID from the request path and delegates lookup to the service layer.
 
 > **Note:** any relevant side-effect or cherry-pick note goes here as a single line.
-
-## Author' checklist
-
-* [x] Did I review my commit logs to make sure all commits are atomic and well described?
-* [x] This PR does only and exactly what the title and description are saying?
 ```
+
+The section names come from **that repo's** template. A repo using
+`Asana / Before / After / Test` gets those headings instead, with the same formatting
+rules applied.
 
 #### Workflow
 
@@ -215,7 +285,7 @@ The new handler reads the user ID from the request path and delegates lookup to 
    - If the user passed `--no-verify` → `git push --no-verify`
    - If the project has pre-push validation hooks (linting, API spec validation, etc.) → `git push` (no `--no-verify`) so hooks run
    - Otherwise → `git push`
-2. Use `create_file` tool to write the body to `/tmp/pr-body.md`
+2. Use the file-writing tool to write the body to `/tmp/pr-body.md`
 3. Then run:
 
 ```bash
@@ -250,7 +320,7 @@ Present the PR URL and a summary to the user.
 Read the project PR template via `read_file`: `.github/pull_request_template.md`
 
 Use that template structure when generating the body. Fill in each section based on branch context,
-commits, and changed files. Pre-check Author' checklist items that are clearly satisfied.
+commits, and changed files. Pre-check only checklist items the analysis actually verified.
 
 ## Labels
 
@@ -270,8 +340,8 @@ Labels are not mutually exclusive, combine freely (e.g., `feature` + `enhancemen
 |---|---|
 | Open PR without user approval | Always show plan and wait for `[Y/N]` |
 | Hardcode reviewer usernames | Never set reviewers automatically |
-| Use shell heredoc for body (`<< 'EOF'`) | Use `create_file` tool to write `/tmp/pr-body.md` |
-| Use inline Python one-liner to write body | Use `create_file` tool to write `/tmp/pr-body.md` |
+| Use shell heredoc for body (`<< 'EOF'`) | Use the file-writing tool to write `/tmp/pr-body.md` |
+| Use inline Python one-liner to write body | Use the file-writing tool to write `/tmp/pr-body.md` |
 | Paragraphs without blank lines between them | Every paragraph separated by one blank line |
 | Mid-sentence line breaks in description | Each sentence/paragraph on a single unbroken line |
 | Run `gh` commands without `PAGER=cat` | Always prefix `gh` with `PAGER=cat` |
