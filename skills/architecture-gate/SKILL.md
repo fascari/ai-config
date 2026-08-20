@@ -16,7 +16,7 @@ counterpart to `style-gate` (which checks micro style on changed files).
   before writing any feature. Proves the skeleton is conformant from line one.
 - **After each production or test phase** — before handing off, to prove no
   drift was introduced (monolithic use case, handler-local interface,
-  hand-written fakes, field-by-field asserts, missing testdata, gock).
+  hand-written fakes, field-by-field asserts, Go factories under testdata/, gock).
 - **Before a cross-vendor review** — so the reviewer spends judgment on logic,
   not mechanical shape the harness already guarantees.
 
@@ -46,8 +46,8 @@ Exit `0` = no universal invariant violated. Exit `1` = at least one ERROR.
   the phase. Fix by re-dispatching the offending files through `go-implementer`
   (production) or `go-tester` (tests) — never patch in the main conversation.
 - **WARN** — an objective-varying concern (router/logger/DI/DB/external-HTTP/
-  testdata) looks missing. Confirm it is intentional (the objective does not use
-  it) or wire it per the blueprint. WARN never fails the gate.
+  fixture placement) looks missing or misplaced. Confirm it is intentional (the
+  objective does not use it) or wire it per the blueprint. WARN never fails the gate.
 - **PASS** — invariant satisfied.
 
 ## Cost/benefit

@@ -103,8 +103,9 @@ reviewers know a choice is deliberate. When used, they must be wired correctly.
 Cost/benefit first: prefer the cheapest tier that proves the behavior. Unit
 tests dominate; integration/e2e cover wiring and external contracts.
 
-- **Unit** — pure/fast, mockery mocks for collaborators, `testdata/` factories,
-  whole-object assertions. No I/O.
+- **Unit** — pure/fast, mockery mocks for collaborators, fixture factories in
+  `_test.go` or a `<pkg>test` sibling when reuse or complexity warrants them,
+  whole-object assertions. No I/O. `testdata/` is for static assets only.
 - **Handler** — real use case + mocked collaborators via a reusable
   `pkg/handlertest` suite; assert the whole JSON response against a
   `go:embed` golden file in `testdata/`.

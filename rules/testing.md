@@ -1,5 +1,5 @@
 ---
-applyTo: "**/*_test.go,**/testdata/**/*.go,**/factory/**/*.go"
+applyTo: "**/*_test.go,**/*test/**/*.go,**/testdata/**,**/factory/**/*.go"
 ---
 
 # Testing
@@ -12,7 +12,7 @@ Every unit test must satisfy all five FIRST properties:
 |---|---|
 | **Fast** | Unit tests run in milliseconds. No I/O, no sleep, no real HTTP calls. If a test needs a database, it is an integration test (tag with `//go:build integration`) |
 | **Independent** | Tests do not share state. Each test arranges its own mocks and data. Execution order must not matter |
-| **Repeatable** | Same result every run, regardless of time, environment, or external systems. Use testdata factories and inject clocks — never call `time.Now()` in production code under test |
+| **Repeatable** | Same result every run, regardless of time, environment, or external systems. Use fixture factories when reuse or complexity warrants them, and inject clocks — never call `time.Now()` in production code under test |
 | **Self-validating** | Test passes or fails automatically. No human inspection of output. `require` (not `assert`) stops on first failure |
 | **Timely** | Tests are written with the code, not after |
 
@@ -356,7 +356,7 @@ This rule is absolute: **no exceptions, no `assert` anywhere in test files**, in
 
 ### Assert against full objects, not field by field
 
-Compare results against a complete expected value from `testdata/`. Field-by-field assertions are a test smell: they silently miss new fields, produce noisy failure messages, and obscure intent.
+Compare results against a complete expected value. Field-by-field assertions are a test smell: they silently miss new fields, produce noisy failure messages, and obscure intent.
 
 ```go
 // Wrong — field-by-field assertions hide missing fields
@@ -366,53 +366,82 @@ require.Equal(t, 103.5, result[0].TotalPrice)
 require.Equal(t, "PENDING", result[0].Status)
 
 // Correct — assert the full slice/object in one call
-require.Equal(t, []domain.Order{testdata.PendingOrder()}, result)
+require.Equal(t, []domain.Order{PendingOrder()}, result)
 ```
 
-This applies to all returned values: entities, DTOs, slices, and maps. Define the expected value in `testdata/` so it is reusable and self-documenting.
+This applies to all returned values: entities, DTOs, slices, and maps. Build the expected value with an inline literal or a factory, using the reuse/complexity triggers in [Test Data](#test-data).
 
 ## Test Data
 
-**HARD RULE — `testdata/` is mandatory, always.** Every test package that
-constructs a domain entity, DTO, message, or any composite value MUST build it
-through a `testdata/` factory package. Defining that data inline inside a
-`*_test.go` file is a violation, regardless of the layer under test — domain,
-engine, actor/state, use case, handler, or integration. This applies even when
-the test is a single function or a table-driven test. There is no "small enough
-to inline" exception for composite types.
+Extract test data into a named factory when the extraction pays for itself.
+Two triggers, either one is enough:
 
-The only values permitted inline are trivial scalars with no domain meaning
-(e.g. a loop bound, a single `int`/`string`/`bool` flag). The moment a test
-needs a struct literal for a domain type, that literal belongs in a factory
-function under `testdata/`, named after the state it represents.
+- **Reuse.** The value is needed by more than one test, subtest, or package.
+  A factory called once is indirection with nothing amortising it.
+- **Complexity.** The value is a domain entity, aggregate, or nested composite
+  whose literal would bury the one field the test is actually about.
 
-Never define test data inline in test files.
+Inline the literal when neither trigger fires. A two-field request whose whole
+point is one value reads better with that value sitting next to the test case
+name, and the Go wiki's "Identify the Input" backs this: when the relevant
+properties of an input are not obvious, the sanctioned fix is a descriptive
+test case name, not a separate file. Keep the literal multiline with one field
+per line, and keep comparing full structures.
 
-### testdata/ package (per feature)
+This replaces an earlier hard rule that made extraction mandatory for every
+composite value. That rule cost more than it bought on small tables, and the
+call requires balance rather than a blanket policy.
 
-For **every** test package (domain, engine, state, use case, handler,
-integration alike), create `testdata/` within the package. Each file is named after the domain entity it constructs, **never by role** (`inputs.go`, `expected.go`, `errors.go` are wrong):
+### Where the factory lives
+
+Not in `testdata/`. The `cmd/go` documentation defines `testdata` as a
+directory the go tool ignores, and the consequence is measurable: `go list
+./pkg/foo/...` does not list `pkg/foo/testdata`, so Go code placed there never
+reaches `go vet` or `revive`, while the same code in a `_test.go` file does.
+Reserve `testdata/` for static assets read through `embed` or `os.ReadFile`,
+which is its canonical use.
+
+Put factories in a `_test.go` file in the package under test. When several
+packages need them, use a sibling helper package named `<pkg>test`, following
+`net/http/httptest` in the standard library.
+
+### Factory layout (per entity)
+
+Once a value clears the reuse or complexity trigger, name the file after the
+domain entity it constructs, **never by role** (`inputs.go`, `expected.go`,
+`errors.go` are wrong):
 
 ```
 pkg/{feature}/
 ├── feature.go
 ├── feature_test.go
+├── user_fixtures_test.go       ← all User factory functions
+├── purchase_fixtures_test.go   ← all Purchase factory functions
 └── testdata/
-    ├── user.go       ← all User factory functions
-    ├── purchase.go   ← all Purchase factory functions
-    └── cashback.go   ← all Cashback factory functions
+    └── invoice.pdf             ← static assets only, read via embed
+```
+
+When more than one package needs the same factories, promote them to a sibling
+`<pkg>test` package with the same one-file-per-entity layout:
+
+```
+pkg/{feature}/
+├── feature.go
+└── featuretest/
+    ├── user.go
+    └── purchase.go
 ```
 
 Each entity file:
 - Contains every factory function for that entity covering all states needed by the tests
 - Groups constants (IDs, mock timestamps) with the entity that primarily owns them
-- Uses no artificial split between "inputs" and "expected outputs"; both live in the same file
+- Uses no artificial split between "inputs" and "expected outputs", both live in the same file
 
 Function names describe the **specific state** of the entity, not just the type:
 
 ```go
-// testdata/cashback.go
-package testdata
+// cashback_fixtures_test.go
+package cashback
 
 import cashdomain "github.com/example/internal/app/cashback/domain"
 
@@ -431,8 +460,8 @@ func PendingCashback() cashdomain.Cashback {
 ```
 
 ```go
-// testdata/user.go
-package testdata
+// user_fixtures_test.go
+package user
 
 import userdomain "github.com/example/internal/app/user/domain"
 
@@ -525,14 +554,15 @@ func (s *Suite) TestUpdate_ShouldNotAdjustWhenNoConflict()  { ... }
 
 ### Database assertions in integration tests
 
-Never write raw DB queries inline inside a test function. Any assertion that requires querying the database to verify side effects belongs in a dedicated `assert/` sub-package under `testdata/`:
+Never write raw DB queries inline inside a test function. Any assertion that requires querying the database to verify side effects belongs in a dedicated `assert/` helper package. YAML fixtures stay in `testdata/` (static assets). Go helpers do not.
 
 ```
-internal/app/{domain}/repository/testdata/
-├── fixtures/
-├── inputs.go
-└── assert/
-    └── {entity}.go   ← database assertion helpers
+internal/app/{domain}/repository/
+├── testdata/
+│   └── fixtures/          ← YAML fixtures only
+└── repositorytest/
+    └── assert/
+        └── {entity}.go    ← database assertion helpers
 ```
 
 Each function in `assert/` must:
@@ -583,7 +613,7 @@ func (cs *Suite) TestCancelOrder_ShouldCancelConflictingActiveOrder() {
     name: "Should cancel active order",
     ...
     assert: func() {
-        orderassert.OrderCancelled(cs.T(), cs.DB, testdata.OrderID)
+        orderassert.OrderCancelled(cs.T(), cs.DB, OrderID)
     },
 },
 ```
@@ -674,7 +704,7 @@ observable HTTP response is unchanged (no duplicate side effect).
 
 Test code is self-describing. The function name, subtest strings, and variable names are the documentation.
 
-**Default: no comments.** This applies equally to `*_test.go` files and `testdata/` packages.
+**Default: no comments.** This applies equally to `*_test.go` files and fixture helper packages.
 
 Forbidden:
 - Function-level doc comments (`// TestFoo verifies that...`)

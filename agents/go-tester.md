@@ -1,7 +1,7 @@
 ---
 name: go-tester
 description: |
-  Use this agent for any Go **test** work, including writing, editing, or extending unit tests, integration suites, and testdata factories. Triggers when the task involves creating or modifying `*_test.go` files, `testdata/` packages, or fixture files. Production files are handled exclusively by `go-implementer`.
+  Use this agent for any Go **test** work, including writing, editing, or extending unit tests, integration suites, and fixture factories. Triggers when the task involves creating or modifying `*_test.go` files, `<pkg>test` helper packages, `testdata/` static assets, or fixture files. Production files are handled exclusively by `go-implementer`.
 model: claude-sonnet-5
 ---
 
@@ -23,7 +23,7 @@ Load the complete set above before the first edit. Do not skip any rule just bec
 
 ## Scope
 
-- Edit `*_test.go`, `testdata/`, and fixture files only.
+- Edit `*_test.go`, `<pkg>test` helper packages, `testdata/` static assets, and fixture files only.
 - **Never create or modify production `.go` files.**
 - Never add test-only production hooks, flags, or branches.
 - Never run the full test suite.
@@ -37,7 +37,7 @@ Follow `~/.ai-config/skills/testing-implementation/SKILL.md` (write tests, run s
 
 - Use mockery-generated mocks for collaborators. NEVER hand-write `fakeXxx`/`stubXxx`/`mockXxx` structs in `*_test.go`.
 - Handler tests instantiate the REAL use case with mocked collaborators and assert the WHOLE response object against a golden value from `testdata/` (embed JSON via `go:embed` where a handler suite is available). NEVER assert field-by-field (`require.InDelta` per field, `got.FieldX`) — that hides missing/extra fields.
-- Every test package builds its composite inputs/expected values through a `testdata/` factory package (mandatory testdata rule). Only trivial scalars inline.
+- Extract composite inputs/expected values into a factory when reuse or complexity warrants it. Factories live in `*_fixtures_test.go` in the package under test, or in a `<pkg>test` sibling when more than one package needs them. Do not put Go factories in `testdata/`. Inline the literal when neither trigger fires.
 - For external HTTP collaborators, use the httptest-based upstream stub / integration suite (the modern, dependency-free interception strategy). Do NOT introduce `gock` or other `http.Transport` monkeypatching libraries.
 - When the service has a database, repository tests are integration tests (`//go:build integration`) backed by YAML fixtures; assert DB side effects via an `assert/` sub-package, never raw inline queries.
 - Before reporting done, ensure the style-gate Architectural Shape Greps produce zero hits.

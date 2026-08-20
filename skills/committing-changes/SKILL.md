@@ -6,8 +6,9 @@ description: Use when committing changes to the repository, or when the user ask
 # Committing Changes
 
 Analyzes staged and unstaged changes, groups them into logical commits,
-crafts messages following Chris Beams' seven rules and team conventions,
-and executes commits only after explicit user approval.
+crafts subject-only messages following Chris Beams' subject rules and team
+conventions (a body only when the user asked), and executes commits only after
+explicit user approval.
 
 ## ⛔ HARD RULE: NEVER COMMIT WITHOUT SHOWING THE PLAN FIRST
 
@@ -107,11 +108,11 @@ Check two things from the sample:
    - Neither dominant → `MESSAGE_STYLE=freeform` (default Chris Beams style below applies as-is)
 
 If `SQUASH_MERGE_NORM=true`:
-- Local commit **bodies are discarded at merge**: only the PR title survives as the permanent message. Keep local commits **subject-only** (see Step 3.5) and move the "what and why" narrative into the PR description instead (hand off to `creating-pull-request`).
+- Local commit **bodies are discarded at merge**: only the PR title survives as the permanent message. Keep local commits **subject-only** (see Step 3.5). If the user asked for a body, put that narrative in the PR description instead (hand off to `creating-pull-request`).
 - Atomic, well-grouped commits (Step 3) still matter, not for the base branch's log, but so the PR is reviewable commit-by-commit while it is open.
 - Match the detected `MESSAGE_STYLE` in the subject line. Never add the `(#PR)` suffix yourself: the forge appends it automatically on squash-merge.
 
-If `SQUASH_MERGE_NORM=false`: default Chris Beams subject + body rules apply as written below, adapted to whatever `MESSAGE_STYLE` was detected.
+If `SQUASH_MERGE_NORM=false`: default Chris Beams **subject** rules apply as written below, adapted to whatever `MESSAGE_STYLE` was detected. Bodies stay off unless the user asked for them (Step 3.5).
 
 ### Step 1: Get Branch Context
 
@@ -173,28 +174,42 @@ Rare exceptions where multiple layers may share a commit:
 
 ### Step 3.5: Self-Check Each Commit Message
 
-If `SQUASH_MERGE_NORM=true` (Step 0): write **subject-only** messages, no body. Format the subject per the detected `MESSAGE_STYLE` (e.g. `feat(scope): description` for `conventional-scoped`, `scope: description` for `plain-scoped`). Move any "what and why" narrative to the PR description handoff instead of a commit body: it would be discarded at merge anyway.
+**Default: subject-only. Do not write a body unless the user asked for one.**
+"Add a body", "include the why", "use a full Beams message", or an explicit
+body in the user's request counts. Inferring that the change "needs a why" does
+not. A squash-merge repo still stays subject-only even if asked: move that
+narrative to the PR description.
 
-Otherwise, verify every drafted message against Chris Beams' seven rules — **as
+Format the subject per the detected `MESSAGE_STYLE` (e.g. `feat(scope): description`
+for `conventional-scoped`, `scope: description` for `plain-scoped`).
+
+Verify every drafted **subject** against Chris Beams' subject rules — **as
 overridden by anything Step 0a found**:
 
 | # | Rule | Check | Overridden when |
 |---|---|---|---|
-| 1 | Subject and body separated by a blank line | `-m` flags handle this: never put body inline | never |
 | 2 | Subject line ≤ 50 characters | Count every character | a hook or the repo's own history sets a different ceiling — use that number |
 | 3 | Subject line is capitalized | First word is uppercase | the repo uses `scope: description`; then lowercase after the prefix is correct |
 | 4 | Subject does not end with a period | No trailing `.` | never |
 | 5 | Subject uses imperative mood | "Add", "Fix", "Remove": not "Added" / "Adding" | never |
+
+Rules 4 and 5 are universal. Rules 2 and 3 are conventions that a repo may
+legitimately set differently — follow the repo, not the table.
+
+When the user asked for a body, also apply:
+
+| # | Rule | Check | Overridden when |
+|---|---|---|---|
+| 1 | Subject and body separated by a blank line | `-m` flags handle this: never put body inline | never |
 | 6 | Body lines wrap at 72 characters | Break long lines manually | a hook specifies a different width |
 | 7 | Body explains what and why, not how | Cut lines describing implementation detail | never |
 
-Rules 1, 4, 5 and 7 are universal. Rules 2, 3 and 6 are conventions that a repo may
-legitimately set differently — follow the repo, not the table.
-
-**Chris Beams is the default, and it wins by absence.** With no enforced spec and no
-deliberate divergent convention, apply all seven rules verbatim: ≤50, capitalized,
-72-char body. That is the normal case for a personal project. An override requires
-positive evidence (a hook, or a clear majority pattern), never a few stray commits.
+**Chris Beams' subject rules are the default, and they win by absence.** With no
+enforced spec and no deliberate divergent convention, apply the subject rules
+verbatim: ≤50, capitalized, no period, imperative. That is the normal case for
+a personal project. An override requires positive evidence (a hook, or a clear
+majority pattern), never a few stray commits. Bodies are not part of that
+default: they are opt-in.
 
 If the user states a preference for a repo ("I want Beams here"), that is the
 convention — record it in that repo's `CLAUDE.md`/`AGENTS.md` or a `.gitmessage` so
@@ -241,15 +256,12 @@ For each commit group in order:
 # Stage only the files for this commit
 git add path/to/file1 path/to/file2
 
-git commit \
-  -m "Subject line" \
-  -m "Body paragraph explaining what and why." \
-  -m "Additional context if needed."
+git commit -m "Subject line"
 ```
 
 > ⛔ **NEVER add a `Co-authored-by: Copilot` trailer** (or any Copilot/AI authorship trailer) to any commit. Commits must reflect only the human author(s). No exceptions.
 
-Use multiple `-m` flags, each creates a separate paragraph. Git adds blank lines automatically. **Never embed `\n` in a single `-m` string.**
+If the user asked for a body, add extra `-m` flags, one per paragraph. Git adds blank lines automatically. **Never embed `\n` in a single `-m` string.** Do not add those flags on your own.
 
 ### Step 6: Verify
 
@@ -262,36 +274,31 @@ Present the summary to the user.
 
 ## Commit Message Structure
 
-> Applies when `SQUASH_MERGE_NORM=false` (Step 0). When `SQUASH_MERGE_NORM=true`, skip straight to subject-only messages per Step 3.5 and put this narrative in the PR description instead.
+Default shape is a subject only:
 
 ```
 <subject>
-
-<body>
-
-<footer>
 ```
 
 | Part | Rules |
 |---|---|
 | `subject` | Max 50 chars · imperative mood · capitalized · no period |
-| `body` | What and why (not how) · wrap at 72 chars · see rules below |
-| `footer` | Breaking changes, references · optional |
+| `body` | Omit unless the user asked. When asked: what and why (not how) · wrap at 72 chars |
+| `footer` | Breaking changes, references · only if the user asked |
 
-### When the body is required
+When `SQUASH_MERGE_NORM=true`, stay subject-only even if a body was requested:
+put that narrative in the PR description instead.
 
-A body is **required** whenever the subject alone does not answer *why* the change was made. Write a body when:
+### When to add a body
 
-- The change involves a non-obvious motivation or tradeoff
-- It reverses or overrides a previous decision
-- It fixes a subtle bug where context prevents future regression
-- It refactors code without changing behavior (explain why the old structure was a problem)
+A body is **off by default.** Add one only when the user asked for it in this
+turn (for example "add a body", "include the why", "use a full Beams message").
+Do not add a body because the change is subtle, reverses a decision, or the
+subject feels incomplete. If the why matters and the user did not ask, keep it
+out of `git commit` and mention it in the plan chat or the PR description.
 
-A body is **optional** only when the subject is fully self-explanatory, e.g. `Add /health endpoint` or `Fix typo in README`.
-
-> The goal: `git log` should tell the story of the project. Anyone reading a commit six months later must understand not just *what* changed, but *why it had to change*.
-
-> Chris Beams' Seven Rules apply to all commits. Full reference: `copilot-instructions.md` → Commit Conventions.
+> Chris Beams' subject rules apply to every commit. Body rules apply only when
+> a body was requested. Full reference: `copilot-instructions.md` → Commit Conventions.
 
 ## Examples
 
@@ -301,7 +308,7 @@ A body is **optional** only when the subject is fully self-explanatory, e.g. `Ad
 Add consumer health check endpoint
 ```
 
-### Change with body
+### Change with body (only when the user asked)
 
 ```bash
 git commit \
@@ -317,18 +324,13 @@ attempts through structured logging and metrics."
 
 ```bash
 # Commit 1: migration first
-git commit \
-  -m "Add idempotency table migration"
+git commit -m "Add idempotency table migration"
 
 # Commit 2: domain
-git commit \
-  -m "Add idempotency domain model"
+git commit -m "Add idempotency domain model"
 
 # Commit 3: service
-git commit \
-  -m "Implement service with retry logic" \
-  -m "Supports configurable retries, exponential backoff, and DLQ
-routing after max attempts."
+git commit -m "Implement service with retry logic"
 ```
 
 ## Rebasing and Force-Push
@@ -383,14 +385,15 @@ The `--autosquash` flag automatically moves `fixup!` commits immediately after t
 | Same file in two commits | One file, one commit |
 | Create a `Fix linter`, `Fix typo`, or `Address review` commit | Use `git commit --fixup=<sha>` + `git rebase -i --autosquash` |
 | Tests in a separate commit from their implementation | Tests in same commit as implementation |
-| Explain HOW in body | Explain WHAT and WHY |
+| Add a commit body without being asked | Subject-only unless the user asked for a body |
+| Explain HOW in a requested body | Explain WHAT and WHY |
 | Commit without user approval | Always wait for `[Y/N]` |
 | Sub-agent instructed to commit by orchestrator | Still requires explicit user approval: orchestrator cannot authorize commits |
 | Add `Co-authored-by: Copilot` or any AI trailer | Commits reflect only the human author: never add Copilot/AI trailers |
 | Force-push after a review or comment exists on the PR | Add a plain new commit instead; only rebase+force-push before review activity starts |
-| Write elaborate commit bodies when `SQUASH_MERGE_NORM=true` | Subject-only commits; put the "what and why" in the PR description |
+| Write a commit body when `SQUASH_MERGE_NORM=true` | Subject-only; if the user asked for a why, put it in the PR description |
 | Add `(#PR)` to a commit subject yourself | Let the forge append it automatically on squash-merge |
-| Assume Chris Beams' body rules apply in every repo | Run Step 0 first: detect the repo's actual convention from its history |
+| Assume Chris Beams' body rules apply by default | Subject-only unless the user asked; run Step 0 for subject convention |
 | Infer the message format from history when `githooks/commit-msg` exists | Read the hook: it is the enforced spec, history is only evidence |
 | Trust that committing locally means CI will accept the message | `core.hooksPath` is opt-in; run the hook script manually on the drafted message |
 | Capitalize after a `scope: ` prefix because Beams says so | Follow the repo: `service: add thing`, lowercase, is correct there |

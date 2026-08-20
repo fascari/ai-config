@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Objective-varying concerns (W1-W7, W9) — Go backend only. Advise (WARN),
 # never fail the gate; checked only when the objective actually uses the
-# concern (router, logger, DI, DB, external HTTP, testdata, API contract,
+# concern (router, logger, DI, DB, external HTTP, fixture placement, API contract,
 # error mapping). Sourced by conformance.sh after checks-universal.sh; expects
 # ROOT already cd'ed into, and err()/warn()/pass()/imports() already defined.
 # Not meant to be run directly.
@@ -54,14 +54,14 @@ if imports '(gorm\.io/gorm|database/sql|jackc/pgx|jmoiron/sqlx)'; then
   else warn "W5 database detected but missing fixtures dir and/or //go:build integration repository tests"; fi
 fi
 
-# W6 testdata factory package alongside test packages
-notd=""
-while IFS= read -r td; do
-  [ -n "$td" ] || continue
-  [ -d "$td/testdata" ] || [ -d "$(dirname "$td")/testdata" ] || notd="${notd}${td}\n"
-done < <(grep -rl --include='*_test.go' '' internal/app 2>/dev/null | while read -r f; do dirname "$f"; done | sort -u)
-if [ -z "$notd" ]; then pass "W6 test packages have a testdata/ factory package"
-else warn "W6 test package(s) without a testdata/ factory (mandatory testdata rule)" "$(printf '%b' "$notd")"; fi
+# W6 testdata/ holds static assets only — Go factories do not live there
+go_in_td=""
+while IFS= read -r f; do
+  [ -n "$f" ] || continue
+  go_in_td="${go_in_td}${f}\n"
+done < <(find internal -type f -name '*.go' 2>/dev/null | grep '/testdata/' || true)
+if [ -z "$go_in_td" ]; then pass "W6 testdata/ has no Go factory packages"
+else warn "W6 Go file(s) under testdata/; factories belong in *_fixtures_test.go or a <pkg>test sibling" "$(printf '%b' "$go_in_td")"; fi
 
 # W7 API contract: OpenAPI spec under docs/, and no endpoint table in README
 if find internal/app -type f -name 'handler.go' 2>/dev/null | grep -q .; then

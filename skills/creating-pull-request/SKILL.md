@@ -56,6 +56,16 @@ Include only what a reviewer or merger needs and cannot get from the diff:
 cross-repo merge ordering, silent behavioural changes, production risk. Cut
 anything the diff already shows.
 
+**Sample every repo you will open a PR in.** Conventions do not carry across repos,
+even inside one company or one workspace. When a change spans two repos, run this
+step twice and write each body to its own repo's norms.
+
+**Copy the shape of the Test section, not just its length.** Read a UI-heavy PR and
+a backend-only PR from the same repo: teams usually write one line for the second
+("CI is enough") and a few bullets for the first. Match the bullet style, the mood of
+the verbs, and whether steps are numbered. Keep justification out of Test; it belongs
+in the section that describes the change.
+
 ### Step -0.5: Issue tracker is not always JIRA
 
 The template's tracker section may expect Asana, Linear, GitHub Issues, JIRA, or

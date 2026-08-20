@@ -108,7 +108,7 @@ Initialisms keep consistent case: `ID`, `URL`, `HTTP`, `API`, `DB`, `SQS`, `DLQ`
 
 ## Declaration Grouping
 
-Always group related declarations:
+Group declarations that belong to the same semantic family:
 
 ```go
 type (
@@ -125,6 +125,62 @@ var (
     ErrNotFound = errors.New("not found")
 )
 ```
+
+### Group by family, not by kind
+
+The unit of grouping is the domain family, not the keyword. A file with two
+unrelated types gets two blocks, or two plain declarations, never one block that
+merges them because they happen to both be types.
+
+The Uber Go Style Guide states the boundary explicitly under "Group Similar
+Declarations": *"Only group related declarations. Do not group declarations that
+are unrelated."* The Go standard library follows the same rule. Measured on Go
+1.26.5, `cmd/compile/internal/syntax/nodes.go` carries four separate `type (`
+blocks in one file, one per AST family (`Decl`, `Expr`, and so on). Merging
+those four into one would pass a linter and lose the meaning.
+
+### Enforcing with decorder
+
+`decorder` is the linter for this section. Run it for `dec-order`, and disable
+`dec-num-check`:
+
+```bash
+decorder -disable-dec-num-check ./...
+```
+
+`dec-order` gives the payoff, a predictable place to look for declarations in
+every file. `dec-num-check` works against the rule above, because it allows one
+`const`/`var`/`type` statement per file and so forces unrelated declarations
+into a single block. `cmd/compile/internal/syntax/nodes.go` would fail it, and
+it fails for doing the better thing. Turn that one check off and the linter
+stops fighting the family rule.
+
+Two limits to keep in mind when proposing this to a team that hasn't adopted it:
+
+- It is a house convention, not a language rule. Neither Effective Go nor the
+  Google Go Style Guide takes any position on grouping or ordering declarations.
+  Google's guide covers import grouping only, and its rule for silence is that
+  authors pick their own style unless the surrounding code has taken a
+  consistent stance.
+- Go itself doesn't follow `dec-order`. Measured on Go 1.26.5, 392 of 1542
+  non-test files (25.4%) declare a top-level `func` before their first `type`.
+
+So argue it on the readability payoff, never as "the language requires it", and
+drop it in repos whose code has already settled on something else.
+
+### Know the cost before grouping
+
+A parenthesized block adds an indentation level, so moving a declaration in or
+out rewrites every one of its lines. Git renders a re-indent instead of a move.
+Measured: moving two declarations into a block produces 6 insertions and 4
+deletions, and `git diff -w` still reports 4 and 2. A separate effect compounds
+it, since `gofmt` realigns the whole block when a longer name arrives, which
+turns one new type into 3 insertions and 2 deletions against 1 for the flat
+form. Merge conflicts are unaffected, both forms conflict when two branches add
+a declaration at the same position.
+
+Group when the family is real, because the reader gains from seeing it. Skip the
+block for one-off declarations, where the diff cost buys nothing.
 
 ## Struct Literals
 

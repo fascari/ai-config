@@ -100,7 +100,7 @@ In Copilot native mode, `go-tester` maps to an `agent_type` only when that agent
 
 6. Write unit tests following the stack's conventions:
    - Cover happy path + each error case + edge cases.
-   - Test data via factory/fixture helpers: never inline complex structs.
+   - Test data via factory/fixture helpers when reuse or complexity warrants them; inline small literals otherwise.
 
    **Go:** table-driven, fail-fast assertions (`require`), project's mock strategy (e.g. `EXPECT()` builder for testify/mockery).
 
@@ -246,14 +246,14 @@ time.Sleep(10 * time.Microsecond)
 - [ ] External HTTP tested via an `httptest.Server` upstream stub — never `gock`/transport monkeypatching
 - [ ] `//go:generate` or equivalent on all mocked interfaces
 - [ ] Test names: `TestFoo_ShouldDoX` / `"should do x"`: predicate holds for ALL rows
-- [ ] Test data via factory/fixture helpers: never inline complex structs
-- [ ] No comments anywhere in test code or testdata/ packages
+- [ ] Test data via factory/fixture helpers when reuse or complexity warrants them
+- [ ] No comments anywhere in test code or fixture helper packages
 - [ ] No ticket IDs in test names, fixture identifiers, or payload filenames
 - [ ] For goroutine-based code: `synctest.Test` + `synctest.Wait()` (when available)
 - [ ] No `sync.WaitGroup`, ad-hoc channels, or `time.Sleep` for test synchronization
 - [ ] No testing-oriented production code (hooks, flags, branches) added solely for tests
 - [ ] Integration tests tagged appropriately (`//go:build integration` or project standard)
-- [ ] All fixtures in `testdata/` or equivalent project fixture directory
+- [ ] Static fixtures (JSON, YAML, PDF) in `testdata/`; Go factories in `*_fixtures_test.go` or a `<pkg>test` sibling — never as a `testdata/` Go package
 
 **Non-Go stacks:**
 - [ ] Fail-fast assertions
@@ -270,8 +270,8 @@ When dispatched by `orchestrating-tasks` in Codex managed mode, a generic worker
 
 Hard testing conventions that must be checked manually in Codex managed mode:
 
-- Reusable fixtures, representative JSON payloads, and domain objects live under `testdata/` or the project fixture directory.
-- Inline test values are limited to scalar inputs, expected constants, and trivial one-off assertions.
+- Static fixtures and golden JSON/YAML live under `testdata/`. Go factories live in `*_fixtures_test.go` or a `<pkg>test` sibling, and only when reuse or complexity warrants them.
+- Small one-off composite literals may stay inline in the test. Do not put Go factory packages under `testdata/`.
 - Tests do not call external services unless the phase is explicitly an integration or smoke phase.
 - Test workers do not edit production files unless a repair cycle is explicitly approved.
 

@@ -4,21 +4,21 @@ Use one flat file per change: `.plans/<slug>.md`.
 
 ## Setup
 
-Always use the vault for plan storage. If `$COPILOT_VAULT` is unset, stop and ask the user to
+Always use the vault for plan storage. If `$AI_MEMORY_HOME` is unset, stop and ask the user to
 configure it before starting the workflow.
 
 Run this setup from the target project being changed. The repository root must not be the
 repository that only distributes this skill.
 
 ```bash
-if [ -z "${COPILOT_VAULT:-}" ]; then
-  echo "COPILOT_VAULT must be configured for orchestrating-single-loop." >&2
+if [ -z "${AI_MEMORY_HOME:-}" ]; then
+  echo "AI_MEMORY_HOME must be configured for orchestrating-single-loop." >&2
   exit 1
 fi
 
 repo_root="$(git rev-parse --show-toplevel)"
 project="${repo_root##*/}"
-plan_root="$COPILOT_VAULT/$project/plans"
+plan_root="$AI_MEMORY_HOME/$project/plans"
 mkdir -p "$plan_root"
 if [ -e "$repo_root/.plans" ] && [ ! -L "$repo_root/.plans" ]; then
   echo "$repo_root/.plans exists and is not a symlink." >&2

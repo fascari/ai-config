@@ -111,8 +111,8 @@ multi-endpoint handlers are rejected for implementation work.
 For testing phases:
 
 - Changed files are test-only unless a repair cycle was explicitly approved.
-- Fixtures, representative payloads, JSON bodies, and reusable domain objects live in `testdata/` or the project fixture directory.
-- Inline test values are limited to scalar inputs, expected constants, and small one-off assertions.
+- Static fixtures and golden JSON/YAML live in `testdata/`. Go factories live in `*_fixtures_test.go` or a `<pkg>test` sibling, and only when reuse or complexity warrants them.
+- Small one-off composite literals may stay inline. Do not put Go factory packages under `testdata/`.
 - Tests cover happy path, error path, validation path, and relevant edge cases from the plan.
 - Tests do not call external services unless the phase is explicitly an integration or smoke phase.
 - Scoped format, lint, and tests pass.

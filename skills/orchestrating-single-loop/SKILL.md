@@ -60,8 +60,8 @@ agents, use `orchestrating-tasks`. For a cost-aware middle ground, use
 
 ## Research and planning rules
 
-- Before Discover, require `$COPILOT_VAULT`. In the target project being changed, resolve the plan
-  root as `$COPILOT_VAULT/<repository>/plans/`, create it when missing, and create or refresh that
+- Before Discover, require `$AI_MEMORY_HOME`. In the target project being changed, resolve the plan
+  root as `$AI_MEMORY_HOME/<repository>/plans/`, create it when missing, and create or refresh that
   project's `.plans` symlink to the directory. Do not create `.plans` in the repository that
   distributes this skill. If the vault variable is unavailable, stop and request configuration
   instead of falling back to in-conversation state.
