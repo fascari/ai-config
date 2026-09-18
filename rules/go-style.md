@@ -4,7 +4,11 @@ applyTo: "**/*.go"
 
 # Go Style
 
-Follow the [Google Go Style Guide](https://google.github.io/styleguide/go/) as the baseline. The rules below are project-specific extensions and emphasis points.
+Follow the [Google Go Style Guide](https://google.github.io/styleguide/go/) and the
+[Uber Go Style Guide](https://github.com/uber-go/guide/blob/master/style.md) as the
+baseline, in that order when they conflict. The rules below are project-specific
+extensions and emphasis points; a rule cited from Uber's guide is noted inline so
+its source stays traceable.
 
 ## Naming
 
@@ -106,6 +110,43 @@ Initialisms keep consistent case: `ID`, `URL`, `HTTP`, `API`, `DB`, `SQS`, `DLQ`
 - Use `Compute` or `Fetch` when the call is expensive or remote
 - No `Get`/`Set` prefixes for methods
 
+### Avoid built-in names
+
+*(Uber Go Style Guide, "Avoid Using Built-In Names")* Reusing an identifier
+like `len`, `min`, `max`, `new`, `error`, or `string` as a variable or
+parameter name shadows the built-in within that scope and confuses code that
+reads fine on its own but breaks once someone expects the built-in to still
+be available.
+
+```go
+// Bad: shadows the built-in len within this function
+func process(items []Item) {
+    len := len(items)
+    ...
+}
+
+// Good
+func process(items []Item) {
+    count := len(items)
+    ...
+}
+```
+
+### Error naming
+
+*(Uber Go Style Guide, "Error Naming")* A sentinel error stored in a package
+variable is prefixed `Err` when exported, `err` when not. This is what makes
+`errors.Is(err, pkg.ErrNotFound)` read correctly at the call site.
+
+```go
+// Good
+var ErrNotFound = errors.New("not found")   // exported
+var errInvalidState = errors.New("invalid state")  // unexported
+
+// Bad: no prefix, doesn't read as a sentinel at the call site
+var NotFound = errors.New("not found")
+```
+
 ## Declaration Grouping
 
 Group declarations that belong to the same semantic family:
@@ -182,9 +223,34 @@ a declaration at the same position.
 Group when the family is real, because the reader gains from seeing it. Skip the
 block for one-off declarations, where the diff cost buys nothing.
 
+### Start enums at one
+
+*(Uber Go Style Guide, "Start Enums at One")* An uninitialized variable of a
+numeric enum type is `0` by default. If a valid enum value can also be `0`,
+there is no way to distinguish "explicitly set to the first value" from
+"never set." Start numeric enums at `1` unless `0` is meant to represent a
+real, meaningful zero state (e.g. `StatusUnknown`).
+
+```go
+// Bad: 0 is ambiguous, could be StatusPending or "never set"
+type Status int
+const (
+    StatusPending Status = iota
+    StatusActive
+)
+
+// Good: 0 is reserved for the zero-value case
+type Status int
+const (
+    StatusUnknown Status = iota
+    StatusPending
+    StatusActive
+)
+```
+
 ## Struct Literals
 
-Always name every field. Place each field on its own line:
+*(Uber Go Style Guide, "Use Field Names to Initialize Structs")* Always name every field. Place each field on its own line:
 
 ```go
 // Good
@@ -259,6 +325,60 @@ func NewUseCase(repo Repository) UseCase { return UseCase{repo: repo} }
 func NewUseCase() Repository { return &impl{} }
 ```
 
+### Never a pointer to an interface
+
+*(Uber Go Style Guide, "Pointers to Interfaces")* An interface value is
+already a two-word header (type, value); a pointer to it adds a layer of
+indirection with no benefit. Pass the interface by value.
+
+```go
+// Bad
+func Process(repo *Repository) { ... }
+
+// Good
+func Process(repo Repository) { ... }
+```
+
+### Verify interface compliance at compile time
+
+*(Uber Go Style Guide, "Verify Interface Compliance")* When a concrete type
+is meant to implement an interface but nothing in the code forces the
+compiler to check it (the interface is only satisfied structurally, never
+named at the assignment site), a `var _ Interface = (*Impl)(nil)` line turns
+a silent runtime/test-time drift into a compile error the moment either side
+changes.
+
+```go
+// handler.go
+type Handler struct{}
+
+var _ http.Handler = (*Handler)(nil)
+
+func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) { ... }
+```
+
+### Avoid embedding types in public structs
+
+*(Uber Go Style Guide, "Avoid Embedding Types in Public Structs")* An
+embedded type's exported methods and fields leak onto the embedding struct's
+public API, so callers can start depending on a detail that was never a
+deliberate design choice, and the embedded type can no longer change without
+breaking them.
+
+```go
+// Bad: AbstractList's methods leak onto ConcreteList's public API
+type ConcreteList struct {
+    AbstractList
+}
+
+// Good: wrap explicitly, decide the public surface on purpose
+type ConcreteList struct {
+    list AbstractList
+}
+
+func (l *ConcreteList) Add(e Entity) { l.list.Add(e) }
+```
+
 ## Law of Demeter
 
 A method should only call methods on: its own receiver, its direct fields,
@@ -322,6 +442,23 @@ if err == ErrNotFound { ... }
 
 Use `any` instead of `interface{}`.
 
+### Always use the comma-ok idiom for type assertions
+
+*(Uber Go Style Guide, "Handle Type Assertion Failures")* A bare type
+assertion panics if the value is not of the asserted type. Always check the
+second return value, even when the caller is confident about the type.
+
+```go
+// Bad: panics if t is not a string
+s := t.(string)
+
+// Good
+s, ok := t.(string)
+if !ok {
+    return fmt.Errorf("expected string, got %T", t)
+}
+```
+
 ## Immutability & Value Receivers
 
 Prefer value receivers. Pointers ONLY when:
@@ -337,6 +474,61 @@ func (h Handler) Handle(c *gin.Context) error { ... }
 // Good: return new value instead of mutating
 func (c Config) WithTimeout(t int) Config { c.Timeout = t; return c }
 ```
+
+### Copy slices and maps at API boundaries
+
+*(Uber Go Style Guide, "Copy Slices and Maps at Boundaries")* Slices and
+maps hold a pointer to their backing data. Returning one from an exported
+function, or accepting one as a constructor argument and storing it, hands
+the caller (or the struct) a live reference to memory someone else can still
+mutate, silently, after the call returns.
+
+```go
+// Bad: caller's slice is stored directly; mutating it later mutates d1 too
+type D1 struct{ nums []int }
+func (d *D1) SetNums(nums []int) { d.nums = nums }
+
+// Good: copy on the way in
+type D2 struct{ nums []int }
+func (d *D2) SetNums(nums []int) {
+    d.nums = make([]int, len(nums))
+    copy(d.nums, nums)
+}
+```
+
+Same risk in reverse: a getter that returns the internal slice/map directly
+lets the caller mutate the struct's internal state from outside. Copy on the
+way out too, unless the whole point of the method is to expose a mutable
+view.
+
+### `nil` is a valid, empty slice
+
+*(Uber Go Style Guide, "nil is a valid slice")* `len(nil)`, `cap(nil)`, and
+ranging over a `nil` slice all behave exactly like an empty slice. Returning
+`[]T{}` instead of `nil` to mean "no results" is unnecessary allocation with
+no behavioral difference for any well-behaved caller.
+
+```go
+// Bad: allocates for no reason
+func FindAll() []Entity {
+    if noResults {
+        return []Entity{}
+    }
+    ...
+}
+
+// Good
+func FindAll() []Entity {
+    if noResults {
+        return nil
+    }
+    ...
+}
+```
+
+The one exception is a boundary that specifically distinguishes `null` from
+`[]` in its JSON contract (some external APIs do). State that explicitly if
+it applies; it is the exception, not the default.
 
 ## Pure Functions
 
@@ -356,6 +548,29 @@ func calculateTotal(items []Item) float64 {
 var globalTotal float64
 func addToTotal(amount float64) { globalTotal += amount }
 ```
+
+### Avoid mutable globals
+
+*(Uber Go Style Guide, "Avoid Mutable Globals")* A package-level `var` that
+gets mutated at runtime is implicit shared state: every caller, in every
+goroutine, is coupled to it, and tests can't run in isolation without
+resetting it by hand. Prefer dependency injection, passing the dependency in
+explicitly, over a global any code in the package can reach into and change.
+
+```go
+// Bad: any caller anywhere can mutate this, tests must reset it
+var defaultClient = &http.Client{}
+
+// Good: injected, each caller controls its own instance
+type Service struct {
+    client *http.Client
+}
+func NewService(client *http.Client) Service { return Service{client: client} }
+```
+
+A package-level `var` that is set once (config loaded at startup, a
+compiled regex) and never mutated afterward is not what this rule targets;
+the risk is mutation, not existence.
 
 ### Command-Query Separation
 
@@ -398,6 +613,66 @@ repo.FindAll(ctx, false)
 func (r Repository) FindAll(ctx context.Context) ([]Entity, error)
 func (r Repository) FindAllIncludingDeleted(ctx context.Context) ([]Entity, error)
 ```
+
+### Avoid naked parameters
+
+*(Uber Go Style Guide, "Avoid Naked Parameters")* This generalizes "no flag
+arguments" above: any unnamed literal at a call site that the reader can't
+decode without opening the function signature hurts readability, not just
+`bool`.
+
+```go
+// Bad: what do true, true mean at this call site?
+printInfo("foo", true, true)
+
+// Good: a comment names each one at the call site
+printInfo("foo", true /* isLocal */, true /* done */)
+
+// Better: named parameters via a struct, self-documenting without a comment
+printInfo("foo", PrintOptions{IsLocal: true, Done: true})
+```
+
+### Functional options for optional/growing configuration
+
+*(Uber Go Style Guide, "Patterns: Functional Options")* When a constructor
+has several optional parameters that may grow over time, prefer functional
+options over either a long parameter list or a struct the caller must fully
+understand upfront. Each option is a function that mutates unexported
+config; adding a new option is backward compatible for every existing
+caller.
+
+```go
+type Option interface {
+    apply(*options)
+}
+
+type options struct {
+    timeout time.Duration
+    caching bool
+}
+
+type timeoutOption time.Duration
+
+func (t timeoutOption) apply(opts *options) { opts.timeout = time.Duration(t) }
+
+func WithTimeout(t time.Duration) Option { return timeoutOption(t) }
+
+func NewConnection(addr string, opts ...Option) (*Connection, error) {
+    cfg := options{timeout: defaultTimeout}
+    for _, opt := range opts {
+        opt.apply(&cfg)
+    }
+    ...
+}
+
+// Call site: only specify what deviates from the default
+conn, err := NewConnection("localhost", WithTimeout(5*time.Second))
+```
+
+Use a plain options struct (`design-principles.md`'s "Function Signatures"
+rule) instead when the fields are all required or rarely grow, functional
+options earn their extra indirection only when optionality and growth are
+the actual problem being solved.
 
 ## Comments
 
@@ -515,6 +790,22 @@ import (
 2. Third-party packages
 3. Internal packages
 
+### Alias an import when the package name doesn't match its path
+
+*(Uber Go Style Guide, "Import Aliasing")* Import aliasing is mandatory,
+not optional, whenever the last path segment doesn't match the package's
+actual declared name, and whenever two imports would otherwise collide.
+Guessing the package name from the import path alone should always be
+correct.
+
+```go
+// Bad: package name (yaml) doesn't match the path's last segment (go-yaml)
+import "gopkg.in/yaml.v2"
+
+// Good: alias makes the actual package name explicit
+import yaml "gopkg.in/yaml.v2"
+```
+
 ## Concurrency
 
 Channels for coordination, mutexes for shared state:
@@ -531,6 +822,59 @@ func (c Consumer) run(ctx context.Context) {
     }
 }
 ```
+
+### Every goroutine needs a way to stop and be waited on
+
+*(Uber Go Style Guide, "Don't fire-and-forget goroutines" / "Wait for
+goroutines to exit" / "No goroutines in `init()`")* A goroutine started
+with no channel, no `context.Context`, and no `sync.WaitGroup`/`errgroup`
+tying it back to its caller is a leak the moment the caller returns; nothing
+can observe whether it finished, panicked, or is still running. `init()` is
+an especially bad place to start one: it runs before `main`, before flags
+are parsed, before the program has decided whether it even wants that
+goroutine running.
+
+```go
+// Bad: fire-and-forget, no way to know when (or if) this finishes
+go worker.Run()
+
+// Good: caller can wait for it, cancel it, and observe its error
+g, ctx := errgroup.WithContext(ctx)
+g.Go(func() error { return worker.Run(ctx) })
+...
+if err := g.Wait(); err != nil { ... }
+```
+
+### Avoid `init()`
+
+*(Uber Go Style Guide, "Avoid init()")* Code in `init()` runs before `main`,
+with no way for the caller to control ordering, inject configuration, or
+skip it in a test. Prefer an explicit constructor the caller invokes when
+it's actually ready. When `init()` truly is unavoidable (registering a
+database driver, for example), it must be fully deterministic and touch
+nothing outside the current process (no I/O, no network, no mutating shared
+state, no depending on other packages' `init()` order).
+
+### `os.Exit`/`log.Fatal` only in `main()`
+
+*(Uber Go Style Guide, "Exit in Main")* Any function other than `main()`
+should return an error and let the caller decide how to handle it; only
+`main()` may call `os.Exit`/`log.Fatal*`, never a helper it calls into,
+because those calls skip every deferred cleanup on the call stack, and a
+helper function has no way to know whether the caller has cleanup pending.
+
+Uber's companion "Exit Once" guidance (call it "at most once," on a single
+final path) is stated as a preference, not an absolute ("if possible" in
+their own text), and does not match this repo's real, deliberate convention:
+every `cmd/*/main.go` in lego (`aiproxy`, `supportbot`, `mcps`, ...) calls
+`panic`/`l.Fatal` at each distinct startup failure point (`env.Init` fails,
+`log.Init` fails, `server.New` fails, `s.Listen` fails), not once at a
+single collected path. This is safe here specifically because `main()`'s
+only deferred cleanup (`defer cancel()`) is registered before any of those
+checks and is not depended on for correctness after an early exit, the
+process is terminating either way. Keep the multi-exit-point pattern; do not
+"fix" it into a single trailing exit to match Uber's preference when nothing
+here is actually placing a defer at risk.
 
 ## Linting
 
