@@ -23,15 +23,13 @@ Never starts implementation before presenting the restored state to the user.
 
 ### Step 1: Discover the Plan
 
-Before matching against any user-provided input, **always** run these two commands in parallel:
+Before matching against any user-provided input, run:
 
 ```bash
 git rev-parse --abbrev-ref HEAD
 ```
 
-Resolve the external `{plan_root}` with the same rule as `orchestrating-tasks`: use `$AI_MEMORY_HOME/{project}/plans/`. If unset, stop and ask the user to configure an external plan root.
-
-List `.plans/` to find available plan slugs. `.plans` must be a symlink to `{plan_root}`. Never create real repo-local plan folders, provider-specific AI configuration inside the project repository, or `.github/plans`.
+`{plan_root}` is already resolved (Step 0). List `.plans/` to find available plan slugs. `.plans` must be a symlink to `{plan_root}`. Never create real repo-local plan folders, provider-specific AI configuration inside the project repository, or `.github/plans`.
 
 Extract the identifier from the branch name using the following rules:
 

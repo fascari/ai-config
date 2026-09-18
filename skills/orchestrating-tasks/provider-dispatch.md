@@ -14,7 +14,8 @@ Choose the role in `dispatching.md` first. Only then choose the transport:
 - **Copilot native**: `task(skill: ..., agent_type: ..., model: ..., mode: ..., prompt: ...)`
 - **OpenCode native**: model selection is agent-based; dispatch via `task(subagent_type: "...", description: "...", prompt: "...")`. See `orchestrating-tasks-efficient/provider-dispatch.md` for the tier → agent mapping.
 - **Codex managed**: generic worker call only; use the smallest accepted field set
-- **Claude managed**: generic worker call only unless the runtime explicitly exposes native skill dispatch
+- **Claude Code native**: `Skill(skill: "...")` to load the skill's instructions, THEN `Agent(subagent_type: "...", prompt: "...", run_in_background: bool, model: optional)` to dispatch the actual worker — two separate tool calls, not one. See `claude-runtime.md` for the full shape, the cross-vendor-judge fallback, and `progress.md` ownership. This is the profile to use whenever both `Skill` and `Agent` tools with distinct `subagent_type`s are available — **do not** fall through to "Claude managed" below just because the provider name matches; check for the actual tools first.
+- **Claude managed (degraded)**: generic worker call only, no distinct `subagent_type`s exposed — this is the fallback for bare Claude API integrations with no `Skill`/`Agent` tooling, not the default for "any Claude-branded runtime"
 
 Do not assume that `agent_type`, `skill`, `mode`, `fork`, or full repo cloning
 flags exist on every provider.
@@ -144,10 +145,60 @@ spawn_worker(
 If the current runtime supports naming or description fields, they may be
 included. They are optional. The prompt contract is not.
 
-### Claude managed
+### Claude Code native
 
-Default to the same profile as Codex managed unless the Claude runtime
-explicitly exposes native skill dispatch with stable semantics.
+**Check for this profile first whenever the runtime is any Claude Code
+surface (CLI, desktop app, web app, IDE extension).** Claude Code exposes two
+separate tools, not one combined dispatch call — read `claude-runtime.md` in
+full before dispatching, this section is only the quick reference.
+
+1. `Skill(skill: "{skill-name}")` — loads that skill's own `SKILL.md` (and
+   whatever sub-files it points to) as instructions for the *current* agent to
+   follow. This is not a dispatch; nothing runs in the background from this
+   call alone.
+2. `Agent(subagent_type: "{logical role}", description: "...", prompt: "...",
+   run_in_background: bool, model: optional)` — the actual worker dispatch,
+   following the instructions `Skill` just loaded.
+
+```unknown
+Skill(skill: "implementing-feature")
+# read the returned SKILL.md content, then:
+Agent(
+  subagent_type: "go-implementer",
+  description: "{short imperative description}",
+  prompt: "{full task prompt, per the Dispatch contract in dispatching.md}",
+  run_in_background: false
+)
+```
+
+Rules:
+
+- Never call `Agent(subagent_type: "go-implementer" | "go-tester", ...)`
+  without a preceding `Skill(skill: "implementing-feature" | "testing-implementation")`
+  call in the same turn or an earlier one in this conversation — the skill is
+  what injects the quality-gate instructions and rule bundle.
+- `subagent_type` availability is session- and project-specific. Verify the
+  live list (surfaced via a `<system-reminder>`, or `ToolSearch`) rather than
+  assuming the mapping in `claude-runtime.md` is exhaustive for every project.
+- No cross-vendor judge exists — `Agent` only dispatches Claude-family models.
+  Follow `claude-runtime.md`'s Cross-Vendor Rule fallback and disclose the
+  limitation in any gate's output.
+- The orchestrator (main session), not the dispatched agent, owns writing
+  `progress.md` — require a structured completion-report block instead of
+  expecting the subagent to edit the vault file itself. See `claude-runtime.md`.
+- Independently re-run the deterministic gates (`gofmt`, `vet`, the project's
+  real lint entrypoint, `test`) after any `implementing-feature`/
+  `testing-implementation` dispatch. A subagent's self-reported PASS is a
+  claim, not a fact.
+
+### Claude managed (degraded fallback)
+
+Use this profile only when the runtime is Claude-branded but does **not**
+expose `Skill`/`Agent` with distinct `subagent_type`s — e.g. a bare Claude API
+integration with a single generic tool-use loop and no skill or subagent
+concept. Do not default here just because the provider name is "Claude"; check
+for the real tools first (see "Claude Code native" above), since Claude Code
+itself is not this degraded case.
 
 Rules:
 
@@ -162,7 +213,7 @@ Preferred worker shape:
 spawn_worker(
   model: "{provider-tier model}",
   prompt: """
-  Runtime: Claude managed.
+  Runtime: Claude managed (degraded, no distinct subagent types).
   Logical role: {logical role from dispatching.md}
   Return WORKER PASS, WORKER FAIL, or BLOCKED.
 
@@ -185,10 +236,15 @@ These names are **logical roles**, not guaranteed transport fields:
 | `go-implementer` | Production code worker |
 | `go-tester` | Test-only worker |
 | `general-purpose` | Planning, review, research, and text work |
+| `Explore` (Claude Code only) | Read-only codebase search, faster/cheaper than `general-purpose` for "find X" questions — cannot Edit/Write, do not use for phases that write files |
+| `Plan` (Claude Code only) | Architecture/implementation planning — cannot Edit/Write either; have it return plan text and have the orchestrator write the file |
 
 For managed workers, put the logical role in the prompt and attach the matching
 source files from `agents/` or `skills/`. For Codex custom agents, the role is
-resolved by agent name and the prompt carries only task-specific context.
+resolved by agent name and the prompt carries only task-specific context. For
+Claude Code, the role maps to a real `subagent_type` on the `Agent` tool when
+one exists (see `claude-runtime.md`); otherwise fall back to `general-purpose`
+with the role bound in the prompt, same principle as the other managed modes.
 
 ## Nested dispatch rule
 
@@ -196,7 +252,8 @@ Nested dispatch is provider-sensitive:
 
 - **Copilot native**: allowed where the skill explicitly says so
 - **Codex managed**: disallowed inside managed workers unless the runtime has already proven it supports the exact nested shape
-- **Claude managed**: disallowed by default for the same reason
+- **Claude Code native**: disallowed by default — a dispatched `Agent` cannot itself call `Skill`/`Agent` in most configurations; the orchestrator (main session) owns all dispatch, gate execution, and judge follow-up
+- **Claude managed (degraded)**: disallowed by default for the same reason
 
 In managed-worker mode, the orchestrator owns the acceptance checklist and any
 follow-up judge dispatch.

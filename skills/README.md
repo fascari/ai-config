@@ -47,7 +47,6 @@ Use **orchestrating-tasks** as the single entry point when maximum assurance is 
 | [researching-codebase](researching-codebase/) | Read-only codebase analysis. Documents how and where things are implemented, with `file:line` references. Never suggests improvements. |
 | [planning-implementation](planning-implementation/) | Translates research findings into a phased, verifiable implementation plan. Does not write code. |
 | [analyzing-system-design](analyzing-system-design/) | Analyses atomicity, idempotency, consistency, concurrency, resilience, and architectural patterns. Produces `system-design-analysis.md` before any code is written. Mandatory for Standard and Complex tasks. |
-| [system-design-advisor](system-design-advisor/) | Analyses implementation phases through the lens of distributed systems correctness, data integrity, and production reliability. Presents trade-offs with concrete proposals and optional Mermaid diagrams. |
 
 ### Implementation and Testing
 

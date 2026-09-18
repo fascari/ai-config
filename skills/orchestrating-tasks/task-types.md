@@ -35,6 +35,7 @@ task(agent_type: "go-implementer", ...)     <- direct agent, no quality gates
 task(agent_type: "go-tester", ...)          <- direct agent, no quality gates
 task(agent_type: "go-tester", ...)          <- dispatched for non-Go stack (hard rule violation)
 spawn_worker(prompt: "act like go-implementer", ...) <- managed worker accepted as final without orchestrator review
+Agent(subagent_type: "go-implementer", ...) <- WRONG in Claude Code too, if not preceded by Skill(skill: "implementing-feature") in this or an earlier turn
 
 # CORRECT - choose by runtime. implementer role is stack-dependent.
 Copilot native:
@@ -45,7 +46,19 @@ task(skill: "testing-implementation", agent_type: "go-tester", ...)
 task(skill: "implementing-feature", agent_type: "general-purpose", ...)
 task(skill: "testing-implementation", agent_type: "general-purpose", ...)
 
-Codex/Claude managed:
+Claude Code native (Skill + Agent, two separate tool calls):
+# Go stack
+Skill(skill: "implementing-feature")                          # load the skill first
+Agent(subagent_type: "go-implementer", prompt: "...")          # then dispatch
+Skill(skill: "testing-implementation")
+Agent(subagent_type: "go-tester", prompt: "...")
+# Non-Go stack
+Skill(skill: "implementing-feature")
+Agent(subagent_type: "general-purpose", prompt: "Logical role: general-purpose ...")
+# See claude-runtime.md for the full contract, progress.md ownership, and the
+# cross-vendor-judge fallback.
+
+Codex managed / Claude managed (degraded, no distinct subagent types):
 # Go stack
 spawn_agent(agent: "go-implementer", prompt: "...")  <- when a matching Codex custom agent exists
 spawn_agent(agent: "go-tester", prompt: "...")       <- when a matching Codex custom agent exists
@@ -75,7 +88,7 @@ Dispatch order:
 
 **Phase target files (required in every `implementing-feature` / `testing-implementation` dispatch prompt).** List the exact file paths the phase will create or edit. The worker sets `PHASE_FILES` from this list to detect the stack per phase; without it a mixed Go+React repo cannot route Go work to the Go rules, and an empty scope in a multi-manifest repo is treated as ambiguous and fails closed. If paths are not in the prompt, the worker derives them from the phase's CREATE/MODIFY list in the plan.
 
-**Multi-turn anti-pattern**: NEVER send a "now write the integration test" follow-up via `write_agent` to an `implementing-feature` agent that just finished production code, nor to a `testing-implementation` agent that just finished unit tests. Each test phase (unit, integration, e2e) is a separate `testing-implementation` dispatch.
+**Multi-turn anti-pattern**: NEVER send a "now write the integration test" follow-up turn (Copilot's `write_agent`, or a Claude Code `SendMessage` to a live agent) to an `implementing-feature` agent that just finished production code, nor to a `testing-implementation` agent that just finished unit tests. Each test phase (unit, integration, e2e) is a separate, fresh `testing-implementation` dispatch — a new `Agent()` call, not a continuation of the old one.
 
 ---
 
@@ -94,6 +107,19 @@ task(skill: "implementing-feature", agent_type: "go-implementer", ...)  # Go sta
 task(skill: "implementing-feature", agent_type: "general-purpose", ...) # non-Go stack
 task(skill: "testing-implementation", agent_type: "go-tester", ...)     # Go stack
 task(skill: "testing-implementation", agent_type: "general-purpose", ...) # non-Go stack
+```
+
+Claude Code has native-equivalent capability, just split across two tool
+calls instead of one — see `claude-runtime.md`:
+
+```unknown
+Skill(skill: "implementing-feature")
+Agent(subagent_type: "go-implementer", prompt: "...")   # Go stack
+Agent(subagent_type: "general-purpose", prompt: "Logical role: go-implementer\n...")  # no matching native type
+
+Skill(skill: "testing-implementation")
+Agent(subagent_type: "go-tester", prompt: "...")        # Go stack
+Agent(subagent_type: "general-purpose", prompt: "Logical role: go-tester\n...")  # no matching native type
 ```
 
 Codex managed mode is different:

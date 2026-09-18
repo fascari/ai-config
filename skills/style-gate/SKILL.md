@@ -1,6 +1,6 @@
 ---
 name: style-gate
-description: Deterministic quality gates (lint, format, typecheck, tests, style greps). Zero LLM tokens. Called by implementing-feature and testing-implementation after code changes.
+description: Runs deterministic quality gates (lint, format, typecheck, tests, style greps) with zero LLM tokens. Use after implementing-feature or testing-implementation writes code, or when asked to lint, format, typecheck, or run style checks before a handoff or commit.
 ---
 
 # Style Gate
@@ -66,22 +66,7 @@ mypy src/changed/
 
 **Pass criteria**: exit code 0.
 
-### 4. Tests (testing phase only)
-
-Run scoped tests:
-
-```bash
-# Unit tests
-go test ./path/to/package/... -count=1 -timeout=60s
-
-# Integration tests
-grep -rl '//go:build integration' path/to/domain/ | xargs -I{} dirname {} | sort -u
-# Run each package found
-```
-
-**Pass criteria**: all tests pass, exit code 0.
-
-### 5. Style Greps (Go-specific)
+### 4. Style Greps (Go-specific)
 
 Run deterministic style checks:
 
@@ -100,6 +85,21 @@ git diff --name-only --diff-filter=AM HEAD | grep '\.go$' | xargs grep -nE \
 ```
 
 **Pass criteria**: no output from any grep.
+
+### 5. Tests (testing phase only)
+
+Run scoped tests:
+
+```bash
+# Unit tests
+go test ./path/to/package/... -count=1 -timeout=60s
+
+# Integration tests
+grep -rl '//go:build integration' path/to/domain/ | xargs -I{} dirname {} | sort -u
+# Run each package found
+```
+
+**Pass criteria**: all tests pass, exit code 0.
 
 ### 6. Architectural Shape Greps (Go clean-architecture)
 

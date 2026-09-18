@@ -1,6 +1,6 @@
 ---
 name: sanitizing-text
-description: Use when text produced by other skills is about to be written to a file or sent to an issue tracker, wiki, or GitHub
+description: Removes AI tells and normalizes formatting in text before it's saved or published. Use when text produced by other skills is about to be written to a file or sent to an issue tracker, wiki, or GitHub
 ---
 
 # Sanitizing Text
@@ -8,7 +8,7 @@ description: Use when text produced by other skills is about to be written to a 
 Post-processing pass applied to any text produced by other skills before it is written to a file or sent to an external system (issue tracker, wiki, GitHub). Covers two concerns:
 
 1. **Formatting and structure**, list markers, heading levels, em-dashes, emojis. Applies to all content.
-2. **AI writing patterns**, inflated language, sycophantic tone, vague attributions, mechanical structure. Applies to narrative text (descriptions, PR bodies, prose). Based on [Wikipedia: Signs of AI writing](https://en.wikipedia.org/wiki/Wikipedia:Signs_of_AI_writing) and patterns from [blader/humanizer](https://github.com/blader/humanizer) (MIT).
+2. **AI tells**, inflated language, sycophantic tone, vague attributions, mechanical structure. Applies to narrative text (descriptions, PR bodies, prose). Based on [Wikipedia: Signs of AI writing](https://en.wikipedia.org/wiki/Wikipedia:Signs_of_AI_writing) and patterns from [blader/humanizer](https://github.com/blader/humanizer) (MIT).
 
 Never generates content. Only cleans content that already exists.
 
@@ -18,7 +18,7 @@ If the personal `humanizer` skill is available in the session, prefer it for the
 
 **Preferred tier**: Fast · **Logical role**: `general-purpose`
 
-When dispatched by `orchestrating-tasks`, this skill should run in an isolated worker or task context using the provider-specific shape from `orchestrating-tasks/provider-dispatch.md`. Use the provider's Fast-tier model. Rationale: rule-based text transformation requires no deep reasoning.
+Rule-based text transformation needs no deep reasoning: dispatch as `general-purpose` on the provider's Fast tier. See `orchestrating-tasks/dispatching.md`'s Capability Tiers table for the Fast-tier model per provider. This skill never needs the Complex or Expert Review tiers, so the full `provider-dispatch.md` chain (`dispatching.md`, `claude-runtime.md`, `task-types.md`, `gates.md`, `codex-runtime.md`) is unnecessary here.
 
 ## When to use
 
@@ -31,8 +31,8 @@ When dispatched by `orchestrating-tasks`, this skill should run in an isolated w
 
 1. Read the target text (from conversation context, file, or user selection).
 2. Identify whether the text is **narrative** (prose descriptions) or **structured** (checklists, tables, code). Most PR bodies and issue descriptions are a mix of both.
-3. Apply **Formatting rules** (Rules 1-6) to the entire text.
-4. Apply **Narrative rules** (Rules 7-27) to prose sections only. Skip checklists, table cells with short values, and code comments.
+3. Apply **Formatting rules** (Rules 1, 2, 3, 5, 6) to the entire text.
+4. Apply **Rule 4** and the **Narrative rules** (Rules 7-27, see [NARRATIVE-RULES.md](NARRATIVE-RULES.md)) to prose sections only. Skip checklists, table cells with short values, and code comments.
 5. For narrative sections: run the **audit pass**, ask "What still sounds AI-generated?" and revise.
 6. Return the sanitized text only. No commentary about what was changed unless the user asked for it.
 
@@ -180,13 +180,14 @@ Replace or remove any of the following. The list is not exhaustive; apply the sa
 
 ### Rule 4: Enforce professional, objective language
 
+**Scope: narrative sections only** (not table cells, checklists, or code comments). Hedging and sycophantic-opener removal only makes sense for prose, so unlike Rules 1-3 and 5-6 this rule does not apply to all content the way its position in this list might suggest.
+
 - Write in third person or imperative voice. Avoid first person (`I`, `we`, `our`) in ticket descriptions, plans, and reports.
 - Use present or future tense for requirements. Avoid past tense unless describing existing behaviour.
-- Remove hedging language: `might`, `could potentially`, `sort of`, `kind of`, `basically`, `essentially`, `obviously`, `clearly`.
 - Remove filler openings: sentences that start with `So,`, `Well,`, `Basically,`, `In essence,`.
 - Remove closing affirmations: `Hope this helps`, `Feel free to`, `Let me know if`, `Happy to`, `I hope this helps`.
-- Remove sycophantic openings: `Great question!`, `Of course!`, `Certainly!`, `You're absolutely right!`.
-- Vary sentence length. Humans naturally write some short sentences and some longer ones with comma-separated clauses. A 50-word sentence is fine when the clauses connect logically; a paragraph of 15-word sentences all built the same way is the real Ai tell.
+- See [NARRATIVE-RULES.md](NARRATIVE-RULES.md) Rules 14 and 16 for the full hedging-language and sycophantic-opener word lists.
+- Vary sentence length. Humans naturally write some short sentences and some longer ones with comma-separated clauses. A 50-word sentence is fine when the clauses connect logically; a paragraph of 15-word sentences all built the same way is the real AI tell.
 - Use active voice. Passive constructions such as `it was decided that` must be rewritten (`the team decided`).
 - Remove subjectless fragments: `No configuration file needed` → `No configuration file is needed` or `You do not need a configuration file`.
 
@@ -237,207 +238,11 @@ Colons (`:`) and semicolons (`;`) used as sentence connectors make prose feel me
 
 ## Narrative rules (apply to prose sections only)
 
-These rules target AI writing patterns. Apply them to paragraph prose, PR descriptions, and issue description fields. Skip checklists, table cells with short values, and code comments.
+Rules 7-27 target AI tells in prose: inflated significance, superficial `-ing` padding, promotional language, vague attributions, copula avoidance, negative parallelisms, rule-of-three, chatbot artifacts, knowledge-cutoff disclaimers, hedging, generic conclusions, signposting, missing contractions, uniform sentence openings and length, synonym cycling, false ranges, viral phrases, filler clusters, symmetric comparisons, and hyphen overuse.
 
-### Rule 7: Remove inflated significance and legacy language
+Apply to paragraph prose, PR descriptions, and issue description fields. Skip checklists, table cells with short values, and code comments.
 
-AI writing inflates the importance of ordinary facts by adding statements about how they "represent", "mark", or "contribute to" broader themes.
-
-**Words to watch:** stands as, serves as, marks a, represents a, is a testament to, vital/significant/crucial/pivotal role, underscores its importance, reflects broader, symbolizing its enduring, setting the stage for, shaping the, evolving landscape, deeply rooted
-
-| Before | After |
-|---|---|
-| The fix marks a pivotal moment in how the system handles resolution. | The fix changes how the system resolves the issue. |
-| This approach underscores our commitment to correctness. | (remove: it says nothing) |
-
-### Rule 8: Remove superficial -ing endings
-
-AI appends present participle phrases (`-ing`) to sentences to fake depth. These add no information.
-
-**Words to watch:** highlighting, underscoring, emphasizing, ensuring, reflecting, symbolizing, contributing to, cultivating, fostering, encompassing, showcasing
-
-| Before | After |
-|---|---|
-| The query was rewritten, ensuring correctness. | The query was rewritten. |
-| The handler returns a 404, reflecting the domain convention. | The handler returns a 404 per domain convention. |
-
-### Rule 9: Remove promotional and advertisement language
-
-**Words to watch:** boasts, vibrant, rich (figurative), profound, enhancing its, showcasing, exemplifies, commitment to, nestled, in the heart of, groundbreaking, renowned, breathtaking
-
-Replace with plain factual statements. If the sentence only carries promotional weight and no information, remove it.
-
-### Rule 10: Remove vague attributions
-
-AI attributes opinions to unnamed authorities.
-
-**Words to watch:** Industry reports, Observers have cited, Experts argue, Some critics argue, Several sources, It is widely believed
-
-Replace with a specific source or remove entirely. If the point is worth making, make it directly.
-
-### Rule 11: Replace copula avoidance
-
-AI avoids `is`/`are`/`has` by substituting elaborate constructions.
-
-| Before | After |
-|---|---|
-| The function serves as the entry point. | The function is the entry point. |
-| The repository boasts three query methods. | The repository has three query methods. |
-| This commit marks the introduction of the feature. | This commit introduces the feature. |
-
-### Rule 12: Remove negative parallelisms
-
-AI overuses `It's not just X, it's Y` and tailing negation fragments.
-
-| Before | After |
-|---|---|
-| It's not just about correctness; it's about predictability. | The fix improves predictability, not just correctness. |
-| Options come from the selected item, no guessing. | Options come from the selected item without requiring a guess. |
-
-### Rule 13: Break up rule-of-three patterns
-
-AI forces ideas into groups of three to appear comprehensive. If two items are the natural scope, use two.
-
-| Before | After |
-|---|---|
-| The change improves correctness, reliability, and maintainability. | The change improves correctness and makes the code easier to maintain. |
-
-### Rule 14: Remove chatbot artifacts
-
-Chatbot conversational fragments that end up in published text.
-
-**Phrases to remove entirely:** `Here is an overview of`, `I hope this helps!`, `Let me know if you'd like`, `Would you like me to expand`, `Of course!`, `Certainly!`, `Great question!`, `You're absolutely right!`
-
-Keep the content. Remove the meta-commentary.
-
-### Rule 15: Remove knowledge-cutoff disclaimers
-
-**Phrases to watch:** `as of [date]`, `up to my last training update`, `while specific details are limited`, `based on available information`
-
-Remove these. State what is known directly, or omit if genuinely unknown.
-
-### Rule 16: Remove excessive hedging
-
-| Before | After |
-|---|---|
-| It could potentially possibly be argued that the policy might have some effect. | The policy may affect outcomes. |
-| This is essentially a workaround for what is basically a timing issue. | This is a workaround for a timing issue. |
-
-### Rule 17: Remove generic positive conclusions
-
-Vague upbeat endings that add no information.
-
-| Before | After |
-|---|---|
-| The future looks bright. Exciting times lie ahead as we continue this journey. | (remove entirely) |
-| This represents a major step in the right direction. | (remove entirely: or state what specifically changes next) |
-
-### Rule 18: Remove signposting and fragmented headers
-
-AI announces what it is about to do instead of doing it.
-
-**Phrases to watch:** `Let's dive in`, `let's explore`, `here's what you need to know`, `without further ado`, `now let's look at`
-
-Remove the announcement. Start with the content.
-
-Also remove warm-up sentences that restate the heading before the real content:
-
-| Before | After |
-|---|---|
-| `## Performance` + `Speed matters.` + `When users hit a slow page, they leave.` | `## Performance` + `When users hit a slow page, they leave.` |
-
-### Rule 19: Use contractions in prose
-
-Uncontracted forms ("does not", "it is", "would not", "cannot") read as stiff and machine-generated. Use natural contractions in prose.
-
-| Before | After |
-|---|---|
-| It does not mention tests. | It doesn't mention tests. |
-| This is not a valid approach. | This isn't a valid approach. |
-| The function would not compile. | The function wouldn't compile. |
-
-**Exception**: Keep the uncontracted form when used for deliberate emphasis ("The service does not retry. Ever.") or in formal specifications and acceptance criteria.
-
-### Rule 20: Vary sentence openings
-
-Runs of sentences starting with the same subject ("It names...", "It covers...", "It also...") are a strong AI tell. Break the pattern.
-
-- No two consecutive sentences should start with the same word.
-- No three consecutive sentences should start with a pronoun (It, This, That, They).
-- Vary by leading with the object, a dependent clause, or a different subject.
-
-| Before | After |
-|---|---|
-| It covers PSS. It adds a test helper. It organizes changes file by file. | PSS support lands too. A test helper keeps the setup clean. File-by-file changes make the diff easy to follow. |
-
-### Rule 21: Mix sentence lengths
-
-Uniform sentence length (all 15-25 words, all built with the same structure) is an AI signature. Vary the rhythm.
-
-- Prefer a natural mix: one long sentence weaving clauses with commas, then a shorter one landing the point.
-- Do not mechanically insert a short sentence in every paragraph. Some paragraphs work as one long, flowing sentence.
-- Three consecutive sentences starting with the same subject is a stronger tell than uniform length.
-
-| Before | After |
-|---|---|
-| Model A comes last because it describes the same core logic but omits too much detail in its output. | Model A comes last. Same core logic, but too much is left out. |
-
-### Rule 22: Remove elegant variation and synonym cycling
-
-AI avoids repeating a word by cycling through synonyms, creating unnatural variety. Humans repeat words naturally.
-
-**Pattern**: Using "the feature", "the capability", "the functionality", "the enhancement" for the same concept within a paragraph.
-
-| Before | After |
-|---|---|
-| The implementation handles edge cases. The solution also covers error paths. The approach validates inputs. | The implementation handles edge cases, covers error paths, and validates inputs. |
-
-If you mean the same thing, use the same word. Forced synonyms sound artificial.
-
-### Rule 23: Remove false ranges
-
-AI creates "from X to Y" constructions that sound comprehensive but add nothing.
-
-| Before | After |
-|---|---|
-| From novice developers to seasoned engineers, everyone benefits. | Developers at any level benefit. |
-| Everything from configuration to deployment is automated. | Configuration and deployment are automated. |
-
-### Rule 24: Remove viral and manipulation phrases
-
-Social media and engagement-bait phrases that AI picks up from training data.
-
-**Phrases to remove entirely:** `Let that sink in`, `Read that again`, `The truth is`, `And honestly?`, `Here's the kicker`, `Spoiler alert`, `Plot twist`, `Hot take`, `Unpopular opinion`, `Let me be clear`, `Make no mistake`, `Full stop`, `Period.` (as emphasis), `I said what I said`
-
-### Rule 25: Remove filler phrase clusters
-
-AI inserts conversational filler to sound human, but overuses specific phrases in clusters.
-
-**Watch for clusters of:** `Here's the thing`, `The thing is`, `Fair enough`, `At the end of the day`, `Look`, `Listen`, `I mean`, `To be fair`, `That said`, `That being said`, `Having said that`, `With that in mind`
-
-One filler phrase per paragraph is natural. Two or more in the same paragraph is a tell. Remove extras.
-
-### Rule 26: Avoid symmetric treatment in comparisons
-
-When comparing items (models, options, approaches), AI gives each item roughly the same word count and structure. Humans spend more words on what matters and less on the obvious.
-
-| Before | After |
-|---|---|
-| Model A handles validation with 3 tests. Model B handles validation with 4 tests. Model C handles validation with 2 tests. | B has the most tests at 4. A covers 3. C only manages 2. |
-
-Different items deserve different depth. The winner might get 3 sentences, the loser just one.
-
-### Rule 27: Reduce hyphenated word pair overuse
-
-AI hyphenates compound modifiers with perfect consistency. Humans are inconsistent with common pairs.
-
-**Words to watch:** cross-functional, client-facing, data-driven, decision-making, high-quality, real-time, long-term, end-to-end, well-known
-
-When three or more hyphenated pairs appear in the same paragraph, drop the hyphens on the most common ones. Keep hyphens on technical or ambiguous compounds where meaning changes without them.
-
-| Before | After |
-|---|---|
-| The cross-functional team delivered a high-quality, data-driven report. | The cross functional team delivered a high quality, data driven report. |
+**Full rule text, words to watch, and before/after tables**: see [NARRATIVE-RULES.md](NARRATIVE-RULES.md).
 
 ---
 
@@ -462,42 +267,9 @@ After applying all rules, run a final audit on narrative sections:
 
 ## AI detector patterns (reference)
 
-These patterns were flagged by GPTZero Advanced Scan in real evaluations. Apply the fixes during the audit pass or inline while applying Rules 1-21.
+Additional patterns to check for during the audit pass, drawn from real detector-tool evaluations (GPTZero Advanced Scan): predictable syntax, lack of creative grammar, mechanical word choice, and robotic formality.
 
-### Predictable syntax
-
-- Template openers: "Model B is best because...", "Model C is second.", "A comes last."
-  Fix: Lead with what was noticed, not the rank. "What sold me on B is...", "C is pretty close to B, honestly."
-
-- Feature enumeration with connectors: "It covers X, adds Y, and includes Z"
-  Fix: Weave features into opinions. "PSS is covered, there's a helper so the test setup stays clean" reads as observation, not a list.
-
-- Balanced comparison sentences: "Same implementation scope as B, and also covers..."
-  Fix: Be asymmetric. Spend more words on what matters, less on the obvious.
-
-### Lacks creative grammar
-
-- Perfect grammar throughout. No fragments, no interrupted thoughts.
-  Fix: Use fragments for emphasis ("None.", "No PSS either, no test helper."). Start sentences with "And" or "But". Use comma splices.
-
-- Uniform sentence length. All sentences in the 15-25 word band.
-  Fix: Alternate 3-word fragments with 20-word sentences in the same paragraph.
-
-### Mechanical precision
-
-- Most-probable word choices: "implementation scope", "test specificity", "file-by-file breakdown"
-  Fix: Use casual equivalents. "what it covers", "how specific the tests are", "changes broken down file by file"
-
-- Generic evaluative principles: "A security feature with no visible test coverage doesn't give me confidence..."
-  Fix: Make it personal and shorter. "For something that's supposed to block algorithm confusion, that's a dealbreaker."
-
-### Robotic formality
-
-- Three symmetric paragraphs with identical structure.
-  Fix: Different length per paragraph. One can be 4 sentences, another 6, another 3.
-
-- No colloquial language anywhere.
-  Fix: Allow casual qualifiers in moderation: "pretty close", "honestly", "kind of", "the kind of thing", "comes in handy". Use parenthetical asides: "(well, three if you count the key set path)".
+**Full pattern list with fixes**: see [AI-DETECTOR-PATTERNS.md](AI-DETECTOR-PATTERNS.md).
 
 ---
 

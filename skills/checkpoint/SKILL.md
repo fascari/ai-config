@@ -7,6 +7,11 @@ description: Use when ending a session or reaching a milestone, saves decisions,
 
 Saves session output to the Obsidian vault so the next session picks up exactly where this one left off. Write-only: reads existing vault files only to avoid overwriting, never to load context.
 
+Scope note: this is the long-term, human-readable project log, read back later by
+`recall`. For an immediate, mechanical resume of a specific in-progress plan in a
+fresh chat (no vault required), use `compressing-context` instead — the two are
+complementary, not interchangeable.
+
 ## When to use
 
 - User says "checkpoint"

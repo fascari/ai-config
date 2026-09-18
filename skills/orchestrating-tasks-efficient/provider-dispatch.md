@@ -13,7 +13,8 @@ Choose the role in `dispatching.md` first. Only then choose the transport:
 - **Copilot native**: `task(skill: ..., agent_type: ..., model: ..., mode: ..., prompt: ...)`
 - **OpenCode native**: `skill(name: "...")` or `task(skill: "...", agent_type: "...", prompt: ...)`
 - **Codex managed**: generic worker call only; use the smallest accepted field set
-- **Claude managed**: generic worker call only unless the runtime explicitly exposes native skill dispatch
+- **Claude Code native**: `Skill(skill: "...")` to load a skill's instructions, THEN `Agent(subagent_type: "...", prompt: "...")` to dispatch the worker — two separate tool calls. See `skills/orchestrating-tasks/claude-runtime.md` for the full contract (this skill reuses that file rather than duplicating it). Check for this profile whenever the runtime is Claude Code, before falling through to "Claude managed" below.
+- **Claude managed (degraded)**: generic worker call only — the fallback for a bare Claude API integration with no `Skill`/`Agent` tooling, not the default for every Claude-branded runtime
 
 Do not assume that `agent_type`, `skill`, `mode`, `fork`, or full repo cloning flags exist on every provider.
 
@@ -118,9 +119,43 @@ spawn_worker(
 )
 ```
 
-### Claude managed
+### Claude Code native
 
-Default to the same profile as Codex managed unless the Claude runtime explicitly exposes native skill dispatch with stable semantics.
+Check for this profile first whenever the runtime is any Claude Code surface.
+Full contract in `skills/orchestrating-tasks/claude-runtime.md` — quick
+reference here:
+
+```unknown
+Skill(skill: "implementing-feature")
+Agent(
+  subagent_type: "go-implementer",
+  description: "{short imperative description}",
+  prompt: "{task prompt, per the Dispatch Contract above}",
+  run_in_background: false
+)
+```
+
+- Never dispatch `Agent(subagent_type: "go-implementer" | "go-tester", ...)`
+  without a preceding `Skill(skill: "implementing-feature" | "testing-implementation")`
+  call — the skill is what injects the quality-gate instructions.
+- No cross-vendor judge exists in this runtime; `Agent` only dispatches
+  Claude-family models. Follow the Cross-Vendor Rule's Claude Code fallback in
+  `dispatching.md` (same-vendor, higher tier, adversarial framing + mandatory
+  disclosure) for the combined semantic review and any High Assurance gate.
+- The orchestrator, not the dispatched agent, owns `progress.md` and
+  `context-capsule.md` writes — require a structured completion-report block
+  from each dispatch instead of expecting the subagent to edit vault files
+  directly.
+- Verify the project's actual lint/format entrypoint before dispatching
+  (`gates.md`'s `golangci-lint` default is a Copilot-repo-family assumption —
+  check for a real `.golangci.yml`, a documented `check.sh`, or a `Makefile`
+  target first).
+
+### Claude managed (degraded fallback)
+
+Use only when the runtime is Claude-branded but does NOT expose `Skill`/`Agent`
+with distinct `subagent_type`s (e.g. a bare API integration). Claude Code
+itself is not this case — check for the real tools first, above.
 
 Preferred worker shape:
 
@@ -128,7 +163,7 @@ Preferred worker shape:
 spawn_worker(
   model: "{provider-tier model}",
   prompt: """
-  Runtime: Claude managed.
+  Runtime: Claude managed (degraded, no distinct subagent types).
   Logical role: {logical role from dispatching.md}
   Return WORKER PASS, WORKER FAIL, or BLOCKED.
 
@@ -164,7 +199,8 @@ Nested dispatch is provider-sensitive:
 - **Copilot native**: allowed where the skill explicitly says so
 - **OpenCode**: allowed only when the runtime proves it supports the exact nested shape
 - **Codex managed**: disallowed inside managed workers unless the runtime has already proven it supports the exact nested shape
-- **Claude managed**: disallowed by default for the same reason
+- **Claude Code native**: disallowed by default — a dispatched `Agent` generally cannot itself call `Skill`/`Agent`; the orchestrator owns all dispatch and judge follow-up
+- **Claude managed (degraded)**: disallowed by default for the same reason
 
 In managed-worker mode, the orchestrator owns the acceptance checklist and any follow-up judge dispatch.
 

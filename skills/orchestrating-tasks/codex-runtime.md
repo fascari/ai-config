@@ -6,15 +6,14 @@ These skills were originally written for a Copilot-style harness that exposes na
 
 ## Runtime Detection
 
-Before dispatching any implementation or testing phase, identify the runtime mode:
-
-| Runtime capability | Mode | Action |
-|---|---|---|
-| Native `task(skill: "...")` or equivalent is available | Native harness | Use it exactly as written in `task-types.md` and `dispatching.md`. |
-| Only generic agents such as `spawn_agent` are available | Codex managed | You may use agents only as untrusted workers. The orchestrator owns all gates manually. |
-| No agent dispatch is available | Local manual | The orchestrator may execute locally only after explicit user approval for degraded mode. |
-
-If the user requested the full orchestrator workflow and native skill dispatch is unavailable, say so before continuing. Do not imply that `spawn_agent` provides the same harness guarantees.
+Before dispatching any implementation or testing phase, identify the runtime
+mode using `dispatching.md`'s "Provider Runtime Override" table (the
+canonical 4-way classification). For Codex specifically: if only generic
+agents such as `spawn_agent` are available, treat this as Codex managed —
+agents are untrusted workers, the orchestrator owns all gates manually. If the
+user requested the full orchestrator workflow and native skill dispatch is
+unavailable, say so before continuing. Do not imply that `spawn_agent`
+provides the same harness guarantees.
 
 ## Call-shape fallback
 

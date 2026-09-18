@@ -151,6 +151,10 @@ Always dispatch the SKILLS, not the underlying agents:
 - `testing-implementation`, not `go-tester`.
 
 The skills enforce deterministic gates. Direct agent dispatch bypasses them.
+In Claude Code this means: `Skill(skill: "implementing-feature")` before
+`Agent(subagent_type: "go-implementer", ...)` — not the `Agent` call alone,
+even though `go-implementer` is a real, correctly-named `subagent_type`. See
+`skills/orchestrating-tasks/claude-runtime.md`.
 
 ---
 

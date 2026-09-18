@@ -20,6 +20,7 @@ This skill is split into focused sub-files. Always read this SKILL.md first for 
 | [`approval-and-output.md`](approval-and-output.md) | Approval checkpoints before external writes; expected artifact set in the external vault plan directory |
 | [`plans-setup.md`](plans-setup.md) | Resolve `{plan_root}` and create the repo-local `.plans` symlink |
 | [`codex-runtime.md`](codex-runtime.md) | Required when running these Copilot-origin skills inside Codex; defines native, managed, and manual modes |
+| [`claude-runtime.md`](claude-runtime.md) | Required when running these Copilot-origin skills inside Claude Code; defines the real `Skill`+`Agent` two-step dispatch, the cross-vendor-judge fallback, and who owns `progress.md` writes |
 
 ---
 
@@ -35,14 +36,14 @@ These rules always apply regardless of task type. Read them before anything else
 - **All narrative prose passes through `sanitizing-text` before presentation**
 - **Never skip user approval checkpoints**: commits, pushes, and any external API writes require explicit approval (see `approval-and-output.md`)
 - **Never assume a plan exists**: always run plan discovery first
-- **Codex compatibility is explicit**: when native `task(skill: "...")` dispatch is unavailable, read `codex-runtime.md`; generic `spawn_agent` workers are untrusted until the orchestrator loads the phase rule bundle and runs the manual acceptance checklist
+- **Runtime compatibility is explicit**: native `task(skill: "...")` dispatch does not exist outside Copilot. Inside Codex, read `codex-runtime.md`. Inside Claude Code, read `claude-runtime.md` — the real dispatch is `Skill(skill: "...")` to load a skill's instructions, THEN `Agent(subagent_type: "...")` to actually run a worker; these are two separate tool calls, not one. Generic workers (Codex's `spawn_agent`, or a `subagent_type`-less fallback) are untrusted until the orchestrator loads the phase rule bundle and runs the manual acceptance checklist.
 - **`implementing-feature` owns production code, `testing-implementation` owns tests**: never cross-assign; each returns completion report. A phase that touches both production files AND test files MUST be split into two dispatches. (See `task-types.md`)
-- **NEVER dispatch `go-implementer` or `go-tester` directly**: always dispatch the SKILLS (`implementing-feature`, `testing-implementation`). The skills are the wrappers that enforce quality gates. Dispatching the agents directly bypasses the quality checks entirely. (See `task-types.md`)
-- **`write_agent` is single-skill-scoped**: switching skill type requires a fresh `task()` dispatch
-- **Dispatch model selection is mandatory**: for every task dispatch, consult `dispatching.md` Delegation Model Matrix. Run the Pre-Dispatch Checklist before every `task` invocation.
-- **Dispatch syntax is provider-specific**: select the logical role in `dispatching.md`, then render the actual worker or task call using `provider-dispatch.md`
+- **NEVER dispatch `go-implementer` or `go-tester` directly without first loading their owning skill**: always run `Skill(skill: "implementing-feature")` / `Skill(skill: "testing-implementation")` (or the Copilot `task(skill:...)` equivalent) before the `go-implementer`/`go-tester` dispatch — the skill is the wrapper that enforces quality gates and carries the rule bundle into the prompt. Dispatching the agent type directly, with no skill instructions loaded first, bypasses the quality checks entirely. (See `task-types.md`, `claude-runtime.md`)
+- **A skill-loaded context is single-skill-scoped**: switching to a different skill (e.g. `implementing-feature` → `testing-implementation`) requires re-invoking `Skill`/`task(skill:...)` for the new skill, then a fresh worker dispatch — you cannot reuse a `go-implementer` dispatch's context for `go-tester` work.
+- **Dispatch model selection is mandatory**: for every dispatch, consult `dispatching.md` Delegation Model Matrix. Run the Pre-Dispatch Checklist before every dispatch.
+- **Dispatch syntax is provider-specific**: select the logical role in `dispatching.md`, then render the actual worker call using `provider-dispatch.md` (which points to `claude-runtime.md` or `codex-runtime.md` for the concrete shape).
 - **Subagent prompts MUST include Codebase Search Rules**: for any subagent that needs codebase exploration, paste the verbatim block from `dispatching.md` into the dispatch prompt. Trusting global instructions alone is not enough.
-- **Judges and validators MUST use a different vendor than the producer**: see `dispatching.md` Cross-Vendor Rule. Same-vendor judging is a hard rule violation.
+- **Judges and validators MUST use a different vendor than the producer when one is available.** In a single-vendor runtime (Claude Code's `Agent` tool only dispatches Claude-family models), true cross-vendor is not possible — follow the documented fallback in `dispatching.md` Cross-Vendor Rule / `claude-runtime.md` instead, and disclose the limitation in the gate's own output. Silently treating a same-vendor judge as if it met the rule is the violation; using the documented fallback with disclosure is not.
 
 ---
 
@@ -56,7 +57,7 @@ Answer these questions explicitly in your reasoning BEFORE dispatching any subag
 4. **Approval needed before dispatch?** Check `approval-and-output.md` Approval Checkpoints table.
 5. **Does the phase touch both production files AND test files?** If yes, SPLIT into two dispatches.
 6. **Is this a judge/validator of another agent's output?** If yes, confirm the judge's vendor is DIFFERENT from the producer's vendor.
-7. **Runtime mode?** Copilot native | Codex managed | Claude managed | Local manual. Confirm the concrete call shape from `provider-dispatch.md` before dispatching.
+7. **Runtime mode?** Copilot native | Codex managed | **Claude Code native** (`Skill` + `Agent` tools, see `claude-runtime.md`) | Claude managed (degraded, no distinct `subagent_type`s) | Local manual. Confirm the concrete call shape from `provider-dispatch.md` before dispatching.
 
 ---
 
@@ -94,23 +95,18 @@ Classify complexity, then delegate to the matching skill chain. See `task-types.
 
 | Level | Criteria | Skill chain |
 |---|---|---|
-| Simple | Single file, typo, config | implementing-feature only |
-| Standard | New endpoint, bug fix (≤3 layers) | researching-codebase → planning-implementation → implementing-feature → testing-implementation → [Gates] → reviewing-code |
-| Complex | New domain, cross-service, migrations | All skills, analyzing-system-design mandatory |
+| Simple | Single file change, typo/config fix, guard condition. Entire production change fits in ≤5 lines across 1 file AND root cause is fully documented. | implementing-feature only |
+| Standard | Bug fix touching 2-3 layers, new endpoint, new service. | researching-codebase → planning-implementation → implementing-feature → testing-implementation → [Gates] → reviewing-code |
+| Complex | New domain, cross-service change, migration + multiple layers, fixture/test changes that may cascade. | All skills, analyzing-system-design mandatory |
+
+When in doubt between Standard and Complex, default to Standard and escalate
+after the critique gate if needed.
 
 For a Go Simple change that needs a test, escalate to Standard so `testing-implementation` (`go-tester`) governs the `*_test.go`. Never write Go test files through `implementing-feature`.
 
 `analyzing-system-design` is not optional for Standard and Complex tasks. The implementer must not start until `system-design-analysis.md` is approved.
 
 ---
-
-## Complexity Classification
-
-| Level | Criteria |
-|---|---|
-| Simple | Single file change, typo/config fix, guard condition. Entire production change fits in ≤5 lines across 1 file AND root cause is fully documented. |
-| Standard | Bug fix touching 2-3 layers, new endpoint, new service. |
-| Complex | New domain, cross-service change, migration + multiple layers, fixture/test changes that may cascade. When in doubt between Standard and Complex, default to Standard and escalate after critique gate if needed. |
 
 ---
 
@@ -181,9 +177,11 @@ Skill: `skills/compressing-context/SKILL.md`
 - Treating review approval as commit authorization: they are separate checkpoints
 - Assuming the active plan without reading `progress.md`: always discover first
 - Writing code directly: this skill only routes; implementation goes to implementing-feature
-- Reusing a live agent across skill types: each skill phase requires a fresh `task()` dispatch
-- Dispatching `go-implementer` or `go-tester` directly: always dispatch the skills
-- Treating `spawn_agent` as equivalent to native `task(skill: ...)`: in Codex managed mode it is only a worker, and the orchestrator must run the manual acceptance checklist
+- Reusing a live agent across skill types: each skill phase requires a fresh dispatch (`task()` on Copilot, a fresh `Agent()` call on Claude Code)
+- Dispatching `go-implementer` or `go-tester` directly, in Claude Code, without first calling `Skill(skill: "implementing-feature" | "testing-implementation")`: the skill is what loads the quality-gate instructions into the prompt; skipping it produces an ungoverned worker even though the `subagent_type` is correct
+- Treating `spawn_agent` (Codex) as equivalent to native `task(skill: ...)`: it is only a worker, and the orchestrator must run the manual acceptance checklist
+- Treating Claude Code's `Agent` tool as the same degraded "generic worker" `provider-dispatch.md`'s old "Claude managed" section describes: it has real distinct `subagent_type`s, closer to Copilot native — use `claude-runtime.md`, not the degraded fallback, whenever `Skill`+`Agent` are both available
+- Assuming a same-vendor judge dispatched in Claude Code satisfies the Cross-Vendor Rule as written: it doesn't — follow the documented fallback and disclose the limitation instead of treating the PASS as full-strength
 
 ## Permissions
 

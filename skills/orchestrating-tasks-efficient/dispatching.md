@@ -17,15 +17,16 @@ This file covers model tier selection, dispatch contract, Style Reinforcement bl
 
 ### Provider model reference
 
-| Tier | OpenCode (Go) | Anthropic (Claude) | OpenAI | Google (Gemini) |
-|---|---|---|---|---|
-| **Fast** | deepseek-v4-flash, mimo-v2.5 | claude-haiku-* | gpt-*-mini, o4-mini | gemini-flash-* |
-| **Balanced** | deepseek-v4-pro (default) | claude-sonnet-* | gpt-*/codex (default) | gemini-pro-* |
-| **Complex** | kimi-k2.7-code | claude-opus-* | gpt-*/o-series | gemini-pro-* |
-| **Expert Review** | glm-5.2 | — (use cross-vendor) | — (use cross-vendor) | — (use cross-vendor) |
+| Tier | OpenCode (Go) | Anthropic (Claude, generic) | Claude Code (`Agent` tool `model:`) | OpenAI | Google (Gemini) |
+|---|---|---|---|---|---|
+| **Fast** | deepseek-v4-flash, mimo-v2.5 | claude-haiku-* | `model: "haiku"` | gpt-*-mini, o4-mini | gemini-flash-* |
+| **Balanced** | deepseek-v4-pro (default) | claude-sonnet-* | omit `model:` (inherits session model) | gpt-*/codex (default) | gemini-pro-* |
+| **Complex** | kimi-k2.7-code | claude-opus-* | `model: "opus"` or higher reasoning effort | gpt-*/o-series | gemini-pro-* |
+| **Expert Review** | glm-5.2 | — (use cross-vendor) | `model: "opus"` at high effort — **same-vendor only**, see the Cross-Vendor Rule's Claude Code fallback below | — (use cross-vendor) | — (use cross-vendor) |
 
 > Tier names and model assignments follow `providers/opencode/docs/model-routing.md`.
 > OpenCode Go provides `opencode-go/<model-id>`. OpenCode Zen provides `opencode/<model-id>`. Models listed are the Go variants.
+> Claude Code's `model:` values (`"sonnet"`, `"opus"`, `"haiku"`, `"fable"`) track whatever generation is live — confirm against the session's own model info rather than trusting this table blindly.
 
 ---
 
@@ -94,6 +95,21 @@ Any agent that judges, validates, critiques, reviews, or scores the output of an
 | planning-implementation (Kimi K2.7 Code) | GLM-5.2 | Complex plan deserves expert review |
 
 If the producer's vendor changes, re-check every downstream judge.
+
+### Claude Code fallback — no cross-vendor is available
+
+`Agent` only dispatches Claude-family models; there is no other vendor
+reachable through it. This rule cannot be satisfied literally in Claude Code.
+Do not call a different Claude model "cross-vendor" — that's a same-vendor
+substitution.
+
+Substitute: producer at default/Balanced, judge at Opus/high-effort with
+explicit adversarial framing ("try to refute, default to `refuted: true` if
+uncertain"). For the Standard-mode combined review and any High Assurance
+gate, include `Cross-vendor: NOT AVAILABLE (Claude Code, same-vendor judge
+only)` in the gate's own output — never present a same-vendor PASS as the
+full-strength guarantee this section describes. Full detail in
+`skills/orchestrating-tasks/claude-runtime.md`.
 
 ---
 
@@ -227,6 +243,18 @@ Hard rules:
 - Run the Style Compliance Gate (4 greps) before declaring any phase done, see `skills/implementing-feature/SKILL.md`
 ```
 
+**Repo-specific overrides go in a separate addendum appended after this
+block, never rewritten into it.** A real repo sometimes contradicts a hard
+rule above for a documented reason (a monorepo whose CI enforces doc comments
+the block says to delete, for instance):
+
+```
+## Repo-Specific Override
+
+{Rule name}: {what the repo actually requires, and the concrete reason — cite
+the CI check or lint config, not a guess}
+```
+
 ---
 
 ## Codebase Search in Subagent Prompts
@@ -250,7 +278,8 @@ If Graphify is not available, use targeted file reads. Read source files only wh
 
 | Capability | Mode | Dispatch rule |
 |---|---|---|
-| Native `task(skill: "...")` or equivalent skill dispatch exists | Native harness | Use the native harness shape from `provider-dispatch.md`. The skill wrapper enforces quality gates. |
+| Native `task(skill: "...")` or equivalent single-call skill dispatch exists | Native harness (Copilot) | Use the native harness shape from `provider-dispatch.md`. The skill wrapper enforces quality gates. |
+| `Skill` + `Agent` tools both exist, with distinct `subagent_type`s | Claude Code native | Two-call chain: `Skill(skill: "...")` then `Agent(subagent_type: "...")`. See `skills/orchestrating-tasks/claude-runtime.md`. |
 | Only generic worker agents exist, such as Codex `spawn_agent` | Codex managed | Workers may produce bounded patches, but the orchestrator must run `skills/orchestrating-tasks/codex-runtime.md` manual acceptance before accepting output. |
 | No agent dispatch exists | Local manual | Stop and ask the user to approve degraded local execution. |
 

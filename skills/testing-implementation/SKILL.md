@@ -13,46 +13,12 @@ When dispatched by `orchestrating-tasks`, detect the stack first, then choose th
 
 ### Stack Detection
 
-```bash
-# Detect the stack for THIS phase from the test files it targets, not a single
-# repo-wide flag. A mixed repo (Go engine + React UI) has single-stack phases;
-# route each by the files it touches. Any *_test.go in scope means Go governs,
-# so the canonical Go test rules always load for Go work.
-#
-# PHASE_FILES MUST be populated before detection. Derive it now, in order, from:
-#   1. the target test file paths named in the dispatch prompt, or
-#   2. the test files for the current phase in
-#      {plan_root}/{slug}/implementation-plan.md (read that phase now).
-# Example: PHASE_FILES="internal/feedclient/client_test.go"
-PHASE_FILES="${PHASE_FILES:-}"
-
-STACK="unknown"
-for f in $PHASE_FILES; do
-  case "$f" in
-    *.go)                  STACK="go"; break ;;   # a Go test file in scope wins outright
-    *.ts|*.tsx|*.js|*.jsx) STACK="typescript" ;;
-    *.py)                  STACK="python" ;;
-  esac
-done
-
-# Empty scope is only safe in a single-manifest repo. In a mixed repo do NOT
-# guess from a root manifest: a Go module plus a root package.json would wrongly
-# force Go onto a React test phase. Fail closed and request the target files.
-if [ "$STACK" = "unknown" ]; then
-  manifests=0
-  [ -f "go.mod" ] && manifests=$((manifests + 1))
-  [ -f "package.json" ] && manifests=$((manifests + 1))
-  { [ -f "pyproject.toml" ] || [ -f "setup.py" ] || [ -f "requirements.txt" ]; } && manifests=$((manifests + 1))
-  if [ "$manifests" -gt 1 ]; then
-    echo "stack=ambiguous: populate PHASE_FILES from the phase scope (multi-manifest repo)" >&2
-    exit 1
-  fi
-  [ -f "go.mod" ] && STACK="go"
-  [ "$STACK" = "unknown" ] && [ -f "package.json" ] && STACK="typescript"
-  [ "$STACK" = "unknown" ] && { [ -f "pyproject.toml" ] || [ -f "setup.py" ] || [ -f "requirements.txt" ]; } && STACK="python"
-fi
-echo "stack=$STACK"
-```
+Same `PHASE_FILES`/`STACK` detection logic as `implementing-feature`'s own
+"Stack Detection" section — read it there rather than re-deriving it. The one
+difference: populate `PHASE_FILES` from the phase's **test** file paths (e.g.
+`PHASE_FILES="internal/feedclient/client_test.go"`), not its production files.
+Any `*_test.go` in scope still wins outright and loads the Go rules, same as a
+plain `.go` file does on the production side.
 
 ### Dispatch by stack
 
@@ -67,7 +33,7 @@ echo "stack=$STACK"
 
 **Never dispatch `go-tester` for non-Go stacks.** The Go test commands and mock conventions only apply when `STACK=go`. For any other stack, skip the Go-specific sections below.
 
-In Copilot native mode, `go-tester` maps to an `agent_type` only when that agent is actually installed. When it is **not** an available native `agent_type`, do not fail and do not silently drop the Go rules: dispatch a real Copilot agent type (`general-purpose`), bind the logical role in the prompt (`Logical role: go-tester`), and front-load the canonical contract from `~/.ai-config/agents/go-tester.md` so the full Go test rule set still applies. In Codex managed mode prefer a matching custom agent from `~/.codex/agents/` or `.codex/agents/`; otherwise bind the logical role in the prompt and treat the worker output as untrusted until the orchestrator accepts it.
+In Copilot native mode, `go-tester` maps to an `agent_type` only when that agent is actually installed. When it is **not** an available native `agent_type`, do not fail and do not silently drop the Go rules: dispatch a real Copilot agent type (`general-purpose`), bind the logical role in the prompt (`Logical role: go-tester`), and front-load the canonical contract from `~/.ai-config/agents/go-tester.md` so the full Go test rule set still applies. In Codex managed mode prefer a matching custom agent from `~/.codex/agents/` or `.codex/agents/`; otherwise bind the logical role in the prompt and treat the worker output as untrusted until the orchestrator accepts it. **In Claude Code**, load this skill via `Skill(skill: "testing-implementation")` first, THEN dispatch `Agent(subagent_type: "go-tester", ...)` — two separate tool calls; fall back to `Agent(subagent_type: "general-purpose", ...)` with the logical role bound in the prompt if `go-tester` is not an available `subagent_type` this session. See `skills/orchestrating-tasks/claude-runtime.md`.
 
 ## When to use
 
@@ -102,7 +68,7 @@ In Copilot native mode, `go-tester` maps to an `agent_type` only when that agent
    - Cover happy path + each error case + edge cases.
    - Test data via factory/fixture helpers when reuse or complexity warrants them; inline small literals otherwise.
 
-   **Go:** table-driven, fail-fast assertions (`require`), project's mock strategy (e.g. `EXPECT()` builder for testify/mockery).
+   **Go:** table-driven, fail-fast assertions (`require`), project's mock strategy (e.g. `EXPECT()` builder for testify/mockery) — **but verify the project actually has `testify`/`mockery` configured first.** Grep `go.mod` for `stretchr/testify` as a direct (not indirect) dependency and check for any `go:generate` mockery directive before assuming this applies; real repos exist where neither is present at all, in which case the canonical rule does not silently disable — the deviation is exactly this: `if err != nil { t.Errorf(...) }` instead of `require`, and hand-written mocks instead of generated ones, stated as a documented deviation in the phase report, not applied quietly.
 
    **TypeScript:** fail-fast assertions (`expect`), project's mock strategy (e.g. `jest.fn()`, `mocks/`).
 
@@ -120,6 +86,9 @@ In Copilot native mode, `go-tester` maps to an `agent_type` only when that agent
    grep -rl '//go:build integration' path/to/domain/ | xargs -I{} dirname {} | sort -u
 
    golangci-lint run ./path/to/changed/... | head -50
+   # OR the project's real lint entrypoint if golangci-lint isn't configured —
+   # check for .golangci.yml or a documented alternative (e.g. gofmt/go vet/revive
+   # via a tools/bin/check.sh) before assuming golangci-lint applies.
    ```
 
    **TypeScript stack:**
@@ -142,7 +111,7 @@ In Copilot native mode, `go-tester` maps to an `agent_type` only when that agent
    > **Never run the full suite.** Target only the affected paths.
    > **(Go only)** For goroutine-based code, use the project's async synchronization pattern (`synctest.Test` + `synctest.Wait()` when available). Never use `sync.WaitGroup`, ad-hoc channels, or `time.Sleep` for test synchronization.
 
-9. Update `{plan_root}/{slug}/progress.md` with test results.
+9. Update `{plan_root}/{slug}/progress.md` with test results. **In Claude Code**, do this by including the structured completion-report block from the "Claude Code Runtime Note" below in your final report — the orchestrator transcribes it, since a fresh `Agent` dispatch doesn't reliably share the vault's write history. In native-harness modes with continuous file access, editing `progress.md` directly is fine.
 
 > **Note:** Semantic validation (rules compliance, architecture, error handling) happens in `reviewing-code`, not here. This phase focuses on deterministic gates only (tests + lint).
 
@@ -208,12 +177,19 @@ No ticket IDs. No `And` chaining two behaviors in one name, split or rename.
 
 ## Mock pattern (Go)
 
-When `STACK=go`, use testify/mockery:
+When `STACK=go` **and the project has `testify`/`mockery` actually configured** (see the verification step above), use it:
 
 ```go
 // Always EXPECT() builder
 repo.EXPECT().FindByID(mock.Anything, "id-1").Return(entity, nil)
 ```
+
+**When the project has neither** (a real, documented, non-rare case — not an
+excuse to skip checking): hand-write mocks as structs with func fields
+satisfying a locally-declared interface, matching the neighboring package's
+existing pattern if one exists, and use stdlib `if got != want { t.Errorf(...) }`
+instead of `require`. State this as a deviation in the phase report, don't
+silently downgrade without saying so.
 
 **Non-Go stacks:** use the project's native mocking strategy (e.g. `jest.fn()` for TypeScript, `pytest-mock` for Python). Follow local conventions; do not impose Go mock patterns.
 
@@ -241,7 +217,7 @@ time.Sleep(10 * time.Microsecond)
 **Go stack:**
 - [ ] Fail-fast assertions: never soft assertions
 - [ ] Project mock builder (`EXPECT()`, never `mock.On()`)
-- [ ] Mocks are **mockery-generated only** — no hand-written `fake*/stub*/mock*` structs
+- [ ] Mocks are mockery-generated when the project has `testify`/`mockery` configured; hand-written `fake*/stub*/mock*` structs only when it doesn't, with the deviation stated in the phase report (see "Mock pattern" above) — never hand-written as a shortcut when generation is actually available
 - [ ] Handler tests assert the **whole** response object vs golden `testdata/` — no field-by-field or `InDelta`/`InEpsilon` float asserts
 - [ ] External HTTP tested via an `httptest.Server` upstream stub — never `gock`/transport monkeypatching
 - [ ] `//go:generate` or equivalent on all mocked interfaces
@@ -276,3 +252,19 @@ Hard testing conventions that must be checked manually in Codex managed mode:
 - Test workers do not edit production files unless a repair cycle is explicitly approved.
 
 If any of these fail, report `BLOCKED` or dispatch a repair cycle. Do not report the phase as accepted.
+
+## Claude Code Runtime Note
+
+When dispatched via `Skill(skill: "testing-implementation")` → `Agent(subagent_type: "go-tester" | "general-purpose", ...)`, end your report with this block so the orchestrator can transcribe it into `progress.md`:
+
+```
+## Progress Update
+Phase: {N} — {title}
+Test files created: {list}
+Test names: {list}
+Gates: gofmt={PASS/FAIL} vet={PASS/FAIL} {project's real lint}={PASS/FAIL} test={PASS/FAIL}
+Production files touched: none | {list, should be none}
+Blockers: {none | description}
+```
+
+Expect the orchestrator to independently re-run the reported gates and confirm zero production-file changes before proceeding — a subagent's self-reported PASS is a claim, not a fact.

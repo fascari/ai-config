@@ -1,6 +1,6 @@
 ---
 name: cognition-lessons
-description: Extract lessons from review failures and load them in future sessions. Harness learns from mistakes. Zero tokens on load, minimal on extract.
+description: Extracts compact anti-pattern/preferred-pattern lessons from review failures so the harness stops repeating them. Use when reviewing-code returns BLOCKED with rule violations, or at session start on a project with prior lessons on file.
 ---
 
 # Cognition Lessons
@@ -95,28 +95,6 @@ Loaded {N} lessons from prior review failures:
 These lessons will be checked during implementation.
 ```
 
-## Integration with reviewing-code
-
-When `reviewing-code` runs:
-
-1. Load project lessons (if any)
-2. Include high-priority lessons in review prompt:
-
-```
-## Prior Lessons (check these first)
-
-- {trigger}: avoid {anti-pattern}, use {preferred pattern}
-- {trigger}: avoid {anti-pattern}, use {preferred pattern}
-
-## Standard Rules
-
-{normal rules from rules/*.md}
-```
-
-3. If review passes: no lesson extraction needed
-4. If review fails with same violation: increment occurrence count
-5. If review fails with new violation: extract new lesson
-
 ## Rules
 
 - **Extract only on BLOCKED**: never extract on APPROVED
@@ -124,9 +102,3 @@ When `reviewing-code` runs:
 - **Per-project storage**: lessons are project-specific
 - **Append-only**: never delete lessons, only update occurrence count
 - **Priority-based filtering**: load high-priority first, medium if space allows
-
-## Token Cost
-
-- **Load**: ~500 tokens (read + present)
-- **Extract**: ~200 tokens per lesson (parse + write)
-- **Total per session**: ~500-1000 tokens vs ~50-100k with LLM-as-judge

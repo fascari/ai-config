@@ -34,7 +34,14 @@ Pass: exit code 0, or skipped with at least one other gate passing.
 
 ### 3. Lint
 
-**Go (mandatory):** `golangci-lint run ./path/to/changed/... | head -50`
+**Go (mandatory):** `golangci-lint run ./path/to/changed/... | head -50` —
+**verify this is actually the project's linter before running it.**
+`golangci-lint` is a Copilot-repo-family default, not a universal fact: some
+repos have no `.golangci.yml` at all and run a documented alternative instead
+(a `tools/bin/check.sh` invoking `gofmt`/`go vet`/`revive` directly is a real,
+observed example). Check for a `.golangci.yml`, a documented lint script, or
+a `Makefile`/CI target first, and use whatever the project's own CI actually
+runs — a clean `golangci-lint` run means nothing if CI never invokes it.
 
 **TypeScript (configured):** `npx eslint $(git diff --name-only --diff-filter=AM HEAD | grep -E '\.(ts|tsx)$') 2>&1 | head -50` — skip if `.eslintrc*` / `eslint.config.*` not found
 
@@ -121,6 +128,31 @@ When the diff changes exported functions, interfaces, or HTTP contracts:
 
 > Non-Go stacks: follow the project's existing conventions.
 
+### 10. Architecture Gate (Standard and High Assurance only, Go domain services)
+
+Zero-token, deterministic construction-harness check — belongs in this
+orchestrator's gate list precisely because it costs nothing, unlike the LLM
+gates this orchestrator otherwise minimizes:
+
+```bash
+bash "$AI_CONFIG_HOME/skills/architecture-gate/scripts/conformance.sh" .
+```
+
+- **Exit 0** or a documented self-exit ("not a domain service layout; nothing
+  to check") — proceed.
+- **Exit 1 (any ERROR)** — a universal invariant is broken. Do not proceed;
+  send the offending files as a targeted repair to `implementing-feature`
+  (production) or `testing-implementation` (tests). Re-run until green.
+- A documented waiver (e.g. a `system-design-analysis.md` decision naming a
+  service as structurally incompatible with the blueprint) changes what you do
+  with a failing result, not whether you run the script — run it regardless,
+  confirm the failure matches the waiver, and flag anything the waiver
+  doesn't name.
+
+**Skip in Lean mode**: Lean's own scope (single file, ≤20 lines, no domain
+scaffolding) makes a whole-domain conformance check inapplicable, not merely
+expensive — there's no domain shape being changed for it to check.
+
 ---
 
 ## Completion Gate
@@ -138,6 +170,7 @@ Run all applicable deterministic gates in order. Stop at first failure.
 - style greps: PASS / FAIL / SKIPPED (Go only)
 - API compatibility: PASS / FAIL / N/A
 - package structure: PASS / FAIL / SKIPPED (Go only)
+- architecture gate: PASS / FAIL / SKIPPED (Lean mode, or non-Go)
 ```
 
 On FAIL:
@@ -169,7 +202,7 @@ On PASS:
 
 Combine Output Judge and `reviewing-code` into a single cross-vendor review.
 
-Dispatch a `general-purpose` agent at Balanced tier (or Expert Review if risk is High). The agent must be from a different vendor than the implementer.
+Dispatch a `general-purpose` agent at Balanced tier (or Expert Review if risk is High), using the provider-specific shape from `provider-dispatch.md`. The agent must be from a different vendor than the implementer. **In Claude Code, no other vendor is reachable through the `Agent` tool** — follow the Claude Code fallback in `dispatching.md`'s Cross-Vendor Rule (same-vendor, higher tier, adversarial framing) and include the `Cross-vendor: NOT AVAILABLE` line in this gate's output instead of presenting a same-vendor pass as a full cross-vendor guarantee.
 
 Prompt:
 
@@ -197,6 +230,7 @@ context capsule: {plan_root}/{slug}/context-capsule.md
 ## Output format
 
 PASS
+Cross-vendor: NOT AVAILABLE (Claude Code, same-vendor judge only) | {vendor name} if genuinely cross-vendor
 AC Coverage: N/N
 Changed files: (list)
 No blockers found.
@@ -204,6 +238,7 @@ No blockers found.
 OR
 
 FAIL
+Cross-vendor: NOT AVAILABLE (Claude Code, same-vendor judge only) | {vendor name} if genuinely cross-vendor
 Missing AC evidence:
 - AC #N: "{ac text}": no implementation or test evidence found
 Violations:
@@ -263,6 +298,7 @@ Update `{plan_root}/{slug}/progress.md` after every gate run:
 - style greps: PASS
 - API compatibility: PASS / N/A
 - package structure: PASS
+- architecture gate: PASS / SKIPPED (Lean mode, or non-Go)
 - Semantic Review: PASS / NOT_RUN / FAIL
 - Output Judge: PASS / NOT_RUN / FAIL
 - Critique Gate: PASS / NOT_RUN / FAIL

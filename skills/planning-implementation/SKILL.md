@@ -16,6 +16,7 @@ Does not write code. Produces the plan that implementing-feature will follow.
 
 ## Steps
 
+0. Use the `{plan_root}` provided by `orchestrating-tasks`. If running standalone, resolve `{plan_root}` with the same rule: use `$AI_MEMORY_HOME/{project}/plans/`; then create or refresh `.plans` as a symlink to `{plan_root}`.
 1. Read inputs:
    - `{plan_root}/{slug}/brief.md` (context and acceptance criteria)
    - `{plan_root}/{slug}/research.md` (existing codebase analysis)

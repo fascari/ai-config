@@ -73,26 +73,10 @@ python3 -m venv /tmp/copilot-pdf-env 2>/dev/null || true
 /tmp/copilot-pdf-env/bin/pip install pypdf -q 2>/dev/null
 ```
 
-Write the extraction script to a temp file (never use heredocs):
-
-```python
-# /tmp/extract_pdf.py
-import pypdf
-
-path = "PATH_TO_PDF"
-reader = pypdf.PdfReader(path)
-print(f"Pages: {len(reader.pages)}")
-for i, page in enumerate(reader.pages):
-    text = page.extract_text()
-    if text and text.strip():
-        print(f"\n--- Page {i + 1} ---")
-        print(text)
-```
-
-Use the `create` tool to write this script to `/tmp/extract_pdf.py`, replacing `PATH_TO_PDF` with the resolved absolute path, then run:
+Run the bundled extraction script with the resolved absolute path as its one argument — do not write a fresh script to `/tmp` each time:
 
 ```bash
-/tmp/copilot-pdf-env/bin/python3 /tmp/extract_pdf.py
+/tmp/copilot-pdf-env/bin/python3 scripts/extract_pdf.py <PATH_TO_PDF>
 ```
 
 6. **Present the content**: return the text structured by page markers (`--- Page N ---`). If the file has more than 10 pages, summarize each page instead of dumping full text unless the user asks for raw content.
@@ -129,7 +113,7 @@ Use the `create` tool to write this script to `/tmp/extract_pdf.py`, replacing `
 |---|---|
 | Defaulting to `pypdf` when `pdftotext` is installed | Detect `pdftotext` first and use it as the primary tool |
 | Using `-layout` to simulate ATS parsing | Use `-raw` when the intent is parser-order extraction |
-| Using heredoc (`<<EOF`) to pass the Python fallback script | Write to `/tmp/extract_pdf.py` with the `create` tool, then execute |
+| Writing a fresh Python fallback script to `/tmp` on every run | Run the bundled `scripts/extract_pdf.py` with the PDF path as its argument |
 | Passing a relative path to either tool | Resolve to absolute path before invoking |
 | Dumping all pages raw for a 50-page document | Summarize per page when the file has more than 10 pages |
 | Ignoring empty-text pages silently | Always report if some pages produced no text |

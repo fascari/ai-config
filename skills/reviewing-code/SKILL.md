@@ -18,9 +18,9 @@ Also performs requirements traceability reviews when an issue tracker ticket key
 
 ## Steps
 
-1. Read `.github/skills/implementing-feature/SKILL.md`: apply its Quality Checklist, Testing Rules, and all anti-pattern tables verbatim.
+1. Read `implementing-feature`'s SKILL.md (`Skill(skill: "implementing-feature")` in Claude Code, or directly at `$AI_CONFIG_HOME/skills/implementing-feature/SKILL.md`): apply its Quality Checklist, Testing Rules, and all anti-pattern tables verbatim.
 2. Read the active provider-native project instruction files: apply all project-specific coding rules, architecture rules, and anti-patterns, plus any repo docs they explicitly reference.
-3. **Load Cognition Lessons**: if `~/.ai-config/cognition-lessons/{project}.md` exists, read it and include high-priority lessons in the review prompt. See "Cognition Lessons Integration" below.
+3. **Load Cognition Lessons**: if `$HOME/.ai-config/cognition-lessons/{project}.md` exists, read it and include high-priority lessons in the review prompt. See "Cognition Lessons Integration" below.
 4. Use the `{plan_root}` provided by `orchestrating-tasks`. If running standalone, resolve `{plan_root}` with the same rule: use `$AI_MEMORY_HOME/{project}/plans/`; then create or refresh `.plans` as a symlink to `{plan_root}`.
 5. Read `{plan_root}/{slug}/implementation-plan.md` and `{plan_root}/{slug}/progress.md` for context.
 6. Review all changed files against the checklists below.
@@ -37,7 +37,7 @@ Write to `{plan_root}/{slug}/reviews/review-{model}.md`.
 
 ### implementing-feature Quality Checklist
 
-Apply the **Quality Checklist** section from `.github/skills/implementing-feature/SKILL.md` in full: do not re-derive it. Every item in that checklist is a potential `BLOCKER`.
+Apply the **Quality Checklist** section from `implementing-feature`'s SKILL.md in full: do not re-derive it. Every item in that checklist is a potential `BLOCKER`.
 
 Then apply all rules from the active provider-native project instruction files: these contain the project's specific coding and architecture rules:
 
@@ -188,70 +188,15 @@ Write to `{plan_root}/{slug}/reviews/review-{model}.md`:
 
 ## Cognition Lessons Integration
 
-### Loading Lessons (Step 3)
+**REQUIRED SUB-SKILL**: `cognition-lessons` owns the extract/load flow and lesson
+format — read `$AI_CONFIG_HOME/skills/cognition-lessons/SKILL.md` rather than
+re-deriving it here.
 
-At the start of review, check for project-specific lessons:
-
-```bash
-PROJECT_NAME=$(basename "$(git rev-parse --show-toplevel)")
-LESSONS_FILE="$HOME/.ai-config/cognition-lessons/$PROJECT_NAME.md"
-
-if [ -f "$LESSONS_FILE" ]; then
-  cat "$LESSONS_FILE"
-fi
-```
-
-If lessons exist, include them in the review context:
-
-```markdown
-## Prior Lessons (check these first)
-
-{lessons from file}
-
-## Standard Rules
-
-{normal rules from rules/*.md}
-```
-
-### Extracting Lessons (Step 9)
-
-When verdict is BLOCKED, extract lessons from each blocker:
-
-1. Parse blockers from the review output
-2. For each blocker, create a lesson entry:
-
-```markdown
-### {rule or pattern violated}
-- **Anti-pattern**: {what was done wrong}
-- **Preferred pattern**: {what the rule requires}
-- **Priority**: high (if BLOCKER) | medium (if SUGGESTION)
-- **Occurrences**: 1
-- **Last seen**: {YYYY-MM-DD}
-```
-
-3. Check if lesson already exists in `{project}.md`:
-   - If yes: increment `Occurrences`, update `Last seen`
-   - If no: append new lesson at end of file
-
-4. Save updated file:
-
-```bash
-PROJECT_NAME=$(basename "$(git rev-parse --show-toplevel)")
-LESSONS_FILE="$HOME/.ai-config/cognition-lessons/$PROJECT_NAME.md"
-
-# Append or update lesson
-```
-
-### Example Lesson
-
-```markdown
-### Using interface{} instead of any
-- **Anti-pattern**: `func Process(data interface{}) error`
-- **Preferred pattern**: `func Process(data any) error`
-- **Priority**: high
-- **Occurrences**: 3
-- **Last seen**: 2026-07-05
-```
+- **Loading (Step 3)**: run its Load Flow before review starts; fold any
+  high-priority lessons into the review prompt under a `## Prior Lessons
+  (check these first)` heading, ahead of `## Standard Rules`.
+- **Extracting (Step 9)**: when verdict is BLOCKED, run its Extract Flow —
+  one lesson per blocker, keyed on the rule or pattern violated.
 
 ---
 

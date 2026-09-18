@@ -10,11 +10,24 @@ This file covers user approval checkpoints for external API writes and the outpu
 
 Never bypass. Always wait for explicit user approval before any write operation.
 
-| Skill | Requires approval before |
+| Skill / transition | Requires approval before |
 |---|---|
 | `committing-changes` | Any `git commit` or `git push` |
 | `creating-pull-request` | Any `gh pr create` or equivalent |
 | Any MCP write tool | Any API write (issues, pages, tickets) |
+| First `implementing-feature` dispatch for a task's implementation-plan | Explicit, unambiguous approval of **the plan itself** — see below |
+
+**Plan approval is its own checkpoint, separate from everything else on the
+plan.** A user answering a clarifying sub-question embedded in the plan (which
+team owns a CODEOWNERS entry, which port to provision) or authorizing one
+narrow adjacent action (create the branch, rename a phase) is answering
+exactly that question — it is not "the plan is approved." Do not infer
+blanket approval from the accumulation of small yeses. Ask directly ("plano
+aprovado?" / "approve the plan?") and wait for an unambiguous word before the
+first `implementing-feature` dispatch. This has caused real rework: an
+orchestrator run inferred approval from adjacent answers twice in one session
+before the user caught it and had to say "eu nunca disse isso" — treat that as
+the standing failure mode to design against, not a one-off.
 
 Approval rules:
 
@@ -47,6 +60,27 @@ For Standard/Complex tasks the typical artifact set grows to:
 ├── implementation-plan.md  ← planning-implementation creates
 └── progress.md
 ```
+
+**`requirements.md` being absent is a legitimate, common outcome, not a gap to
+apologize for** — plenty of tasks never run a separate requirements-extraction
+step. What it changes is how the Output Judge sources its ACs (see `gates.md`:
+falls back to `implementation-plan.md`'s per-phase Verification sections) —
+it does not mean the gate silently never runs. If a Complex task's
+`implementation-plan.md` has no phase-level Verification/safety content either
+(rare — `planning-implementation`'s own template asks for it per phase), that
+combination is the actual gap worth flagging to the user, not the missing
+`requirements.md` file by itself.
+
+**In Claude Code, `progress.md` is written by the orchestrator (main
+session), not by dispatched `implementing-feature`/`testing-implementation`
+subagents**, even though those skills' own "Per Phase" steps describe the
+dispatched agent updating it directly. A Claude Code `Agent` dispatch is a
+fresh, stateless context per call — it does not reliably share the vault's
+prior phrasing conventions or file-write history with the orchestrator. Require
+the subagent's completion report to end with the structured block from
+`claude-runtime.md` ("## Progress Update"); the orchestrator transcribes that
+into `progress.md` itself, after independently re-verifying the reported gate
+results.
 
 `progress.md` format:
 

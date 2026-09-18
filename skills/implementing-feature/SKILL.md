@@ -79,7 +79,7 @@ echo "stack=$STACK"
 
 **Never dispatch `go-implementer` for non-Go stacks.** The Go code rules and style gates only apply when `STACK=go`. For any other stack, skip the Go-specific sections below and use only the non-Go gates.
 
-In Copilot native mode, `go-implementer` maps to an `agent_type` only when that agent is actually installed. When it is **not** an available native `agent_type`, do not fail and do not silently drop the Go rules: dispatch a real Copilot agent type (`general-purpose`), bind the logical role in the prompt (`Logical role: go-implementer`), and front-load the canonical contract from `~/.ai-config/agents/go-implementer.md` so the full Go rule set still applies. In Codex managed mode prefer a matching custom agent from `~/.codex/agents/` or `.codex/agents/`; otherwise bind the logical role in the prompt and treat the worker output as untrusted until the orchestrator accepts it.
+In Copilot native mode, `go-implementer` maps to an `agent_type` only when that agent is actually installed. When it is **not** an available native `agent_type`, do not fail and do not silently drop the Go rules: dispatch a real Copilot agent type (`general-purpose`), bind the logical role in the prompt (`Logical role: go-implementer`), and front-load the canonical contract from `~/.ai-config/agents/go-implementer.md` so the full Go rule set still applies. In Codex managed mode prefer a matching custom agent from `~/.codex/agents/` or `.codex/agents/`; otherwise bind the logical role in the prompt and treat the worker output as untrusted until the orchestrator accepts it. **In Claude Code**, this skill is loaded via `Skill(skill: "implementing-feature")` first, THEN dispatched via `Agent(subagent_type: "go-implementer", ...)` — two separate tool calls, never one; if `go-implementer` is not an available `subagent_type` in the current session, dispatch `Agent(subagent_type: "general-purpose", ...)` with the logical role bound in the prompt, same fallback principle. See `skills/orchestrating-tasks/claude-runtime.md`.
 
 ---
 
@@ -115,6 +115,7 @@ Read only the instruction files whose `applyTo` glob matches files you will chan
 - the active provider-native project instruction files for the current repo
 - `skills/writing-modern-go/SKILL.md` when the implementation touches Go and the repo expects modern Go idioms
 - any explicitly referenced repo-local rule docs linked from those project instruction files
+- this skill's own `references/anti-patterns.md`: recurring mistakes to check before presenting code, customized per project (distinct from the vault's `$AI_MEMORY_HOME/{project}/architecture/anti-patterns.md`, which step 9 below writes to)
 
 ---
 
@@ -172,8 +173,21 @@ Read only the instruction files whose `applyTo` glob matches files you will chan
 8. **HARD GATE: compile + lint + format must pass before handoff.**
 
    **Go stack:**
+
+   **Verify this is actually the project's linter before running it.**
+   `golangci-lint` is a common default, not a universal fact — some real repos
+   have no `.golangci.yml` and run a documented alternative instead (a
+   `tools/bin/check.sh` invoking `gofmt`/`go vet`/`revive` directly, for
+   example). Check for `.golangci.yml`, a documented lint script, or a
+   `Makefile`/CI target first; use whatever the project's own CI actually
+   runs. A clean `golangci-lint` run proves nothing if CI never invokes it.
+
    ```bash
    golangci-lint run ./path/to/changed/... | head -50
+   # OR, if the project uses a different real toolchain, e.g.:
+   # gofmt -l {changed files}
+   # go vet ./path/to/changed/...
+   # go tool revive -set_exit_status ./path/to/changed/...
    ```
 
    **TypeScript stack:**
@@ -224,7 +238,13 @@ Read only the instruction files whose `applyTo` glob matches files you will chan
    - If `VAULT_AVAILABLE=true`, append to `$AI_MEMORY_HOME/{project}/architecture/anti-patterns.md`.
 
 10. Update checkboxes in `implementation-plan.md`.
-11. Update `progress.md`.
+11. Update `progress.md`. **In Claude Code, do this by including the
+    structured completion-report block below in your final report — the
+    orchestrator (main session) transcribes it into `progress.md` itself,
+    since a fresh `Agent` dispatch does not reliably share the vault's prior
+    phrasing or write history.** In Copilot/Codex native harness modes where
+    the dispatched worker has direct, continuous file access, editing
+    `progress.md` directly is fine.
 12. **Pause**: present results, wait for approval before next phase.
 
 ---
@@ -329,3 +349,18 @@ Hard implementation conventions that must be checked manually in Codex managed m
 - Scoped format, lint, and tests pass before the phase is accepted.
 
 If any of these fail, report `BLOCKED` or dispatch a repair cycle. Do not report the phase as accepted.
+
+## Claude Code Runtime Note
+
+When dispatched via `Skill(skill: "implementing-feature")` → `Agent(subagent_type: "go-implementer" | "general-purpose", ...)`, end your report with this block so the orchestrator can transcribe it into `progress.md` without re-deriving it:
+
+```
+## Progress Update
+Phase: {N} — {title}
+Files created: {list}
+Files modified: {list}
+Gates: gofmt={PASS/FAIL} vet={PASS/FAIL} {project's real lint}={PASS/FAIL} build={PASS/FAIL}
+Blockers: {none | description}
+```
+
+Do not assume the orchestrator will trust this report uncontested: expect it to independently re-run the gates above against the actual working tree before proceeding to `testing-implementation`. A subagent's self-reported PASS is a claim, not a fact — this is a feature of the runtime, not a lack of trust specific to any one dispatch.

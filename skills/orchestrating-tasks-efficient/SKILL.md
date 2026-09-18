@@ -1,6 +1,6 @@
 ---
 name: orchestrating-tasks-efficient
-description: Cost-aware entry point for AI-assisted tasks. Preserves deterministic gates and cross-vendor review, but reduces dispatches, context repetition, and unnecessary Complex model usage.
+description: Routes AI-assisted tasks to a Lean, Standard, or High-Assurance mode by risk, keeping deterministic gates while cutting dispatches and Complex-model usage. Use when a small-to-medium task (single-file fix, standard endpoint, bug fix) needs cost-aware delegation instead of full orchestrating-tasks ceremony; escalates to orchestrating-tasks itself for Critical/High-risk work (finance, migrations, auth, cross-service).
 ---
 
 # Orchestrating Tasks: Efficient
@@ -31,6 +31,15 @@ Read this SKILL.md first for Critical Rules and Pre-Dispatch Checklist. Then ope
 | [`provider-dispatch.md`](provider-dispatch.md) | Mapping logical roles to Copilot, Codex, Claude, and OpenCode call shapes |
 | [`migration.md`](migration.md) | Differences from `orchestrating-tasks`, migration examples, cost testing strategy |
 
+Shared with `orchestrating-tasks` (read from there, not duplicated here):
+
+| Sub-file | When to open |
+|---|---|
+| [`../orchestrating-tasks/claude-runtime.md`](../orchestrating-tasks/claude-runtime.md) | Claude Code's real `Skill`+`Agent` dispatch shape, cross-vendor fallback, `progress.md` ownership |
+| [`../orchestrating-tasks/codex-runtime.md`](../orchestrating-tasks/codex-runtime.md) | Codex managed-mode manual acceptance checklist and rule bundles |
+| [`../orchestrating-tasks/gates.md`](../orchestrating-tasks/gates.md) | Architecture Gate script and Critique/Output Judge prompt templates this skill's own `gates.md` reuses |
+| [`../orchestrating-tasks/plans-setup.md`](../orchestrating-tasks/plans-setup.md) | `{plan_root}` resolution and `.plans` symlink setup, same rule this skill follows |
+
 ---
 
 ## Critical Rules
@@ -41,7 +50,7 @@ Read this SKILL.md first for Critical Rules and Pre-Dispatch Checklist. Then ope
 - **Always run deterministic Completion Gate before any LLM review**: lint, format, typecheck, relevant tests, and style greps must pass.
 - **On gate failure**: present the failure to the user and wait for direction. Do not auto-dispatch a repair cycle.
 - **Balanced first, Complex on risk or escalation**: see `dispatching.md`.
-- **NEVER dispatch `go-implementer` or `go-tester` directly**: always dispatch the skills (`implementing-feature`, `testing-implementation`). The skills detect the stack and decide: Go gets `go-implementer`/`go-tester`, non-Go gets `general`.
+- **NEVER dispatch `go-implementer` or `go-tester` directly without first loading their owning skill**: always run `Skill(skill: "implementing-feature" | "testing-implementation")` (or Copilot's `task(skill:...)`) before the agent dispatch — the skill detects the stack and injects the quality-gate instructions. A `subagent_type: "go-implementer"` call with no preceding `Skill` call bypasses the gates even though the type is correct. See `skills/orchestrating-tasks/claude-runtime.md`.
 - **`implementing-feature` owns production code, `testing-implementation` owns tests**: each returns a completion report.
 - **Cross-vendor rule applies to any judge/reviewer**: see `dispatching.md`.
 - **Do not run `sanitizing-text` on internal handoffs**: use it only for public output, PR descriptions, docs, and user-facing reports.
@@ -63,7 +72,7 @@ Answer these questions explicitly before dispatching any subagent:
 5. **Does this task need a separate research/planning dispatch?** In Standard, consolidate research + planning into one dispatch unless High Assurance is required.
 6. **Does the phase touch both production files AND test files?** If considering a combined Lean production + test dispatch, verify every condition in "Lean mode" under Step 4. If any condition fails, split into separate `implementing-feature` and `testing-implementation` dispatches.
 7. **Is this a judge/validator of another agent's output?** If yes, confirm cross-vendor pairing.
-8. **Runtime mode?** Copilot native | Codex managed | Claude managed | OpenCode | Local manual.
+8. **Runtime mode?** Copilot native | Codex managed | **Claude Code native** (`Skill`+`Agent` tools, see `skills/orchestrating-tasks/claude-runtime.md`) | Claude managed (degraded) | OpenCode | Local manual.
 
 ---
 
@@ -254,6 +263,13 @@ Request explicit user approval before:
 - implementation after a plan that has not been approved;
 - transitions to High Assurance after a failed Standard attempt.
 
+**Answering a sub-question inside the plan, or authorizing one narrow adjacent
+action (e.g. "create the branch"), is not plan approval.** This has caused
+real rework once already — do not infer it; ask for an explicit word before
+the first `implementing-feature` dispatch. This is the one approval rule this
+orchestrator does not relax for speed; everything after that single checkpoint
+still batches freely.
+
 Do not pause after every small phase when the approved plan already authorizes continuation. Related phases may run in batch while `progress.md` is updated.
 
 ---
@@ -283,6 +299,9 @@ Do not invent token counts. The goal is to enable comparison between `orchestrat
 - Running `sanitizing-text` on handoffs, checkpoints, lint output, or progress updates.
 - Dispatching `go-implementer` or `go-tester` directly instead of the skills.
 - Dispatching `go-implementer` or `go-tester` for non-Go stacks.
+- In Claude Code: calling `Agent(subagent_type: "go-implementer" | "go-tester", ...)` without a preceding `Skill(skill: "implementing-feature" | "testing-implementation")` call — the type is correct but the gate instructions never loaded.
+- Treating a same-vendor Claude Code judge as satisfying the Cross-Vendor Rule without the `Cross-vendor: NOT AVAILABLE` disclosure — see `dispatching.md`.
+- Assuming `golangci-lint` is the project's linter without checking for a real `.golangci.yml` or documented alternative — see `gates.md`.
 - Re-reading full `research.md` or `implementation-plan.md` when `context-capsule.md` is sufficient.
 - Parallelizing agents that share overlapping context just to save wall-clock time.
 - Skipping deterministic gates in any mode.

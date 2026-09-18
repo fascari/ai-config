@@ -35,6 +35,17 @@ bash "$AI_CONFIG_HOME/skills/architecture-gate/scripts/conformance.sh" .
 - **WARN** — an objective-varying concern looks missing; confirm it is
   intentional or wire it per the blueprint. WARN does not block.
 
+**A documented waiver (e.g. a system-design-analysis.md decision that names this
+service as structurally incompatible with the blueprint) changes what you do
+with a failing result — it does not mean skip running the script.** Run it
+every time regardless of a waiver:
+- If it fails exactly the way the waiver predicted (or self-exits with a
+  message like "not a domain service layout; nothing to check"), that
+  confirms nothing new broke — proceed.
+- If it produces anything the waiver doesn't name, that's new information the
+  waiver never covered — surface it before proceeding, don't fold it into the
+  accepted exception silently.
+
 Only after the Architecture Gate and `style-gate` are green does the Output Judge
 Gate run.
 
@@ -48,7 +59,7 @@ After `planning-implementation` completes and before `implementing-feature` star
 - Standard tasks: offer the gate to the user; proceed if they skip.
 - Complex tasks: run the gate (mandatory).
 
-Dispatch a **general-purpose judge role** using the provider-specific shape from `provider-dispatch.md`. **Cross-vendor rule applies** - planning-implementation runs at Balanced/Complex (typically Anthropic); critique-gate MUST use a different vendor (OpenAI or Google). See `dispatching.md`.
+Dispatch a **general-purpose judge role** using the provider-specific shape from `provider-dispatch.md` (in Claude Code: `Agent(subagent_type: "general-purpose", ...)`, no preceding `Skill` call needed since this is an inline orchestrator dispatch, not a skill-owned phase). **Cross-vendor rule applies** - planning-implementation runs at Balanced/Complex (typically Anthropic); critique-gate MUST use a different vendor (OpenAI or Google). See `dispatching.md`. **In Claude Code, no other vendor is reachable through the `Agent` tool** — follow the Claude Code fallback in `dispatching.md`'s Cross-Vendor Rule section / `claude-runtime.md` (same-vendor, higher tier, adversarial framing) and include `Cross-vendor: NOT AVAILABLE (Claude Code, same-vendor judge only)` in this gate's output instead of silently presenting it as a full cross-vendor pass.
 
 Include the Codebase Search Rules block (from `dispatching.md`) in the prompt, critique-gates need to verify claims against the code.
 
@@ -88,21 +99,26 @@ After both `implementing-feature` and `testing-implementation` complete, run an 
 | Standard | any | **run** |
 | Complex | any | **run** |
 
-**Only runs when `requirements.md` exists.** If absent, skip and proceed to `reviewing-code`.
+**Only runs against explicit ACs when `requirements.md` exists.** If it's absent because the task genuinely has no separate AC extraction step, fall back to the implementation-plan.md's own per-phase Verification/safety sections as the AC source instead of skipping outright — a Complex task's plan that documents "why merging this phase alone is safe" and a concrete verification step per phase already carries testable ACs, they're just not in a dedicated file. Skipping the gate entirely should be a deliberate, logged choice ("Output Judge skipped: no requirements.md and no plan-level Verification sections to substitute, confirmed by orchestrator manually"), not an automatic bypass triggered by one file's absence. See `approval-and-output.md`.
 
-Dispatch a **general-purpose judge role**, Expert Review tier, **cross-vendor**, using the provider-specific shape from `provider-dispatch.md`:
+Dispatch a **general-purpose judge role**, Expert Review tier, **cross-vendor**, using the provider-specific shape from `provider-dispatch.md` (in Claude Code: `Agent(subagent_type: "general-purpose", model: "opus", ...)` — **same-vendor only**, see the Claude Code fallback in `dispatching.md`'s Cross-Vendor Rule section, and include the `Cross-vendor: NOT AVAILABLE` disclosure line in the judge's required output format below):
 
 ```
 You are an adversarial Output Judge. Do NOT act as a developer or helper.
-Your sole job: verify that every AC in requirements.md has explicit evidence in the implementation.
+Your sole job: verify that every AC has explicit evidence in the implementation.
 
 ## Context
 slug: {slug}
 plan dir: {plan_root}/{slug}/
 retry count: {N} (0-indexed; max 2 before escalation)
+AC source: {plan_root}/{slug}/requirements.md if it exists, otherwise the
+  per-phase Verification/safety sections of {plan_root}/{slug}/implementation-plan.md
+  (or its split-file equivalent) — state which one you used
 
 ## Required steps
-1. Read {plan_root}/{slug}/requirements.md: extract all acceptance criteria (ACs)
+1. Read the AC source named above: extract all acceptance criteria (ACs).
+   If using implementation-plan.md, each phase's Verification bullets and its
+   "why this phase is safe" claims are the ACs for that phase.
 2. Run: git --no-pager diff HEAD~1 --stat
 3. Run: git --no-pager diff HEAD~1 (read actual changes)
 4. For each AC, find EXPLICIT evidence in the diff: specific file path, function name, or test
@@ -115,12 +131,16 @@ retry count: {N} (0-indexed; max 2 before escalation)
 ## Output format: must be exactly one of:
 
 PASS
+AC source: requirements.md | implementation-plan.md fallback
+Cross-vendor: NOT AVAILABLE (Claude Code, same-vendor judge only) | {vendor name} if genuinely cross-vendor
 AC Coverage: N/N
 Changed files: (list)
 
 OR:
 
 FAIL
+AC source: requirements.md | implementation-plan.md fallback
+Cross-vendor: NOT AVAILABLE (Claude Code, same-vendor judge only) | {vendor name} if genuinely cross-vendor
 Missing AC evidence:
 - AC #N: "{ac text}": no implementation or test evidence found
 Violations:

@@ -325,25 +325,6 @@ gh pr view         # shows PR summary in terminal
 
 Present the PR URL and a summary to the user.
 
-## PR Body Template
-
-Read the project PR template via `read_file`: `.github/pull_request_template.md`
-
-Use that template structure when generating the body. Fill in each section based on branch context,
-commits, and changed files. Pre-check only checklist items the analysis actually verified.
-
-## Labels
-
-Use `PAGER=cat gh label list` to discover available labels. Choose ALL that apply:
-
-| Branch prefix | Default label(s) |
-|---|---|
-| `feature/` | `feature` |
-| `bugfix/` | `bug` |
-| `hotfix/` | `bug` + `hotfix` |
-
-Labels are not mutually exclusive, combine freely (e.g., `feature` + `enhancement`).
-
 ## Anti-patterns (never do these)
 
 | Wrong | Correct |
@@ -361,8 +342,4 @@ Labels are not mutually exclusive, combine freely (e.g., `feature` + `enhancemen
 | Use `--no-verify` when project validation hooks must run | Always `git push` (no `--no-verify`) when hooks are mandatory |
 | Add `Co-authored-by: Copilot` to the PR body | The `Co-authored-by` trailer belongs only in **git commit messages**: never in the PR description or any GitHub comment |
 | Assume any branch name is CI-safe | Run Step 0: check whether CI derives Docker tags or other artifact names from the branch name before naming or pushing |
-
-
-
-
 

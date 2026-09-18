@@ -8,6 +8,11 @@ description: Use when the session context reaches 70% or more, the user wants to
 Compresses the current conversation into a session-summary.md that allows
 a new chat session to resume exactly where this one left off.
 
+Scope note: this is a mechanical, plan-scoped resume snapshot, read back
+immediately by `resuming-context`. For a durable, human-readable project log
+read back later by `recall` across many future sessions, use `checkpoint`
+instead — the two are complementary, not interchangeable.
+
 ## When to use
 
 - User types /compress or asks to compress the session
@@ -19,12 +24,11 @@ a new chat session to resume exactly where this one left off.
 
 1. Use the `{plan_root}` resolved by `orchestrating-tasks`. If running standalone, resolve `{plan_root}` with the same rule: use `$AI_MEMORY_HOME/{project}/plans/`; then create or refresh `.plans` as a symlink to `{plan_root}`.
 2. Scan the conversation from the beginning. Collect: current state, completed work, key decisions, discoveries, open blockers, next steps.
-3. **Resolve the plan slug**:
-   a. Resolve the external `{plan_root}` with the same rule as `orchestrating-tasks`: use `$AI_MEMORY_HOME/{project}/plans/`. If unset, stop and ask the user to configure an external plan root.
-   b. Scan `.plans/` for a directory containing a `progress.md` with status `IN_PROGRESS`. Use that slug.
-   c. If no `IN_PROGRESS` plan exists, derive a slug from the session topic (kebab-case, max 4 words, e.g. `cv-job-applications`, `api-auth-refactor`).
-   d. Create the directory `{plan_root}/{slug}/` if it does not exist.
-   e. If creating a new plan directory, also create a minimal `progress.md`:
+3. **Resolve the plan slug** (`{plan_root}` already resolved in step 1):
+   a. Scan `.plans/` for a directory containing a `progress.md` with status `IN_PROGRESS`. Use that slug.
+   b. If no `IN_PROGRESS` plan exists, derive a slug from the session topic (kebab-case, max 4 words, e.g. `cv-job-applications`, `api-auth-refactor`).
+   c. Create the directory `{plan_root}/{slug}/` if it does not exist.
+   d. If creating a new plan directory, also create a minimal `progress.md`:
       ```markdown
       # {slug}
       **Status**: IN_PROGRESS
@@ -75,7 +79,7 @@ Write to `{plan_root}/{slug}/session-summary.md`. If the file already exists, re
 
 > Paste this into a new chat session to resume without losing context.
 
-Read and follow .github/skills/orchestrating-tasks/SKILL.md, then resume plan {slug}.
+Read and follow the `orchestrating-tasks` skill, then resume plan {slug}.
 
 Before doing anything, read these files for full context:
 - {plan_root}/{slug}/session-summary.md

@@ -174,11 +174,8 @@ Rare exceptions where multiple layers may share a commit:
 
 ### Step 3.5: Self-Check Each Commit Message
 
-**Default: subject-only. Do not write a body unless the user asked for one.**
-"Add a body", "include the why", "use a full Beams message", or an explicit
-body in the user's request counts. Inferring that the change "needs a why" does
-not. A squash-merge repo still stays subject-only even if asked: move that
-narrative to the PR description.
+**Default: subject-only.** See "When to add a body" below for the full rule
+before drafting anything beyond the subject line.
 
 Format the subject per the detected `MESSAGE_STYLE` (e.g. `feat(scope): description`
 for `conventional-scoped`, `scope: description` for `plain-scoped`).
@@ -208,8 +205,7 @@ When the user asked for a body, also apply:
 enforced spec and no deliberate divergent convention, apply the subject rules
 verbatim: ≤50, capitalized, no period, imperative. That is the normal case for
 a personal project. An override requires positive evidence (a hook, or a clear
-majority pattern), never a few stray commits. Bodies are not part of that
-default: they are opt-in.
+majority pattern), never a few stray commits.
 
 If the user states a preference for a repo ("I want Beams here"), that is the
 convention — record it in that repo's `CLAUDE.md`/`AGENTS.md` or a `.gitmessage` so

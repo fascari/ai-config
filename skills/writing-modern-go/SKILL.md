@@ -6,7 +6,10 @@ description: Use when writing or reviewing Go code to ensure modern idioms are u
 # Writing Modern Go
 
 Always use the most modern Go idiom available up to the project's Go version.
-This project uses **Go 1.26.1**; all features below are available.
+Detect it before applying any version-gated idiom below: `grep '^go ' go.mod`.
+Only use features at or below that version — a repo pinned below 1.26 cannot
+use `new(val)` or `errors.AsType`, for example, even though both appear first
+in the Quick Reference.
 
 ## Quick Reference
 
@@ -252,18 +255,3 @@ flag.Store(true)
 var ptr atomic.Pointer[Config]
 ptr.Store(cfg)
 ```
-
-## Common Mistakes
-
-| Mistake | Fix |
-|---|---|
-| Using `new(int(0))` | Just `new(0)`, type is inferred |
-| Using `&T{field: val}` for pointer to struct literal | Use `new(T{field: val})` on Go 1.26+ |
-| Using `errors.As` when `errors.AsType` is available | Always prefer `errors.AsType[T]` on Go 1.26+ |
-| Using `wg.Add(1)` + `go func` + `defer wg.Done()` | Use `wg.Go(fn)` on Go 1.25+ |
-| Using `context.Background()` in tests | Use `t.Context()` on Go 1.24+ |
-| Using `omitempty` for `time.Time` or structs | Use `omitzero` on Go 1.24+ |
-| Using `strings.Split` in `for range` | Use `strings.SplitSeq` on Go 1.24+ |
-| Using `for i := 0; i < b.N; i++` | Use `for b.Loop()` on Go 1.24+ |
-| Using `sort.Slice` | Use `slices.SortFunc` on Go 1.21+ |
-| Using `interface{}` | Use `any` on Go 1.18+ |

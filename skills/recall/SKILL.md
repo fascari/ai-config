@@ -23,23 +23,33 @@ echo "VAULT=${AI_MEMORY_HOME:-NO_VAULT}"
 echo "REPO=$REPO_NAME"
 ```
 
-Map the repo name to the vault project folder. If `AI_MEMORY_HOME` is not set, skip all vault steps and note that no vault is configured.
+Map the repo name to the vault project folder. If `AI_MEMORY_HOME` is not set,
+this session has **no vault** — skip every step below marked "vault devs
+only," and note that no vault is configured. Steps marked "all devs" run
+regardless, since they don't depend on `AI_MEMORY_HOME`.
 
-### 2. Read recent session logs
+### 2. Load Cognition Lessons
+
+**REQUIRED SUB-SKILL**: all devs — run `cognition-lessons`' Load Flow
+(`$AI_CONFIG_HOME/skills/cognition-lessons/SKILL.md`, or `Skill(skill:
+"cognition-lessons")` in Claude Code). It checks `$HOME/.ai-config/cognition-lessons/{project}.md`,
+independent of the vault, and surfaces prior review lessons if any exist.
+
+### 3. Read recent session logs
 
 Vault devs only. Read the 3 most recent files (sorted by name, descending) from:
 `$AI_MEMORY_HOME/{project}/logs/`
 
 If the directory does not exist: note "No prior sessions found" and continue.
 
-### 3. Read architecture decisions
+### 4. Read architecture decisions
 
 Vault devs only. Read:
 `$AI_MEMORY_HOME/{project}/architecture/decisions.md`
 
 If the file does not exist: skip silently.
 
-### 4. Read active plans
+### 5. Read active plans
 
 All devs: resolve the external `{plan_root}` with the same rule as `orchestrating-tasks`, then read from `{plan_root}/`:
 - Scan all subdirectories
@@ -48,7 +58,7 @@ All devs: resolve the external `{plan_root}` with the same rule as `orchestratin
 
 Vault devs: additionally read from `$AI_MEMORY_HOME/{project}/plans/` if it exists.
 
-### 5. Read Graphify context
+### 6. Read Graphify context
 
 Always, read `graphify-out/GRAPH_REPORT.md` if it exists.
 
@@ -57,17 +67,18 @@ Vault devs: additionally read up to 5 relevant community files:
 
 Pick communities most relevant to the current branch name or active plan.
 
-### 6. Check git state
+### 7. Check git state
 
 ```bash
 git --no-pager log --oneline -10
 git --no-pager status
 ```
 
-### 7. Present recall summary
+### 8. Present recall summary
 
 Present a concise summary (max 20 lines) covering:
 - **Last session**: what was done, decisions made, pending items
+- **Cognition lessons**: any high-priority lessons loaded in step 2
 - **Active plan**: current phase and next step
 - **Codebase**: key modules from GRAPH_REPORT (if available)
 - **Git state**: current branch and any uncommitted work
