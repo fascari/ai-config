@@ -48,7 +48,7 @@ Copy the appropriate entrypoint template from `~/.ai-config/providers/` to your 
 | Provider | Files to copy | Rules |
 |----------|-------------|-------|
 | Codex CLI | `providers/codex/AGENTS.md` → `AGENTS.md` | Referenced from `~/.ai-config/rules/` |
-| Claude Code | `providers/claude/CLAUDE.md` → `CLAUDE.md` | Referenced from `~/.ai-config/rules/` |
+| Claude Code | none needed, `~/.claude/CLAUDE.md` already applies globally (see below) | Referenced from `~/.ai-config/rules/` |
 | Opencode | `providers/codex/AGENTS.md` → `AGENTS.md` + `providers/opencode/opencode.jsonc` → `.opencode/opencode.jsonc` | Referenced via `instructions` field |
 | GitHub Copilot | `providers/copilot/copilot-instructions.md` → `.github/copilot-instructions.md` + symlink `rules/` to `.github/instructions/` | Symlinked from `~/.ai-config/rules/` |
 
@@ -67,6 +67,28 @@ cp ~/.ai-config/providers/opencode/opencode.jsonc /path/to/project/.opencode/ope
 ```
 
 Opencode agents are installed globally in `~/.config/opencode/agents/` via `install-global-skills.sh --provider opencode` and discovered automatically. No per-project duplication needed.
+
+### Global rules for Claude Code
+
+Claude Code auto-loads `~/.claude/CLAUDE.md` in every project on the machine.
+Unlike the other providers, it needs no per-project file at all. `install.sh
+--provider claude` (or `all`) bootstraps it from `providers/claude/CLAUDE.md`
+the first time (never overwrites an existing one, so personal additions,
+skill triggers, `@imports` and the like, survive a re-run). On a machine that
+already has a `~/.claude/CLAUDE.md`, re-sync the rules list by hand after a
+`git pull`:
+
+```bash
+diff ~/.ai-config/providers/claude/CLAUDE.md ~/.claude/CLAUDE.md
+```
+
+Never write a project-local `CLAUDE.md` into a shared team repo. It would
+push personal AI-tooling instructions onto every other engineer and every
+other AI tool touching the repo. The global file already covers every
+project. A shared repo needing genuinely repo-specific context (real
+toolchain facts, structural conventions that diverge from the generic rules)
+should keep that in Claude Code's memory system instead, scoped to that
+project.
 
 ### Example: GitHub Copilot
 

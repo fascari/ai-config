@@ -74,6 +74,23 @@ if [[ -n "$shell_rc" ]]; then
   fi
 fi
 
+# Step 4: Claude Code only. Bootstrap ~/.claude/CLAUDE.md (the file Claude
+# Code auto-loads in every project, on this machine) from the atlas rules
+# index. Never overwrites an existing file: it's meant to carry personal
+# additions (skill triggers, @imports) on top of the shared rules list.
+if [[ "$provider" == "claude" || "$provider" == "all" ]]; then
+  claude_md="$HOME/.claude/CLAUDE.md"
+  echo ""
+  if [[ -e "$claude_md" ]]; then
+    echo "--- ~/.claude/CLAUDE.md already exists, not overwriting ---"
+    echo "  diff \"$script_dir/providers/claude/CLAUDE.md\" \"$claude_md\" to check for missing rules"
+  else
+    mkdir -p "$(dirname "$claude_md")"
+    cp "$script_dir/providers/claude/CLAUDE.md" "$claude_md"
+    echo "--- Bootstrapped ~/.claude/CLAUDE.md from providers/claude/CLAUDE.md ---"
+  fi
+fi
+
 echo ""
 echo "=== Setup complete ==="
 echo ""

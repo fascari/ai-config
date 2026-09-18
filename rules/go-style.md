@@ -259,6 +259,57 @@ func NewUseCase(repo Repository) UseCase { return UseCase{repo: repo} }
 func NewUseCase() Repository { return &impl{} }
 ```
 
+## Law of Demeter
+
+A method should only call methods on: its own receiver, its direct fields,
+its arguments, and objects it created. Chaining more than one navigation
+(`a.B().C()`) couples the caller to the internal structure of distant types.
+
+```go
+// Bad: talks to a stranger's fields through a chain
+func (h Handler) Handle(r *http.Request) error {
+    userID := r.Context().Value(tokenKey).(TokenCtx).User.Profile.ID
+    ...
+}
+
+// Good: ask your direct dependency, which encapsulates the navigation
+func (h Handler) Handle(r *http.Request) error {
+    userID, err := tokenmanager.UserIDFromContext(r.Context())
+    ...
+}
+```
+
+## Avoid Special Cases
+
+> [Ousterhout — APSD] Special cases add cognitive overhead and are often a
+> sign the abstraction is wrong. Handle them generically when possible; make
+> the general path cover the edge case.
+
+```go
+// Bad: single-item fast path breaks the general flow
+func applyDiscount(items []Item) []Item {
+    if len(items) == 1 {
+        return items
+    }
+    for i := range items {
+        items[i].Price = calculateDiscounted(items[i])
+    }
+    return items
+}
+
+// Good: general path handles any length, including 1
+func applyDiscount(items []Item) []Item {
+    for i := range items {
+        items[i].Price = calculateDiscounted(items[i])
+    }
+    return items
+}
+```
+
+When you find yourself writing `if len == 0`, `if len == 1`, or `if
+isFirstTime` to skip the general algorithm, first ask whether the algorithm
+can be made to handle those inputs correctly instead.
+
 ## Error Comparison
 
 ```go
@@ -306,6 +357,27 @@ var globalTotal float64
 func addToTotal(amount float64) { globalTotal += amount }
 ```
 
+### Command-Query Separation
+
+A function either **changes state** (command) or **returns a value**
+(query), not both. A function named `Save` should not return the saved
+entity; a function named `Find` must not mutate state.
+
+```go
+// Bad: ambiguous, does Activate return the updated entity or just confirm success?
+func (r Repository) Activate(ctx context.Context, id string) (Entity, error)
+
+// Good: command and query are separate
+func (r Repository) Activate(ctx context.Context, id string) error                  // command
+func (r Repository) FindByID(ctx context.Context, id string) (Entity, error)        // query
+```
+
+**Go-idiomatic exception:** returning a created entity from `Create` to get
+the DB-assigned ID/timestamps back is acceptable, since the repository
+cannot know the ID before insertion. State this explicitly in a doc comment
+when a create method returns the entity (an explanation-of-intent comment,
+see "Comments" below).
+
 ## Function Size & Abstraction
 
 - Keep functions focused on one responsibility
@@ -313,17 +385,58 @@ func addToTotal(amount float64) { globalTotal += amount }
 - Extract only when logic is complex OR reused across callers
 - Avoid tiny functions (< 5 lines) that create unnecessary indirection
 
+### No flag arguments
+
+A `bool` parameter that changes a function's behavior signals the function
+does two things. Split it into two functions.
+
+```go
+// Bad: what does false mean at the call site?
+repo.FindAll(ctx, false)
+
+// Good: intent is explicit
+func (r Repository) FindAll(ctx context.Context) ([]Entity, error)
+func (r Repository) FindAllIncludingDeleted(ctx context.Context) ([]Entity, error)
+```
+
 ## Comments
 
-Default: no comments. Code should be self-explanatory through good naming.
+Default: no comments. Code should be self-explanatory through good naming. Per
+Robert C. Martin's *Clean Code* (ch. 4): comments are always a failure to
+express intent through code, tolerated only in narrow categories, never a
+substitute for renaming or restructuring.
 
-- Only comment when explaining WHY something exists or WHY a non-obvious decision was made
+A comment is justified only when it falls into one of these three categories
+(Martin's own taxonomy, not an open-ended "seems non-obvious" judgment call):
+
+1. **Explanation of intent**: the code's WHY isn't derivable from its
+   structure alone (a business rule, a deliberate trade-off, a decision that
+   would look wrong without context).
+2. **Warning of consequences**: doing it the "obvious" other way would break
+   something non-local (concurrency, ordering, an external contract).
+3. **Clarification of foreign or unchangeable code**: a call into a
+   third-party/generated/legacy API whose behavior can't be renamed or
+   restructured to be self-explanatory.
+
+Everything else Martin classifies as a bad comment stays forbidden: redundant
+comments, mandated comments ("every function needs one"), journal/changelog
+comments (git already has this history), noise comments, position markers,
+closing-brace comments, and comments compensating for code that should have
+been rewritten instead.
+
 - Never comment WHAT the code does; the code already says that
 - Never comment HOW it does it; the code already says that
 - Delete any comment that restates the function/variable name
 - **NEVER write package doc comments.** Delete every `// Package x ...` comment, including one-line summaries. Not "keep them short" — remove them entirely. The package name is the documentation.
-- **NEVER add a godoc just because a symbol is exported.** Being exported is not a reason to document; only a genuinely non-obvious purpose is.
-- **No inline comments in function bodies** unless the logic is genuinely surprising
+- **NEVER add a godoc just because a symbol is exported.** Being exported is not a reason to document; only one of the three categories above is.
+- **No inline comments in function bodies** unless they fall into one of the three categories above.
+- **Repo-specific override**: when the project's own linter forces a comment
+  to exist regardless of content (e.g. revive's `package-comments`/`exported`
+  rules with no config file, common in Go monorepos with no `.golangci.yml`),
+  write the shortest comment that satisfies the lint check and, where
+  possible, one of the three categories above. The linter checks existence,
+  not quality: a comment that only restates the name is still a defect, not
+  a compliant workaround.
 
 ```go
 // Bad: obvious (restates name)

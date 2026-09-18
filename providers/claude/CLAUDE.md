@@ -8,7 +8,9 @@ Read relevant files from `~/.ai-config/rules/` before making changes:
 - `testing.md`: table-driven tests, mocks, assertions
 - `error-handling.md`: domain errors, wrapping, HTTP mapping
 - `package-design.md`: package naming, dependency direction
+- `architecture-blueprint.md`: new service/domain layout
 - `clean-architecture.md`: layer rules, DI, domain isolation
+- `documentation.md`: README, godoc, ADR conventions
 - `sanitizing-text.md`: text formatting before save
 
 ## Hard Rule

@@ -145,7 +145,14 @@ The predicate (`ShouldVerb`) must describe the observable outcome — not re-sta
 | `TestRouteOrder_ShouldRouteToPriorityPathWhenOrderTypeIsPriority` | `TestRouteOrder_ShouldRouteToPriorityPath` |
 | `TestShouldSkipOrder_ShouldEvaluateExclusionCriteria` | `TestSkipOrder_ShouldEvaluateCriteria` |
 
-**Target:** the full function name fits in ~70 characters without scrolling. If it doesn't, shorten the predicate.
+**The rule is idiomatic, not a character count.** A Go developer reading the
+name should recognize it as how a Go test is actually named, not need to
+count anything: one behavior, no stacked conditions, no vocabulary a
+reviewer wouldn't reach for themselves. Length is a symptom, not the
+criterion, use it only as a sanity check: every corrected example in the
+table above lands between 41 and 43 characters, so a name pushing past ~50
+is a signal (not the rule itself) that a qualifier belongs in the subtest
+name instead (see "Remove" above).
 
 ## Table-Driven vs Individual Tests
 
