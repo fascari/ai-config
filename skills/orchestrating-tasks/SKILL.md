@@ -97,14 +97,14 @@ Classify complexity, then delegate to the matching skill chain. See `task-types.
 |---|---|---|
 | Simple | Single file change, typo/config fix, guard condition. Entire production change fits in ≤5 lines across 1 file AND root cause is fully documented. | implementing-feature only |
 | Standard | Bug fix touching 2-3 layers, new endpoint, new service. | researching-codebase → planning-implementation → implementing-feature → testing-implementation → [Gates] → reviewing-code |
-| Complex | New domain, cross-service change, migration + multiple layers, fixture/test changes that may cascade. | All skills, analyzing-system-design mandatory |
+| Complex | New domain, cross-service change, migration + multiple layers, fixture/test changes that may cascade. | All skills, analyzing-system-design on request |
 
 When in doubt between Standard and Complex, default to Standard and escalate
 after the critique gate if needed.
 
 For a Go Simple change that needs a test, escalate to Standard so `testing-implementation` (`go-tester`) governs the `*_test.go`. Never write Go test files through `implementing-feature`.
 
-`analyzing-system-design` is not optional for Standard and Complex tasks. The implementer must not start until `system-design-analysis.md` is approved.
+`analyzing-system-design` is not automatic for Standard and Complex tasks. It runs only when the user explicitly asks for it. When the user does request it, the implementer must not start until `system-design-analysis.md` is approved.
 
 ---
 
@@ -173,7 +173,7 @@ Skill: `skills/compressing-context/SKILL.md`
 ## Common Mistakes
 
 - Serializing independent phases: always check for parallelism before delegating a phase
-- Skipping `analyzing-system-design` for Standard/Complex tasks: it is mandatory
+- Running `analyzing-system-design` without the user asking for it: it's on request, not automatic
 - Treating review approval as commit authorization: they are separate checkpoints
 - Assuming the active plan without reading `progress.md`: always discover first
 - Writing code directly: this skill only routes; implementation goes to implementing-feature
