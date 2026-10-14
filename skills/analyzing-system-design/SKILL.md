@@ -1,6 +1,6 @@
 ---
 name: analyzing-system-design
-description: Use before any implementation phase to analyse atomicity, idempotency, consistency, concurrency, resilience, architectural patterns, and database fit. Mandatory for all Standard and Complex tasks. Produces system-design-analysis.md that the Coder must read before writing any code.
+description: Use only when the user explicitly asks for a system design analysis of a plan (atomicity, idempotency, consistency, concurrency, resilience, architectural patterns, database fit). Never run automatically or as a default workflow step, at any task tier. Produces system-design-analysis.md.
 ---
 
 # System Design Advisor
@@ -11,9 +11,10 @@ structured analysis, presents trade-offs and concrete proposals, including optio
 Mermaid diagrams, and waits for the developer to approve or reject each proposal before
 the Coder starts.
 
-> This skill is **mandatory** for all Standard and Complex tasks. It runs **after**
-> Researcher and **before** Coder. Its output (`system-design-analysis.md`) must be read
-> by the Coder at the start of every phase.
+> This skill is **opt-in only**. It runs when the user explicitly asks for it, never
+> because a task is Standard, Complex, or High Assurance, and never because a workflow,
+> kickoff prompt, or orchestrator decides the change "needs" one. When it does run, the
+> Coder reads its approved decisions before implementing.
 
 ---
 
@@ -21,9 +22,9 @@ the Coder starts.
 
 | Condition | Action |
 |---|---|
-| Standard or Complex task (new feature, new domain, cross-service change) | Mandatory |
-| Simple task (single-file config/typo fix) | Skip |
-| Resuming a plan that already has `system-design-analysis.md` | Skip unless the plan changed significantly |
+| User explicitly asks for a system design analysis in the current conversation | Run |
+| Any other case, including Complex/High Assurance tasks and cross-service changes | Do not run; settle design questions inside research and planning |
+| Resuming a plan that already has `system-design-analysis.md` | Do not re-run unless the user asks |
 
 ---
 
