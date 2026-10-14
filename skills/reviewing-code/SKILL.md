@@ -13,7 +13,7 @@ Also performs requirements traceability reviews when an issue tracker ticket key
 
 - User asks for a code review
 - User types /review_plan
-- orchestrating-tasks delegates review after implementation is complete
+- developing-changes delegates review after implementation is complete
 - User asks to verify requirements traceability against an issue tracker ticket
 
 ## Steps
@@ -21,7 +21,7 @@ Also performs requirements traceability reviews when an issue tracker ticket key
 1. Read `implementing-feature`'s SKILL.md (`Skill(skill: "implementing-feature")` in Claude Code, or directly at `$AI_CONFIG_HOME/skills/implementing-feature/SKILL.md`): apply its Quality Checklist, Testing Rules, and all anti-pattern tables verbatim.
 2. Read the active provider-native project instruction files: apply all project-specific coding rules, architecture rules, and anti-patterns, plus any repo docs they explicitly reference.
 3. **Load Cognition Lessons**: if `$HOME/.ai-config/cognition-lessons/{project}.md` exists, read it and include high-priority lessons in the review prompt. See "Cognition Lessons Integration" below.
-4. Use the `{plan_root}` provided by `orchestrating-tasks`. If running standalone, resolve `{plan_root}` with the same rule: use `$AI_MEMORY_HOME/{project}/plans/`; then create or refresh `.plans` as a symlink to `{plan_root}`.
+4. Use the `{plan_root}` provided by `developing-changes`. If running standalone, resolve `{plan_root}` with the same rule: use `$AI_MEMORY_HOME/{project}/plans/`; then create or refresh `.plans` as a symlink to `{plan_root}`.
 5. Read `{plan_root}/{slug}/implementation-plan.md` and `{plan_root}/{slug}/progress.md` for context.
 6. Review all changed files against the checklists below.
 7. If an issue tracker ticket key is provided, run the Requirements Traceability Review.
@@ -202,7 +202,7 @@ re-deriving it here.
 
 ## Multi-Model Note
 
-The orchestrating-tasks skill may invoke this skill in parallel with different models. Each writes its own review file to `reviews/review-{model}.md`. The orchestrating-tasks skill synthesizes findings.
+Optional, high-risk work only: parallel reviewers on different models, each writing `reviews/review-{model}.md`, with the orchestrating thread synthesizing findings. The default is one fresh-context review in `reviews/review.md`.
 
 ## Status Transition
 
@@ -213,4 +213,4 @@ After the user explicitly approves the review (verdict: APPROVED, or all blocker
 DONE
 ```
 
-If the review has blockers, do NOT transition. The orchestrating-tasks skill will set the status back to `IN_PROGRESS` and delegate to implementing-feature.
+If the review has blockers, do NOT transition. The developing-changes skill will set the status back to `IN_PROGRESS`, and the orchestrating thread fixes the blockers.

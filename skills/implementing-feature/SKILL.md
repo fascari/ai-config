@@ -1,6 +1,6 @@
 ---
 name: implementing-feature
-description: Use when implementing a plan, feature, or bug fix phase by phase in the codebase
+description: Use when developing-changes delegates the production code of one oversized plan phase to a worker subagent (go-implementer or general-purpose). Not the entry point for implementing a plan or feature; that is developing-changes.
 ---
 
 # Implementing Feature
@@ -21,7 +21,7 @@ Implements **production code only**, phase by phase, validates with linter and s
 
 ## Execution Model
 
-When dispatched by `orchestrating-tasks`, detect the stack first, then choose the logical role. Render the actual call using `skills/orchestrating-tasks/provider-dispatch.md`.
+This skill governs a delegated worker, used when `developing-changes` hands one oversized phase to a subagent. Detect the stack first, then choose the logical role. In the orchestrating thread itself, follow the language rules and the phase flow in `developing-changes/SKILL.md` instead.
 
 ### Stack Detection
 
@@ -79,21 +79,21 @@ echo "stack=$STACK"
 
 **Never dispatch `go-implementer` for non-Go stacks.** The Go code rules and style gates only apply when `STACK=go`. For any other stack, skip the Go-specific sections below and use only the non-Go gates.
 
-In Copilot native mode, `go-implementer` maps to an `agent_type` only when that agent is actually installed. When it is **not** an available native `agent_type`, do not fail and do not silently drop the Go rules: dispatch a real Copilot agent type (`general-purpose`), bind the logical role in the prompt (`Logical role: go-implementer`), and front-load the canonical contract from `~/.ai-config/agents/go-implementer.md` so the full Go rule set still applies. In Codex managed mode prefer a matching custom agent from `~/.codex/agents/` or `.codex/agents/`; otherwise bind the logical role in the prompt and treat the worker output as untrusted until the orchestrator accepts it. **In Claude Code**, this skill is loaded via `Skill(skill: "implementing-feature")` first, THEN dispatched via `Agent(subagent_type: "go-implementer", ...)` — two separate tool calls, never one; if `go-implementer` is not an available `subagent_type` in the current session, dispatch `Agent(subagent_type: "general-purpose", ...)` with the logical role bound in the prompt, same fallback principle. See `skills/orchestrating-tasks/claude-runtime.md`.
+In Copilot native mode, `go-implementer` maps to an `agent_type` only when that agent is actually installed. When it is **not** an available native `agent_type`, do not fail and do not silently drop the Go rules: dispatch a real Copilot agent type (`general-purpose`), bind the logical role in the prompt (`Logical role: go-implementer`), and front-load the canonical contract from `~/.ai-config/agents/go-implementer.md` so the full Go rule set still applies. In Codex managed mode prefer a matching custom agent from `~/.codex/agents/` or `.codex/agents/`; otherwise bind the logical role in the prompt and treat the worker output as untrusted until the orchestrator accepts it. **In Claude Code**, this skill is loaded via `Skill(skill: "implementing-feature")` first, THEN dispatched via `Agent(subagent_type: "go-implementer", ...)` — two separate tool calls, never one; if `go-implementer` is not an available `subagent_type` in the current session, dispatch `Agent(subagent_type: "general-purpose", ...)` with the logical role bound in the prompt, same fallback principle.
 
 ---
 
 ## When to use
 
 - User asks to implement a plan or feature
-- orchestrating-tasks delegates implementation
+- developing-changes delegates an oversized phase to a worker
 - User says "implement", "code this", "start coding", "next phase", "proceed"
 
 ---
 
 ## Setup
 
-1. Use the `{plan_root}` provided by `orchestrating-tasks`. If running standalone, resolve `{plan_root}` with the same rule: use `$AI_MEMORY_HOME/{project}/plans/`; then create or refresh `.plans` as a symlink to `{plan_root}`.
+1. Use the `{plan_root}` provided by `developing-changes`. If running standalone, resolve `{plan_root}` with the same rule: use `$AI_MEMORY_HOME/{project}/plans/`; then create or refresh `.plans` as a symlink to `{plan_root}`.
 2. **Context Bootstrap**: skip entirely if the prompt contains `Violations:` (repair cycle):
    ```bash
    GRAPHIFY_AVAILABLE=false
@@ -101,7 +101,7 @@ In Copilot native mode, `go-implementer` maps to an `agent_type` only when that 
    VAULT_AVAILABLE=false
    [ -n "${AI_MEMORY_HOME:-}" ] && VAULT_AVAILABLE=true
    ```
-   Resolve `{plan_root}` with the same rule as `orchestrating-tasks`: use `$AI_MEMORY_HOME/{project}/plans/`. If unset, stop and ask the user to configure an external plan root.
+   Resolve `{plan_root}` with the same rule as `developing-changes`: use `$AI_MEMORY_HOME/{project}/plans/`. If unset, stop and ask the user to configure an external plan root.
    - If `GRAPHIFY_AVAILABLE=true` **and** the plan_excerpt does NOT contain explicit file paths: use `graphify query` for domains/packages in the plan.
     - If `GRAPHIFY_AVAILABLE=true` **and** the plan already specifies exact files to edit: **skip graphify**: scope is known.
    - If `VAULT_AVAILABLE=true`: read architecture decisions relevant to the target area.
@@ -335,11 +335,11 @@ Update `progress.md` after each phase. Mark only production file tasks:
 - [x] Style gate: PASS
 ```
 
-**Do NOT update `## Status` to `REVIEW`**, that transition is owned exclusively by `orchestrating-tasks` after all gates pass. Leave `## Status` as `IN_PROGRESS` and update only the phase checkboxes.
+**Do NOT update `## Status` to `REVIEW`**, that transition is owned exclusively by `developing-changes` after all gates pass. Leave `## Status` as `IN_PROGRESS` and update only the phase checkboxes.
 
 ## Codex Runtime Override
 
-When dispatched by `orchestrating-tasks` in Codex managed mode, a generic worker is not the implementation harness. The worker may produce a bounded production patch, but its success is only `WORKER PASS`; the orchestrator must audit the diff with `orchestrating-tasks/codex-runtime.md` before accepting the phase.
+In Codex managed mode, a generic worker is not the implementation harness. The worker may produce a bounded production patch, but its success is only `WORKER PASS`; the orchestrating thread must audit the diff against the conventions below before accepting the phase.
 
 Hard implementation conventions that must be checked manually in Codex managed mode:
 
@@ -352,7 +352,7 @@ If any of these fail, report `BLOCKED` or dispatch a repair cycle. Do not report
 
 ## Claude Code Runtime Note
 
-When dispatched via `Skill(skill: "implementing-feature")` → `Agent(subagent_type: "go-implementer" | "general-purpose", ...)`, end your report with this block so the orchestrator can transcribe it into `progress.md` without re-deriving it:
+When running as a delegated worker via `Skill(skill: "implementing-feature")` → `Agent(subagent_type: "go-implementer" | "general-purpose", ...)`, end your report with this block so the orchestrating thread can transcribe it into `progress.md` without re-deriving it:
 
 ```
 ## Progress Update

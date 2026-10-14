@@ -18,7 +18,7 @@ If the personal `humanizer` skill is available in the session, prefer it for the
 
 **Preferred tier**: Fast · **Logical role**: `general-purpose`
 
-Rule-based text transformation needs no deep reasoning: dispatch as `general-purpose` on the provider's Fast tier. See `orchestrating-tasks/dispatching.md`'s Capability Tiers table for the Fast-tier model per provider. This skill never needs the Complex or Expert Review tiers, so the full `provider-dispatch.md` chain (`dispatching.md`, `claude-runtime.md`, `task-types.md`, `gates.md`, `codex-runtime.md`) is unnecessary here.
+Rule-based text transformation needs no deep reasoning: run it inline in the current thread, or, if delegated, as `general-purpose` on a cheap model.
 
 ## When to use
 

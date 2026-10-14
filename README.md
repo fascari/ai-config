@@ -159,13 +159,11 @@ Each runtime discovers agents from its own directory automatically. No per-proje
 
 ## Skills
 
-Workflow skills in `skills/{name}/SKILL.md`. Entry point: **orchestrating-tasks**.
+Workflow skills in `skills/{name}/SKILL.md`. Entry point: **developing-changes**.
 
-Standard workflow: orchestrating-tasks → researching-codebase → planning-implementation → implementing-feature → testing-implementation → reviewing-code → committing-changes → creating-pull-request.
+Standard workflow: developing-changes → researching-codebase → planning-implementation → implementation in-thread → reviewing-code → sanitizing-text → committing-changes → creating-pull-request.
 
 See [`skills/README.md`](skills/README.md) for the full catalog.
-
-Use `orchestrating-single-loop` for production features and bug fixes where a single bounded workflow is preferable to a dispatched pipeline.
 
 ## Persistent Memory
 

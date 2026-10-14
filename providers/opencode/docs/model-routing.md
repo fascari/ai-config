@@ -439,7 +439,7 @@ Keep the current provider strategy:
 ```
 OpenCode Go
 +
-orchestrating-tasks-efficient
+developing-changes
 +
 model routing policy
 ```

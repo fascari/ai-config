@@ -19,7 +19,7 @@ Never starts implementation before presenting the restored state to the user.
 
 ### Step 0: Setup
 
-1. Use the `{plan_root}` resolved by `orchestrating-tasks`. If running standalone, resolve `{plan_root}` with the same rule: use `$AI_MEMORY_HOME/{project}/plans/`; then create or refresh `.plans` as a symlink to `{plan_root}`.
+1. Use the `{plan_root}` resolved by `developing-changes`. If running standalone, resolve `{plan_root}` with the same rule: use `$AI_MEMORY_HOME/{project}/plans/`; then create or refresh `.plans` as a symlink to `{plan_root}`.
 
 ### Step 1: Discover the Plan
 
@@ -121,7 +121,7 @@ Based on the resume point and `progress.md` status, delegate to the appropriate 
 | Resume point | Delegate to |
 |---|---|
 | Research incomplete | `researching-codebase/SKILL.md` |
-| Plan needs to be created or approved | `planning-implementation/SKILL.md` via orchestrating-tasks |
+| Plan needs to be created or approved | `planning-implementation/SKILL.md` via developing-changes |
 | Implementation phase in progress | `implementing-feature/SKILL.md` |
 | Tests need to be written or fixed | `implementing-feature/SKILL.md` (tests are part of the implementing-feature skill) |
 | All phases done, awaiting review | `reviewing-code/SKILL.md` |

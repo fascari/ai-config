@@ -1,6 +1,6 @@
 ---
 name: testing-implementation
-description: Use when implementing-feature delegates testing, when validating test coverage for a feature, or when any prompt mentions tests, test files, assertions, mocks, or test adjustments
+description: Use when developing-changes delegates the tests of one oversized plan phase to a worker subagent (go-tester or general-purpose), or when the user asks for test-only work (coverage, fixing or adding tests) outside a planned change.
 ---
 
 # Testing Implementation
@@ -9,7 +9,7 @@ Writes and executes tests, validates coverage, and ensures the implementation me
 
 ## Execution Model
 
-When dispatched by `orchestrating-tasks`, detect the stack first, then choose the logical role. Render the actual call using `skills/orchestrating-tasks/provider-dispatch.md`.
+This skill governs a delegated worker, used when `developing-changes` hands one oversized phase to a subagent. Detect the stack first, then choose the logical role. In the orchestrating thread itself, follow the language rules and the phase flow in `developing-changes/SKILL.md` instead.
 
 ### Stack Detection
 
@@ -33,7 +33,7 @@ plain `.go` file does on the production side.
 
 **Never dispatch `go-tester` for non-Go stacks.** The Go test commands and mock conventions only apply when `STACK=go`. For any other stack, skip the Go-specific sections below.
 
-In Copilot native mode, `go-tester` maps to an `agent_type` only when that agent is actually installed. When it is **not** an available native `agent_type`, do not fail and do not silently drop the Go rules: dispatch a real Copilot agent type (`general-purpose`), bind the logical role in the prompt (`Logical role: go-tester`), and front-load the canonical contract from `~/.ai-config/agents/go-tester.md` so the full Go test rule set still applies. In Codex managed mode prefer a matching custom agent from `~/.codex/agents/` or `.codex/agents/`; otherwise bind the logical role in the prompt and treat the worker output as untrusted until the orchestrator accepts it. **In Claude Code**, load this skill via `Skill(skill: "testing-implementation")` first, THEN dispatch `Agent(subagent_type: "go-tester", ...)` — two separate tool calls; fall back to `Agent(subagent_type: "general-purpose", ...)` with the logical role bound in the prompt if `go-tester` is not an available `subagent_type` this session. See `skills/orchestrating-tasks/claude-runtime.md`.
+In Copilot native mode, `go-tester` maps to an `agent_type` only when that agent is actually installed. When it is **not** an available native `agent_type`, do not fail and do not silently drop the Go rules: dispatch a real Copilot agent type (`general-purpose`), bind the logical role in the prompt (`Logical role: go-tester`), and front-load the canonical contract from `~/.ai-config/agents/go-tester.md` so the full Go test rule set still applies. In Codex managed mode prefer a matching custom agent from `~/.codex/agents/` or `.codex/agents/`; otherwise bind the logical role in the prompt and treat the worker output as untrusted until the orchestrator accepts it. **In Claude Code**, load this skill via `Skill(skill: "testing-implementation")` first, THEN dispatch `Agent(subagent_type: "go-tester", ...)` — two separate tool calls; fall back to `Agent(subagent_type: "general-purpose", ...)` with the logical role bound in the prompt if `go-tester` is not an available `subagent_type` this session.
 
 ## When to use
 
@@ -57,7 +57,7 @@ In Copilot native mode, `go-tester` maps to an `agent_type` only when that agent
    - If `VAULT_AVAILABLE=true`: read domain notes for prior decisions on testing patterns.
    - If neither exists, proceed directly.
 
-2. Use the `{plan_root}` provided by `orchestrating-tasks`. If running standalone, resolve `{plan_root}` with the same rule: use `$AI_MEMORY_HOME/{project}/plans/`; then create or refresh `.plans` as a symlink to `{plan_root}`.
+2. Use the `{plan_root}` provided by `developing-changes`. If running standalone, resolve `{plan_root}` with the same rule: use `$AI_MEMORY_HOME/{project}/plans/`; then create or refresh `.plans` as a symlink to `{plan_root}`.
 3. Read `{plan_root}/{slug}/implementation-plan.md` to understand success criteria for the current phase.
 4. Read the active provider-native project instruction files for project testing conventions and any repo-local docs they explicitly route you to.
 5. Analyze existing test files for the affected packages. Identify patterns, mock setup, factory functions.
@@ -242,7 +242,7 @@ time.Sleep(10 * time.Microsecond)
 
 ## Codex Runtime Override
 
-When dispatched by `orchestrating-tasks` in Codex managed mode, a generic worker is not the testing harness. The worker may write tests, but its success is only `WORKER PASS`; the orchestrator must audit the diff with `orchestrating-tasks/codex-runtime.md` before accepting the phase.
+In Codex managed mode, a generic worker is not the testing harness. The worker may write tests, but its success is only `WORKER PASS`; the orchestrating thread must audit the diff against the conventions below before accepting the phase.
 
 Hard testing conventions that must be checked manually in Codex managed mode:
 
@@ -255,7 +255,7 @@ If any of these fail, report `BLOCKED` or dispatch a repair cycle. Do not report
 
 ## Claude Code Runtime Note
 
-When dispatched via `Skill(skill: "testing-implementation")` → `Agent(subagent_type: "go-tester" | "general-purpose", ...)`, end your report with this block so the orchestrator can transcribe it into `progress.md`:
+When running as a delegated worker via `Skill(skill: "testing-implementation")` → `Agent(subagent_type: "go-tester" | "general-purpose", ...)`, end your report with this block so the orchestrating thread can transcribe it into `progress.md`:
 
 ```
 ## Progress Update

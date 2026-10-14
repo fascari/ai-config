@@ -17,12 +17,12 @@ instead — the two are complementary, not interchangeable.
 
 - User types /compress or asks to compress the session
 - User says "save context", "I want to resume later", or similar
-- orchestrating-tasks or implementing-feature offers compression because /context shows 70%+ usage and user accepts
+- /context shows 70%+ usage and the user accepts a compression offer
 - User is about to start a new chat and wants to preserve state
 
 ## Steps
 
-1. Use the `{plan_root}` resolved by `orchestrating-tasks`. If running standalone, resolve `{plan_root}` with the same rule: use `$AI_MEMORY_HOME/{project}/plans/`; then create or refresh `.plans` as a symlink to `{plan_root}`.
+1. Use the `{plan_root}` resolved by `developing-changes`. If running standalone, resolve `{plan_root}` with the same rule: use `$AI_MEMORY_HOME/{project}/plans/`; then create or refresh `.plans` as a symlink to `{plan_root}`.
 2. Scan the conversation from the beginning. Collect: current state, completed work, key decisions, discoveries, open blockers, next steps.
 3. **Resolve the plan slug** (`{plan_root}` already resolved in step 1):
    a. Scan `.plans/` for a directory containing a `progress.md` with status `IN_PROGRESS`. Use that slug.
@@ -79,7 +79,7 @@ Write to `{plan_root}/{slug}/session-summary.md`. If the file already exists, re
 
 > Paste this into a new chat session to resume without losing context.
 
-Read and follow the `orchestrating-tasks` skill, then resume plan {slug}.
+Read and follow the `developing-changes` skill, then resume plan {slug}.
 
 Before doing anything, read these files for full context:
 - {plan_root}/{slug}/session-summary.md
@@ -104,7 +104,7 @@ Do not include: full file contents (reference paths instead), long code snippets
 
 ## Proactive offer rule
 
-The orchestrating-tasks and implementing-feature skills must offer compression when:
+Offer compression when:
 - `/context` shows 70% or more usage
 - The session spans research + planning + coding (multi-skill)
 - The user explicitly asks

@@ -31,7 +31,7 @@ On first message of each session, load the **recall** skill from `~/.ai-config/s
 
 ## Skill Invocation
 
-Use `orchestrating-tasks` as the entry point for any codebase change when maximum assurance is required, or `orchestrating-tasks-efficient` when cost-aware quality is preferred. Invoke via `/skill:name` in Copilot chat.
+Use `developing-changes` as the entry point for any codebase change. Invoke via `/skill:name` in Copilot chat.
 
 | Task | Skill |
 |------|-------|

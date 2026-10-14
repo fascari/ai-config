@@ -10,13 +10,13 @@ Does not write code. Produces the plan that implementing-feature will follow.
 
 ## When to use
 
-- orchestrating-tasks delegates planning after research is complete
+- developing-changes delegates planning after research is complete
 - User asks to create an implementation plan for a feature or fix
 - User provides a brief or ticket and needs a structured breakdown
 
 ## Steps
 
-0. Use the `{plan_root}` provided by `orchestrating-tasks`. If running standalone, resolve `{plan_root}` with the same rule: use `$AI_MEMORY_HOME/{project}/plans/`; then create or refresh `.plans` as a symlink to `{plan_root}`.
+0. Use the `{plan_root}` provided by `developing-changes`. If running standalone, resolve `{plan_root}` with the same rule: use `$AI_MEMORY_HOME/{project}/plans/`; then create or refresh `.plans` as a symlink to `{plan_root}`.
 1. Read inputs:
    - `{plan_root}/{slug}/brief.md` (context and acceptance criteria)
    - `{plan_root}/{slug}/research.md` (existing codebase analysis)

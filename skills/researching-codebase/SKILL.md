@@ -13,11 +13,11 @@ Read-only: never suggests improvements or critiques code quality.
 - User asks how a domain, feature, or module works
 - User asks where something is implemented
 - User needs codebase context before planning or implementing
-- orchestrating-tasks delegates a research phase
+- developing-changes delegates a research phase
 
 ## Steps
 
-0. Use the `{plan_root}` provided by `orchestrating-tasks`. If running standalone, resolve `{plan_root}` with the same rule: use `$AI_MEMORY_HOME/{project}/plans/`; then create or refresh `.plans` as a symlink to `{plan_root}`.
+0. Use the `{plan_root}` provided by `developing-changes`. If running standalone, resolve `{plan_root}` with the same rule: use `$AI_MEMORY_HOME/{project}/plans/`; then create or refresh `.plans` as a symlink to `{plan_root}`.
 1. Read architecture rules for context:
    - active provider-native project instruction files: all project-specific architecture and design rules for the current repo
 2. **Query Graphify first** (primary research tool, do this before reading any source file):

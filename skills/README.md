@@ -5,27 +5,7 @@ AI-assisted workflow skills for software engineering tasks. Each subdirectory co
 
 ## Entry Points
 
-Use **orchestrating-tasks** as the single entry point when maximum assurance is required, **orchestrating-tasks-efficient** when cost-aware quality is preferred, or **orchestrating-single-loop** for a bounded production vertical slice.
-
-`orchestrating-tasks` is split into focused sub-files for maintainability. Read `orchestrating-tasks/SKILL.md` first, then open the relevant sub-file:
-
-| Sub-file | Content |
-|---|---|
-| `dispatching.md` | Model tier matrix, cross-vendor rule, dispatch template, style reinforcement |
-| `gates.md` | Critique gate, test-design-judge, output judge gate |
-| `task-types.md` | Skill chain per task type, NEVER-dispatch-agents-directly rule |
-| `approval-and-output.md` | Approval checkpoints, plan artifact contract |
-
-`orchestrating-tasks-efficient` offers Lean, Standard, and High Assurance modes. Read `orchestrating-tasks-efficient/SKILL.md` first, then open the relevant sub-file:
-
-| Sub-file | Content |
-|---|---|
-| `dispatching.md` | Cost-aware model tier matrix, dispatch contract |
-| `task-types.md` | Complexity + risk classification, mode selection |
-| `gates.md` | Deterministic Go gates and conditional LLM gates |
-| `context-management.md` | `context-capsule.md` format and reuse rules |
-| `provider-dispatch.md` | Multi-provider call shapes |
-| `migration.md` | Comparison with `orchestrating-tasks` and migration guide |
+Use **developing-changes** as the single entry point. Read `developing-changes/SKILL.md`; it is the only file of that skill.
 
 
 ## Skill Catalog
@@ -34,9 +14,7 @@ Use **orchestrating-tasks** as the single entry point when maximum assurance is 
 
 | Skill | Purpose |
 |---|---|
-| [orchestrating-tasks](orchestrating-tasks/) | Single entry point for all AI-assisted tasks. Detects complexity, routes to the right skill chain, manages plan state, and dispatches parallel agents when possible. High Assurance reference. |
-| [orchestrating-tasks-efficient](orchestrating-tasks-efficient/) | Cost-aware entry point that preserves deterministic gates and cross-vendor review, but reduces dispatches, context repetition, and unnecessary Complex model usage. Offers Lean, Standard, and High Assurance modes. |
-| [orchestrating-single-loop](orchestrating-single-loop/) | Bounded workflow for production features and bug fixes that do not need a multi-agent pipeline. |
+| [developing-changes](developing-changes/) | Single entry point for planned work. One thread researches, plans, and implements under a plan slug, with commands as gates and one fresh-context review. Subagents only for broad read-only exploration, the review, or an oversized phase. |
 | [compressing-context](compressing-context/) | Compresses the current session into `session-summary.md` so a new chat can resume where this one left off. Triggered manually or when context reaches 70%+. |
 | [resuming-context](resuming-context/) | Restores full working context from a compressed session summary and hands off to the correct skill to continue. |
 
@@ -46,7 +24,7 @@ Use **orchestrating-tasks** as the single entry point when maximum assurance is 
 |---|---|
 | [researching-codebase](researching-codebase/) | Read-only codebase analysis. Documents how and where things are implemented, with `file:line` references. Never suggests improvements. |
 | [planning-implementation](planning-implementation/) | Translates research findings into a phased, verifiable implementation plan. Does not write code. |
-| [analyzing-system-design](analyzing-system-design/) | Analyses atomicity, idempotency, consistency, concurrency, resilience, and architectural patterns. Produces `system-design-analysis.md` before any code is written. Mandatory for Standard and Complex tasks. |
+| [analyzing-system-design](analyzing-system-design/) | Analyses atomicity, idempotency, consistency, concurrency, resilience, and architectural patterns. Produces `system-design-analysis.md`. Opt-in only: runs when the user explicitly asks, never as a default workflow step. |
 
 ### Implementation and Testing
 
@@ -81,7 +59,7 @@ This repo keeps agent definitions in three formats:
 
 | Format | Location | Installed to |
 |---|---|---|
-| Provider-agnostic markdown | `agents/*.md` | Referenced by orchestrating-tasks |
+| Provider-agnostic markdown | `agents/*.md` | Referenced by developing-changes |
 | Codex TOML | `providers/codex/agents/*.toml` | `~/.codex/agents/` via `install-global-skills.sh` |
 | Opencode markdown | `providers/opencode/agents/*.md` | `~/.config/opencode/agents/` via `install-global-skills.sh` |
 
@@ -95,7 +73,7 @@ Provider-neutral templates for Go projects:
 
 ## Standard Workflow
 
-orchestrating-tasks → researching-codebase → analyzing-system-design → planning-implementation → implementing-feature → testing-implementation → reviewing-code → sanitizing-text → committing-changes → creating-pull-request
+developing-changes → researching-codebase → planning-implementation → implementation in-thread → reviewing-code → sanitizing-text → committing-changes → creating-pull-request
 
 
 ## Project Customization
