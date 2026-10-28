@@ -107,23 +107,15 @@ Leaving obsolete idioms in a file you just touched signals you didn't read the p
 | Source file | Existing test file | Correct approach |
 |---|---|---|
 | `foo.go` | none | `foo_test.go` (`package foo` or `package foo_test` as appropriate) |
-| `foo.go` | `foo_test.go` is `package foo_test` and you need whitebox access | add an `export_test.go` (`package foo`) that re-exports the internal symbol as a package-level var; test it from `foo_test.go` |
+| `foo.go` | `foo_test.go` is `package foo_test` and you need whitebox access | write the test in `package foo` (whitebox) instead; never create an `export_test.go` |
 | `foo.go` | `foo_test.go` is `package foo` | add to `foo_test.go` — **do not create a new file** |
-
-**`export_test.go` pattern (Go stdlib convention):**
-```go
-// export_test.go — compiled only during `go test`
-package foo
-
-var ExportedForTest = internalFunc
-```
 
 **Forbidden patterns:**
 - Creating `fooguard_test.go`, `foofixup_test.go`, or any file whose name encodes a feature, ticket, or implementation detail rather than the source file being tested.
 - Creating a new `_test.go` file when an existing file in the same package already covers the same source file.
 - Using `_internal_test.go` as a suffix — this is NOT a Go community convention; it has no stdlib precedent.
 
-**Why:** feature-named test files fracture test suites, orphan after refactors, and signal to reviewers that the author didn't know the `export_test.go` pattern.
+**Why:** feature-named test files fracture test suites, orphan after refactors, and make a reader hunt for where a source file's behavior is tested.
 
 ### Short, semantic names
 
@@ -394,6 +386,10 @@ name, and the Go wiki's "Identify the Input" backs this: when the relevant
 properties of an input are not obvious, the sanctioned fix is a descriptive
 test case name, not a separate file. Keep the literal multiline with one field
 per line, and keep comparing full structures.
+
+### JSON in tests
+
+JSON of more than one line goes in a `testdata/` file read with `embed`, never in a multi-line Go string or constant. Only a one-line JSON string may stay inline, and an HTTP stub body or a request payload follows the same rule. This holds whether the JSON is an input, an upstream response or an expected result.
 
 This replaces an earlier hard rule that made extraction mandatory for every
 composite value. That rule cost more than it bought on small tables, and the
@@ -707,6 +703,24 @@ An E2E suite for a domain whose behavior includes replaying or retrying upstream
 include an idempotent-replay test: re-deliver the same upstream payload and assert the
 observable HTTP response is unchanged (no duplicate side effect).
 
+### In-process e2e with a base suite
+
+Vocabulary: an integration test exercises one adapter against real infrastructure (a database, a queue), and an e2e test drives the assembled service from its public edge with every upstream stubbed. A service with no database of its own has e2e tests and no integration tests, so do not label an e2e test "integration" to match a folder name.
+
+When the service can run in-process, the e2e suite needs no build tag and no Docker: an `httptest` fake for the upstreams, an in-memory fake for Redis, the real router chain.
+
+- **The suite owns the lifecycle, test packages embed it.** A test package declares `type XSuite struct{ e2e.Suite }` and `Test` methods for scenarios, and one `TestX` runs it with testify's `suite.Run`, passing the fixtures (and an env override when the app needs another boot config) in the composite literal. The base embeds `suite.Suite`, boots the app in `SetupSuite`, resets the stubs, Redis and the token in `SetupTest`, and releases everything with `t.Cleanup`. Prefer testify here over a hand-written runner: a stdlib one needs about 40 lines of reflection to find the `Test` methods, and in the mcps e2e suite testify removed 170 lines. Adding testify to a shared `go.mod` is a change to review with its owners, so check CODEOWNERS first.
+- **One suite per test file.** A suite that needs a different boot config (an env override) goes in its own file, and the package's shared declarations (the `embed.FS`, route constants) stay in one of them.
+- **The shared suite holds only what several consumers use.** A helper that serves a single test package (for example the tool snapshot check, used only by the composition test) lives in that package, in a helper test file beside the scenario file, not in the shared suite.
+- **Test files hold only scenarios.** A scenario is a few statements: stub what the upstream answers, act, assert. Wiring, request building, decoding, golden comparison and transport live in the suite package, never in the test file.
+- **Act and assert are separate statements.** The call returns a value (`res := s.CallTool(...)`) and each assertion is a method with no return value (`s.RequireOutput(res, golden)`). Do not chain assertions off the call.
+- **The suite knows no client.** It builds the app through the production entry points (`env.Init`, the composition function) from an env file next to `env.dev` and `env.ci`, with placeholders for the stub addresses, and checks that the file defines every variable `env.ci` does, because a missing one would be read from the process. Every upstream host points at one route fake, and a scenario stubs the route by its HTTP contract. Adding an upstream adds lines to the env file and touches no code in the suite.
+- **A request no route matches fails the test.** That makes "the upstream was not called" free, so scenarios do not assert zero hits.
+- **Compare whole results with goldens.** Fixtures are `testdata/` files embedded per test package (`//go:embed testdata` into an `embed.FS`). The structured result and the text block the SDK derives from it are both compared with the same golden, so any extra or missing field fails with a diff.
+- **Pin what a client sees once.** One test in the composition e2e compares every advertised tool definition with a file per tool, and `-update` regenerates the files so nobody writes them by hand. A tool without a snapshot fails and so does a snapshot without a tool.
+- **Do not duplicate coverage across layers.** Adapter edge cases (status mapping, malformed body, timeouts) are unit-tested at the adapter, and the e2e scenario proves the wiring and what the caller sees, once per behavior.
+- **Prove a scenario can fail.** After the suite is green, break the behavior it claims to guard (unregister the tool, leak the cause, drop a middleware, accept an extra input) and see it go red, then restore. A mutation that does not compile proves nothing, so make it compile.
+
 ## Comments in Tests
 
 Test code is self-describing. The function name, subtest strings, and variable names are the documentation.
@@ -745,10 +759,16 @@ func TestActivateSubscription_ShouldSkipWhenTrialActive(t *testing.T) {
 
 ## What to Test
 
-- Happy path
-- Error cases (each error type)
-- Edge cases (empty, nil, zero values)
-- Transaction rollback scenarios (for write operations)
+Cover the critical path only. Write the happy path, the few cases that change an outcome the caller sees (a status, a visible error, a response shape), the rules that protect security or money, and for write operations the transaction rollback. Do not cover every edge case or every branch.
+
+Before keeping a test, ask which plausible wrong implementation it fails against. These do not earn their place:
+
+- A second test for a branch another test already covers.
+- A row per bound of a range check, when one row shows the check exists.
+- A row per call when several calls share one mapping or helper.
+- A test that restates the behavior of a shared helper or of a library.
+
+A mutant that survives a critical path suite is acceptable. Name the survivors in the report and do not add tests to chase them.
 
 ## What NOT to Test
 

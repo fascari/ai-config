@@ -65,8 +65,9 @@ In Copilot native mode, `go-tester` maps to an `agent_type` only when that agent
    **Go only:** check whether the target code starts goroutines.
 
 6. Write unit tests following the stack's conventions:
-   - Cover happy path + each error case + edge cases.
-   - Test data via factory/fixture helpers when reuse or complexity warrants them; inline small literals otherwise.
+   - Cover the critical path only: the happy path, the few cases that change an outcome the caller sees (a status, a visible error, a response shape) and the rules that protect security or money. Not every edge case and not each branch of a validation. **Caught by Felipe on 2026-10-27**, on the lego `mcps` tool tests: 14 tests for one tool were cut to 7 and he still found useless ones. Before keeping a test, ask which plausible wrong implementation it fails against. A second test for the same branch, a row per bound of a range check, a row per failing call of two that share one mapping, and a test that only restates a helper's behavior do not earn their place.
+   - Test data via factory/fixture helpers when reuse or complexity warrants them; inline small Go literals otherwise.
+   - JSON that is more than one line goes in a `testdata/` file, read with `embed`, never in a multi-line Go string or constant. Only a one-line JSON string may stay inline. **Caught by Felipe on 2026-10-27**: a four-line earnings JSON sat in a `const` in a tool test.
 
    **Go:** table-driven, fail-fast assertions (`require`), project's mock strategy (e.g. `EXPECT()` builder for testify/mockery) — **but verify the project actually has `testify`/`mockery` configured first.** Grep `go.mod` for `stretchr/testify` as a direct (not indirect) dependency and check for any `go:generate` mockery directive before assuming this applies; real repos exist where neither is present at all, in which case the canonical rule does not silently disable — the deviation is exactly this: `if err != nil { t.Errorf(...) }` instead of `require`, and hand-written mocks instead of generated ones, stated as a documented deviation in the phase report, not applied quietly.
 
@@ -247,7 +248,7 @@ In Codex managed mode, a generic worker is not the testing harness. The worker m
 Hard testing conventions that must be checked manually in Codex managed mode:
 
 - Static fixtures and golden JSON/YAML live under `testdata/`. Go factories live in `*_fixtures_test.go` or a `<pkg>test` sibling, and only when reuse or complexity warrants them.
-- Small one-off composite literals may stay inline in the test. Do not put Go factory packages under `testdata/`.
+- Small one-off composite literals may stay inline in the test. JSON text follows the one-line rule above: a one-line string inline, anything longer in `testdata/`. Do not put Go factory packages under `testdata/`.
 - Tests do not call external services unless the phase is explicitly an integration or smoke phase.
 - Test workers do not edit production files unless a repair cycle is explicitly approved.
 

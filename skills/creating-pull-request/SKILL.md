@@ -272,6 +272,7 @@ inline Python: heredocs lock the terminal and corrupt multi-line content in zsh.
 - Each sentence/paragraph must be on a **single unbroken line**: no mid-sentence line wraps
 - Blockquotes (`>`) must have a blank line before and after them
 - Checklist items must have a blank line after their section header
+- A link to another PR or issue goes as a bare URL alone on a list item, after a short lead line (`Checkout this \`diva\` PR:` then `- https://github.com/org/repo/pull/123`). GitHub renders that as an `org/repo#123` reference with the PR icon and title. A bare URL inside a sentence (`see: https://...`) renders as plain text, and `[text](url)` hides the reference entirely.
 
 #### Example: correct body file content
 
@@ -336,6 +337,7 @@ Present the PR URL and a summary to the user.
 | Paragraphs without blank lines between them | Every paragraph separated by one blank line |
 | Mid-sentence line breaks in description | Each sentence/paragraph on a single unbroken line |
 | Run `gh` commands without `PAGER=cat` | Always prefix `gh` with `PAGER=cat` |
+| Link another PR as `[text](url)` or inline `see: https://...` | Put the bare URL alone on a list item under a short lead line, so GitHub shows the reference with its icon |
 | Guess labels that don't exist | Check label existence, create if missing |
 | Skip checklist items silently | Mark unchecked items with `[ ]` + note why |
 | Run `git push` for pure docs/config changes when pre-push hooks don't apply | `git push --no-verify`: hooks are not relevant |

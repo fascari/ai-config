@@ -1,5 +1,5 @@
 ---
-description: Use this agent for any Go test work, including writing, editing, or extending unit tests, integration suites, and fixture factories. Production files are handled exclusively by go-implementer.
+description: Optional worker for Go tests and fixtures when developing-changes explicitly delegates an oversized phase or the user requests delegation. Write and update ordinary tests in the main session. This worker does not edit production code.
 mode: subagent
 model: opencode-go/deepseek-v4-pro
 permission:
@@ -16,6 +16,12 @@ permissions). The behavior contract lives in one canonical, provider-neutral fil
 separate copy of the rules here.
 
 ## Contract
+
+`developing-changes` decides whether to delegate. The shared contract's description
+identifies this worker's scope, not a requirement to dispatch every Go test edit.
+Keep ordinary test work in the main session; use this worker only for an explicitly
+delegated oversized phase or a user-requested delegation. Do not dispatch it when
+the user asks to avoid agents.
 
 Read `~/.ai-config/agents/go-tester.md` and follow it exactly: its Pre-work rule set (load every rule
 it lists before the first edit), its Scope, its Workflow, and its Reporting Back. If that file cannot

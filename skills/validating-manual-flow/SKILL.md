@@ -108,8 +108,10 @@ Discover every fixture value from the live system first. Any placeholder like
 
 ### Rule 2: Never ask the user to set up test data
 
-No "create a record", "delete rows", or "configure X" instructions. Use state
-that already exists (seeded during bring-up or already present in the system).
+No "create a record", "delete rows", or "configure X" instructions addressed to
+the user. The agent finds existing state first (seeded during bring-up or already
+present in the system) and, when none satisfies a precondition and the target is
+local, seeds it itself under Rule 6.
 
 ### Rule 3: Identify services, endpoints, and state before generating
 
@@ -128,11 +130,33 @@ The generated file opens with a `LOCAL ONLY` warning. Connection details and
 payloads carrying real identifiers must never appear in a ticket, wiki page, or
 PR body.
 
-### Rule 6: Never modify state as test setup
+### Rule 6: Find existing state first, seed only on a proven local target
 
-Do not delete, update, insert, or POST a mutation purely to prepare a scenario.
-Find existing state that satisfies the scenario's precondition instead. The only
-mutation allowed in a scenario is the action under test itself.
+Default: do not delete, update, insert, or POST a mutation purely to prepare a
+scenario. Find existing state that satisfies the precondition instead. Inside a
+scenario, the only mutation is the action under test itself.
+
+When no existing state satisfies a precondition, seeding is allowed if ALL of
+these hold:
+
+1. The target is proven local. Read the service's database and upstream hosts
+   from its running environment and confirm each resolves to a local container or
+   compose service, with no remote host or remote credential. Record that proof
+   in the Setup table. If any host is remote, shared, staging or production, never
+   seed: stop and report the missing state.
+2. Use the project's sanctioned write channel (a console script, a documented
+   admin flow, the application's own functions) and not ad hoc SQL. Prefer the
+   function the real flow uses, so the rows keep valid keys and defaults.
+3. Seed in its own `Seed` section of the file, before the scenarios. List every
+   row created with its id and the command that created it.
+4. Take the baseline snapshot after seeding, so each scenario's diff shows only
+   the action under test.
+5. Delete exactly the rows listed in the `Seed` section at the end, unless the
+   user asks to keep them, and say so in the report.
+
+**Caught by Felipe on 2026-10-23**: a wallet endpoint could not be validated end
+to end because the local database had no wallet, and the old rule forbade creating
+one even though the database was a local container.
 
 ### Rule 7: Snapshot before and after every request
 
@@ -244,7 +268,8 @@ Failures: {list any FAIL scenarios with the assertion that did not hold}
 | Wrong | Correct |
 |---|---|
 | Hardcode `<id>` or `<key>` in the request | Run fixture discovery first, substitute real values |
-| "Create a record as setup" | Find existing state that satisfies the precondition |
+| "Create a record as setup" on a shared or remote target | Find existing state, or stop and report the missing state |
+| Giving up when a local database lacks a fixture | Seed it under Rule 6: prove the target is local, use the sanctioned channel, list and clean up the rows |
 | Assume an endpoint from memory | Read the route registration or ask |
 | Run scenarios against a half-up stack | Bring up and health-check every service first |
 | Single static key across re-runs | Append a timestamp: `key-$(date +%Y%m%d-%H%M%S)` |

@@ -84,7 +84,13 @@ git diff --name-only --diff-filter=AM HEAD | grep '\.go$' | xargs grep -nE \
   'wg\.Add\(1\)|interface\{\}|errors\.As\(|sort\.Slice\(|time\.Now\(\)\.Sub\(|for [a-z]+ := 0; [a-z]+ <|context\.Background\(\) *$' 2>/dev/null
 ```
 
+Also grep the diff for function or closure bodies collapsed onto one line and for struct literals with several fields on one line (include lines ending in `})`), and for `export_test.go`; each hit is a defect.
+
 **Pass criteria**: no output from any grep.
+
+### 4b. IDE inspections
+
+When an IDE exposes inspections over MCP (GoLand: `lint_files` or `get_file_problems`), run them on the changed and new files and fix every warning, since the IDE flags what the CLI linters miss (unused results, redundant literals, shadowed names, unclosed resources in tests). Pass criteria: no items. If no IDE is reachable, say so instead of reporting PASS.
 
 ### 5. Tests (testing phase only)
 
@@ -144,6 +150,7 @@ Report gate results:
 - Format: PASS / FAIL ({files})
 - Typecheck: PASS / FAIL ({errors})
 - Style greps: PASS / FAIL ({patterns})
+- IDE inspections: PASS / FAIL ({items}) / SKIPPED (no IDE)
 - Tests: PASS / FAIL ({count}) / SKIPPED
 - Architectural shape greps: PASS / FAIL ({patterns})
 ```

@@ -272,6 +272,45 @@ Single-field structs may stay on one line when the context is obvious:
 err := MyError{Code: "not_found"}
 ```
 
+### Range over a named value
+
+Never range directly over a function call or an iterator chain such as `slices.Sorted(maps.Keys(m))`, `strings.SplitSeq(s, ",")` or `append(values, extra)`. Assign the result to a variable first, collecting map keys with a `for` plus `append` and `slices.Sort` when they need an order, so the loop header only names what it walks.
+
+```go
+// Bad
+for _, name := range slices.Sorted(maps.Keys(props)) {
+
+// Good
+names := make([]string, 0, len(props))
+for name := range props {
+    names = append(names, name)
+}
+slices.Sort(names)
+
+for _, name := range names {
+```
+
+### One-line function bodies
+
+Never collapse a function or closure body onto the line of its signature, named or literal. The body goes on its own lines, even for a single return, a single call, or a `t.Cleanup`:
+
+```go
+// Bad
+func (c Client) Name() string { return c.name }
+t.Cleanup(func() { _ = rdb.Close() })
+
+// Good
+func (c Client) Name() string {
+    return c.name
+}
+
+t.Cleanup(func() {
+    _ = rdb.Close()
+})
+```
+
+Check it with a grep that also catches lines ending in `})`, which a `{ ... }$` pattern misses: `grep -nE 'func[^{]*\{[^}]+\}\)?[,)]*$' --include='*.go' -r .`, then read the hits, since a struct literal also matches.
+
 ## Control Flow
 
 No `else`. Early returns only:
@@ -712,6 +751,8 @@ been rewritten instead.
   possible, one of the three categories above. The linter checks existence,
   not quality: a comment that only restates the name is still a defect, not
   a compliant workaround.
+- **Comments are prose and follow `sanitizing-text`.** No semicolon or colon used as a connector between clauses ("X; Y", "X: it does Y"), no em-dash. Split into two sentences or join with a connector (`and`, `so`, `while`, `because`).
+- **Measure what the linter forces by running the project's real lint on the real files**, never on a comment-stripped copy: a stripped copy understates what is required, and a grouped `var (...)` or `const (...)` block needs a comment on each exported name, not one for the block. Add comments only where that run flags them; unexported symbols, struct fields, in-function comments and an `Error` method on an error type never need one for the linter.
 
 ```go
 // Bad: obvious (restates name)

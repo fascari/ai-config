@@ -101,6 +101,9 @@ for the role it holds:
 - Splitting files never changes behavior, exported symbols, or imports for
   callers, it only improves navigation.
 
+- A type lives in the file of the resource it models, next to its constructor and methods (`users.go` holds `User` and `FetchUser`; `Options` sits beside `New` in `client.go`). There is no `types.go`. Only errors get a file of their own (`errors.go`), and a small unexported helper type used by several files may too.
+- `main` only boots: read config, build the logger and infrastructure, call an importable composition function (`bootstrap.Routes`), serve. Anything a test needs to assemble the service lives outside `main`, because `main` cannot be imported.
+
 If you cannot name a file for a single role, that logic probably belongs in a
 different package (see Forbidden Package Names).
 
