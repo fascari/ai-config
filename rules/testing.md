@@ -770,6 +770,12 @@ Before keeping a test, ask which plausible wrong implementation it fails against
 
 A mutant that survives a critical path suite is acceptable. Name the survivors in the report and do not add tests to chase them.
 
+Do not test code that only copies or renames fields, wires collaborators or returns a constant. First ask whether the language can make the mistake impossible. In Go, a conversion between struct types with identical fields ignores tags, so a field added on one side breaks the build until someone decides what to do with it, and no test has to retype the copy. Test code that makes decisions, above all when it touches security or money. The support is Kent Beck's Stack Overflow answer to "How deep are your unit tests?" (test as little as possible to reach a given level of confidence, and do not test mistakes you do not typically make) and Vladimir Khorikov, *Unit Testing Principles, Practices, and Patterns*, on trivial code, which is not worth a test until it gains branching.
+
+Give fields of the same type distinct values in test data, so a swap between them fails.
+
+Test the code in the unit, not the layers around it. Do not start a full server, an SDK session or a fake upstream to prove that a mapping or a client works, unless the plan has an end to end phase.
+
 ## What NOT to Test
 
 **Tautology tests** — tests that assert a value equals itself via a constant or that a library
