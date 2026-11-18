@@ -1,0 +1,68 @@
+{
+  "id": "checkout",
+  "tab": "Checkout",
+  "title": "Online store checkout (example)",
+  "canvas": [1320, 400],
+  "groups": [
+    { "label": "Storefront", "x": 10, "y": 50, "w": 1300, "h": 120 },
+    { "label": "Back office", "x": 10, "y": 230, "w": 1300, "h": 120 }
+  ],
+  "nodes": [
+    { "id": "customer", "label": "Customer", "sub": "buys a product", "kind": "actor", "x": 30, "y": 90, "w": 150 },
+    { "id": "web", "label": "Web app", "sub": "cart and checkout page", "x": 250, "y": 90, "w": 150 },
+    { "id": "api", "label": "Orders API", "sub": "creates the order", "x": 470, "y": 90, "w": 150 },
+    { "id": "pay", "label": "Payment provider", "sub": "charges the card", "kind": "external", "x": 690, "y": 90, "w": 150 },
+
+    { "id": "bus", "label": "Event bus", "sub": "order.created", "kind": "queue", "x": 470, "y": 270, "w": 150 },
+    { "id": "wh", "label": "Warehouse", "sub": "picks and packs", "kind": "human", "x": 690, "y": 270, "w": 150 },
+    { "id": "db", "label": "Orders DB", "sub": "source of truth", "kind": "data", "x": 910, "y": 270, "w": 150 }
+  ],
+  "edges": [
+    { "id": "e-cust-web", "from": "customer", "to": "web", "label": "pays" },
+    { "id": "e-web-api", "from": "web", "to": "api", "label": "POST" },
+    { "id": "e-api-pay", "from": "api", "to": "pay", "label": "charge" },
+    { "id": "e-api-bus", "from": "api", "to": "bus", "sides": ["bottom", "top"], "label": "event" },
+    { "id": "e-bus-wh", "from": "bus", "to": "wh", "label": "task" },
+    { "id": "e-api-db", "from": "api", "to": "db", "sides": ["bottom", "top"], "label": "save", "dashed": true }
+  ],
+  "steps": [
+    {
+      "label": "Pay",
+      "title": "The customer confirms the cart",
+      "text": ["The checkout page sends the cart and the chosen card to the web app."],
+      "nodes": ["customer", "web"],
+      "edges": ["e-cust-web"]
+    },
+    {
+      "label": "Create order",
+      "title": "The web app asks the API for an order",
+      "text": ["A `POST /orders` call carries the items and the address. The API validates prices again on the server."],
+      "nodes": ["web", "api"],
+      "edges": ["e-web-api"],
+      "state": ["cart", "confirm"]
+    },
+    {
+      "label": "Charge",
+      "title": "The API charges the card",
+      "text": ["The payment provider authorizes and captures the amount. A declined card stops the flow here."],
+      "nodes": ["api", "pay"],
+      "edges": ["e-api-pay"],
+      "state": ["payment: completed"],
+      "note": "Example only. Replace with verified facts when documenting a real system."
+    },
+    {
+      "label": "Publish",
+      "title": "The order is announced",
+      "text": ["The API saves the order and publishes `order.created` so other systems can react without being called directly."],
+      "nodes": ["api", "bus", "db"],
+      "edges": ["e-api-bus", "e-api-db"]
+    },
+    {
+      "label": "Fulfil",
+      "title": "The warehouse picks and packs",
+      "text": ["The warehouse consumes the event and gets a pick task."],
+      "nodes": ["bus", "wh"],
+      "edges": ["e-bus-wh"]
+    }
+  ]
+}

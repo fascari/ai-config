@@ -1,0 +1,350 @@
+<!doctype html>
+<html lang="__LANG__">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>__TITLE__</title>
+<style>
+  :root {
+    --bg: #f4f5f7;
+    --card: #ffffff;
+    --ink: #1c2330;
+    --muted: #667085;
+    --line: #c3c9d4;
+    --service: #3b6fd4;
+    --queue: #d6454f;
+    --data: #2f9e6b;
+    --actor: #d98a1f;
+    --human: #7c5cc4;
+    --external: #7a8394;
+    --focus: #0b57d0;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body { font: 14px/1.45 var(--sans); color: var(--ink); background: var(--bg); display: flex; flex-direction: column; }
+  header { display: flex; align-items: center; gap: 16px; padding: 10px 20px; border-bottom: 1px solid #e0e3ea; background: #fff; }
+  header h1 { font-size: 15px; margin: 0; font-weight: 650; white-space: nowrap; }
+  nav { display: flex; gap: 4px; overflow-x: auto; }
+  nav button { font: inherit; font-size: 13px; padding: 6px 12px; border: 1px solid transparent; background: transparent; color: var(--muted); border-radius: 6px; cursor: pointer; white-space: nowrap; }
+  nav button:hover { background: #eef0f4; }
+  nav button[aria-selected="true"] { background: var(--ink); color: #fff; }
+  nav button:focus-visible, .ctl button:focus-visible, .tl button:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  main { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 360px; }
+  .stage { position: relative; min-width: 0; min-height: 0; padding: 12px; }
+  .stage svg { width: 100%; height: 100%; display: block; }
+  aside { border-left: 1px solid #e0e3ea; background: #fff; padding: 18px 20px; overflow-y: auto; }
+  aside .kicker { font: 600 11px/1.6 var(--sans); letter-spacing: .06em; color: var(--muted); text-transform: uppercase; }
+  aside .tag { display: inline-block; margin-left: 6px; padding: 1px 7px; line-height: 1.5; border-radius: 999px; background: #fff0d6; color: #8a5a00; letter-spacing: .04em; }
+  aside h2 { font-size: 18px; line-height: 1.25; margin: 8px 0 10px; }
+  aside p { margin: 0 0 12px; }
+  aside code { font: 12px var(--mono); background: #eef0f4; padding: 1px 5px; border-radius: 4px; }
+  aside .src { font: 12px/1.5 var(--mono); color: #3d4757; background: #f1f3f7; border-radius: 6px; padding: 8px 10px; margin: 0 0 8px; word-break: break-all; }
+  aside .note { border-left: 3px solid var(--actor); background: #fff7e8; padding: 8px 10px; margin: 0 0 12px; font-size: 13px; }
+  aside .state { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 12px; }
+  aside .chip { font: 600 12px/1 var(--mono); padding: 5px 8px; border-radius: 999px; background: #eef0f4; }
+  .intro { color: var(--muted); font-size: 13px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 10px 14px; margin-top: 18px; font-size: 12px; color: var(--muted); }
+  .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; border: 2px solid; margin-right: 5px; vertical-align: -1px; }
+  footer { border-top: 1px solid #e0e3ea; background: #fff; padding: 10px 20px 12px; display: flex; align-items: flex-start; gap: 16px; }
+  .ctl { display: flex; gap: 6px; padding-top: 2px; }
+  .ctl button { font: inherit; width: 34px; height: 30px; border: 1px solid #d0d5de; background: #fff; border-radius: 6px; cursor: pointer; }
+  .ctl button:hover { background: #eef0f4; }
+  .tl { flex: 1; display: flex; align-items: flex-start; overflow-x: auto; padding-bottom: 2px; }
+  .tl .stop { flex: 1 0 70px; min-width: 70px; display: flex; flex-direction: column; align-items: center; position: relative; }
+  .tl .stop::before { content: ""; position: absolute; top: 9px; left: -50%; width: 100%; height: 2px; background: #d0d5de; }
+  .tl .stop:first-child::before { display: none; }
+  .tl .stop.done::before, .tl .stop.cur::before { background: var(--ink); }
+  .tl button { position: relative; z-index: 1; width: 20px; height: 20px; border-radius: 50%; border: 2px solid #b8bfcc; background: #fff; padding: 0; cursor: pointer; font: 600 10px/1 var(--sans); color: var(--muted); }
+  .tl .done button { border-color: var(--ink); color: var(--ink); }
+  .tl .cur button { border-color: var(--ink); background: var(--ink); color: #fff; }
+  .tl .lbl { margin-top: 5px; font-size: 11px; line-height: 1.2; text-align: center; color: var(--muted); max-width: 90px; }
+  .tl .cur .lbl { color: var(--ink); font-weight: 600; }
+
+  /* svg */
+  .grp rect { fill: #eceff4; stroke: #dde1e9; }
+  .grp text { font: 600 11px var(--sans); letter-spacing: .06em; fill: #8a93a3; text-transform: uppercase; }
+  .node rect { fill: var(--card); stroke-width: 2; rx: 10; transition: opacity .25s, filter .25s; }
+  .node .t { font: 600 13px var(--sans); fill: var(--ink); }
+  .node .s { font: 11px var(--sans); fill: var(--muted); }
+  .node { transition: opacity .25s; }
+  .node.future { opacity: .28; }
+  .node.past { opacity: .85; }
+  .node.cur rect { filter: drop-shadow(0 3px 8px rgba(20, 30, 50, .22)); }
+  .k-service rect { stroke: var(--service); } .k-queue rect { stroke: var(--queue); }
+  .k-data rect { stroke: var(--data); } .k-actor rect { stroke: var(--actor); }
+  .k-human rect { stroke: var(--human); } .k-external rect { stroke: var(--external); stroke-dasharray: 5 3; }
+  .edge path { fill: none; stroke: var(--line); stroke-width: 1.6; transition: opacity .25s, stroke .25s; }
+  .edge.future path { opacity: .25; }
+  .edge.past path { stroke: #98a1b2; }
+  .edge.dashed path { stroke-dasharray: 7 5; }
+  .edge.cur path { stroke: var(--ink); stroke-width: 2.2; }
+  .edge text { font: 11px var(--sans); fill: var(--muted); paint-order: stroke; stroke: var(--bg); stroke-width: 4px; }
+  .edge.cur text { fill: var(--ink); font-weight: 600; }
+  .edge.future text { opacity: .3; }
+  .dot { fill: var(--ink); }
+  @media (max-width: 900px) { main { grid-template-columns: 1fr; grid-template-rows: 1fr auto; } aside { border-left: 0; border-top: 1px solid #e0e3ea; max-height: 40vh; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>__TITLE__</h1>
+  <nav id="tabs" role="tablist" aria-label="Diagrams"></nav>
+</header>
+<main>
+  <div class="stage"><svg id="svg" role="img" aria-label="Flow diagram"></svg></div>
+  <aside id="panel" aria-live="polite"></aside>
+</main>
+<footer>
+  <div class="ctl">
+    <button id="prev" aria-label="Previous step" title="Previous">‹</button>
+    <button id="play" aria-label="Play" title="Play">▶</button>
+    <button id="next" aria-label="Next step" title="Next">›</button>
+  </div>
+  <div class="tl" id="tl"></div>
+</footer>
+<script>
+"use strict";
+const DOC = "__DATA__";
+const NS = "http://www.w3.org/2000/svg";
+const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const I18N = {
+  pt: { kinds: { service: "Serviço", queue: "Evento ou fila", data: "Dados", actor: "Pessoa", human: "Time interno", external: "Sistema externo" }, diagrams: "Diagramas", diagram: "Diagrama do fluxo", prev: "Passo anterior", prevHint: "Anterior (←)", next: "Próximo passo", nextHint: "Próximo (→)", play: "Reproduzir", playHint: "Reproduzir (espaço)", pause: "Pausar", stepOf: (i, n) => `passo ${i} de ${n}`, step: (i, l) => `Passo ${i}: ${l}` },
+  en: { kinds: { service: "Service", queue: "Event or queue", data: "Data", actor: "Person", human: "Internal team", external: "External system" }, diagrams: "Diagrams", diagram: "Flow diagram", prev: "Previous step", prevHint: "Previous (←)", next: "Next step", nextHint: "Next (→)", play: "Play", playHint: "Play (space)", pause: "Pause", stepOf: (i, n) => `step ${i} of ${n}`, step: (i, l) => `Step ${i}: ${l}` }
+};
+const T = I18N[DOC.lang] || I18N.pt;
+const KIND_LABEL = T.kinds;
+
+const $ = (id) => document.getElementById(id);
+$("tabs").setAttribute("aria-label", T.diagrams);
+$("svg").setAttribute("aria-label", T.diagram);
+$("prev").setAttribute("aria-label", T.prev); $("prev").title = T.prevHint;
+$("next").setAttribute("aria-label", T.next); $("next").title = T.nextHint;
+$("play").setAttribute("aria-label", T.play); $("play").title = T.playHint;
+const el = (name, attrs = {}, parent) => {
+  const n = document.createElementNS(NS, name);
+  for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v);
+  if (parent) parent.appendChild(n);
+  return n;
+};
+const html = (tag, attrs = {}, text) => {
+  const n = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v);
+  if (text != null) n.textContent = text;
+  return n;
+};
+
+const rich = (parent, text) => {
+  String(text).split(/(`[^`]+`)/).forEach((part) => {
+    if (part.startsWith("`")) parent.append(html("code", {}, part.slice(1, -1)));
+    else if (part) parent.append(document.createTextNode(part));
+  });
+  return parent;
+};
+
+const CHAR_W = 6.9; // average glyph width at 13px, used for wrapping
+const wrap = (text, maxChars) => {
+  const words = String(text).split(/\s+/);
+  const lines = [];
+  let line = "";
+  for (const w of words) {
+    if ((line + " " + w).trim().length > maxChars && line) { lines.push(line); line = w; }
+    else line = (line + " " + w).trim();
+  }
+  if (line) lines.push(line);
+  return lines;
+};
+
+const anchor = (n, side) => ({
+  right: [n.x + n.w, n.y + n.h / 2], left: [n.x, n.y + n.h / 2],
+  top: [n.x + n.w / 2, n.y], bottom: [n.x + n.w / 2, n.y + n.h]
+}[side]);
+
+const pickSides = (a, b) => {
+  const dx = (b.x + b.w / 2) - (a.x + a.w / 2);
+  const dy = (b.y + b.h / 2) - (a.y + a.h / 2);
+  if (Math.abs(dx) >= Math.abs(dy)) return dx >= 0 ? ["right", "left"] : ["left", "right"];
+  return dy >= 0 ? ["bottom", "top"] : ["top", "bottom"];
+};
+
+const pathFor = (e, nodes) => {
+  const a = nodes[e.from], b = nodes[e.to];
+  const [sa, sb] = e.sides || pickSides(a, b);
+  const [x1, y1] = anchor(a, sa), [x2, y2] = anchor(b, sb);
+  const horiz = (s) => s === "left" || s === "right";
+  const k = Math.max(40, Math.min(160, Math.hypot(x2 - x1, y2 - y1) / 2.2));
+  const c1 = horiz(sa) ? [x1 + (sa === "right" ? k : -k), y1] : [x1, y1 + (sa === "bottom" ? k : -k)];
+  const c2 = horiz(sb) ? [x2 + (sb === "right" ? k : -k), y2] : [x2, y2 + (sb === "bottom" ? k : -k)];
+  return { d: `M${x1},${y1} C${c1[0]},${c1[1]} ${c2[0]},${c2[1]} ${x2},${y2}`, mid: [(x1 + x2) / 2, (y1 + y2) / 2] };
+};
+
+let current = 0;   // diagram index
+let step = 0;
+let playing = false;
+let playTimer = null;
+let raf = null;
+let view = null;
+
+const stop = () => { playing = false; clearTimeout(playTimer); $("play").textContent = "▶"; $("play").setAttribute("aria-label", T.play); };
+
+const build = (idx) => {
+  const diagram = DOC.diagrams[idx];
+  const svg = $("svg");
+  svg.replaceChildren();
+  const [vw, vh] = diagram.canvas || [1200, 600];
+  svg.setAttribute("viewBox", `0 0 ${vw} ${vh}`);
+  svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
+  svg.setAttribute("aria-label", diagram.title);
+  const defs = el("defs", {}, svg);
+  const marker = el("marker", { id: "arrow", viewBox: "0 0 10 10", refX: 9, refY: 5, markerWidth: 7, markerHeight: 7, orient: "auto-start-reverse" }, defs);
+  el("path", { d: "M0,0 L10,5 L0,10 z", fill: "#98a1b2" }, marker);
+
+  const nodes = Object.fromEntries(diagram.nodes.map((n) => [n.id, { w: 170, h: 58, kind: "service", ...n }]));
+  const layerG = el("g", {}, svg);
+  for (const g of diagram.groups || []) {
+    const gg = el("g", { class: "grp" }, layerG);
+    el("rect", { x: g.x, y: g.y, width: g.w, height: g.h, rx: 14 }, gg);
+    const t = el("text", { x: g.x + 14, y: g.y + 20 }, gg); t.textContent = g.label;
+  }
+  const edgeG = el("g", {}, svg);
+  const edgeEls = {};
+  for (const e of diagram.edges) {
+    const { d, mid } = pathFor(e, nodes);
+    const g = el("g", { class: `edge future${e.dashed ? " dashed" : ""}`, "data-id": e.id }, edgeG);
+    const attrs = { d, "marker-end": "url(#arrow)" };
+    if (e.bidir) attrs["marker-start"] = "url(#arrow)";
+    const p = el("path", attrs, g);
+    if (e.label) {
+      const m = p.getPointAtLength(p.getTotalLength() / 2);
+      const t = el("text", { x: m.x, y: m.y - 6, "text-anchor": "middle" }, g); t.textContent = e.label;
+    }
+    edgeEls[e.id] = { g, p, dashed: !!e.dashed };
+  }
+  const nodeG = el("g", {}, svg);
+  const nodeEls = {};
+  for (const n of Object.values(nodes)) {
+    const g = el("g", { class: `node k-${n.kind} future`, "data-id": n.id }, nodeG);
+    el("rect", { x: n.x, y: n.y, width: n.w, height: n.h }, g);
+    const tl = wrap(n.label, Math.floor((n.w - 18) / CHAR_W));
+    const sl = n.sub ? wrap(n.sub, Math.floor((n.w - 18) / 6.1)) : [];
+    let y = n.y + n.h / 2 - ((tl.length * 16 + sl.length * 14) / 2) + 12;
+    for (const line of tl) { const t = el("text", { class: "t", x: n.x + n.w / 2, y, "text-anchor": "middle" }, g); t.textContent = line; y += 16; }
+    for (const line of sl) { const t = el("text", { class: "s", x: n.x + n.w / 2, y: y - 1, "text-anchor": "middle" }, g); t.textContent = line; y += 14; }
+    nodeEls[n.id] = g;
+  }
+  const dotG = el("g", {}, svg);
+  view = { diagram, nodes, nodeEls, edgeEls, dotG };
+
+  const tl = $("tl");
+  tl.replaceChildren();
+  diagram.steps.forEach((s, i) => {
+    const stopEl = html("div", { class: "stop" });
+    const b = html("button", { type: "button", "aria-label": T.step(i + 1, s.label) }, String(i + 1));
+    b.addEventListener("click", () => { stop(); go(i); });
+    stopEl.append(b, html("div", { class: "lbl" }, s.label));
+    tl.appendChild(stopEl);
+  });
+};
+
+const animateDots = (edgeIds) => {
+  cancelAnimationFrame(raf);
+  view.dotG.replaceChildren();
+  if (reduceMotion || !edgeIds.length) return;
+  const runners = edgeIds.map((id) => {
+    const p = view.edgeEls[id].p;
+    const len = p.getTotalLength();
+    return { p, len, dots: [0, 0.5].map((o) => ({ o, c: el("circle", { class: "dot", r: 4.5 }, view.dotG) })) };
+  });
+  const t0 = performance.now();
+  const loop = (now) => {
+    const t = ((now - t0) / 2200) % 1;
+    for (const r of runners) for (const d of r.dots) {
+      const q = r.p.getPointAtLength(((t + d.o) % 1) * r.len);
+      d.c.setAttribute("cx", q.x); d.c.setAttribute("cy", q.y);
+    }
+    raf = requestAnimationFrame(loop);
+  };
+  raf = requestAnimationFrame(loop);
+};
+
+const renderPanel = (diagram, s, i) => {
+  const p = $("panel");
+  p.replaceChildren();
+  p.append(html("div", { class: "kicker" }, `${diagram.title} · ${T.stepOf(i + 1, diagram.steps.length)}`));
+  if (s.tag) p.querySelector(".kicker").append(" ", html("span", { class: "tag" }, s.tag));
+  p.append(html("h2", {}, s.title));
+  for (const para of [].concat(s.text)) p.append(rich(html("p"), para));
+  if (s.note) p.append(rich(html("div", { class: "note" }), s.note));
+  if (s.state) { const c = html("div", { class: "state" }); for (const v of s.state) c.append(html("span", { class: "chip" }, v)); p.append(c); }
+  for (const src of s.src || []) p.append(html("div", { class: "src" }, src));
+  const lg = html("div", { class: "legend" });
+  for (const k of diagram.legend || Object.keys(KIND_LABEL)) {
+    const item = html("span");
+    const sw = html("i"); sw.style.borderColor = `var(--${k})`; if (k === "external") sw.style.borderStyle = "dashed";
+    item.append(sw, KIND_LABEL[k]);
+    lg.append(item);
+  }
+  p.append(lg);
+};
+
+const go = (i) => {
+  const diagram = view.diagram;
+  step = Math.max(0, Math.min(diagram.steps.length - 1, i));
+  const s = diagram.steps[step];
+  // nodes seen up to this step stay visible, later ones fade
+  const seenNodes = new Set(), seenEdges = new Set();
+  diagram.steps.slice(0, step + 1).forEach((st) => { (st.nodes || []).forEach((n) => seenNodes.add(n)); (st.edges || []).forEach((e) => seenEdges.add(e)); });
+  const curNodes = new Set(s.nodes || []), curEdges = new Set(s.edges || []);
+  for (const [id, g] of Object.entries(view.nodeEls)) g.setAttribute("class", `node k-${view.nodes[id].kind} ${curNodes.has(id) ? "cur" : seenNodes.has(id) ? "past" : "future"}`);
+  for (const [id, e] of Object.entries(view.edgeEls)) e.g.setAttribute("class", `edge ${e.dashed ? "dashed " : ""}${curEdges.has(id) ? "cur" : seenEdges.has(id) ? "past" : "future"}`);
+  [...$("tl").children].forEach((c, k) => c.className = `stop ${k < step ? "done" : k === step ? "cur" : ""}`);
+  animateDots([...curEdges].filter((id) => view.edgeEls[id]));
+  renderPanel(diagram, s, step);
+  $("prev").disabled = step === 0;
+  $("next").disabled = step === diagram.steps.length - 1;
+  document.documentElement.dataset.step = String(step);
+};
+
+const select = (idx) => {
+  stop();
+  current = idx;
+  [...$("tabs").children].forEach((b, k) => b.setAttribute("aria-selected", String(k === idx)));
+  build(idx);
+  go(0);
+  history.replaceState(null, "", `#${DOC.diagrams[idx].id}`);
+};
+
+const play = () => {
+  if (playing) { stop(); return; }
+  playing = true; $("play").textContent = "❚❚"; $("play").setAttribute("aria-label", T.pause);
+  const tick = () => {
+    if (!playing) return;
+    if (step >= view.diagram.steps.length - 1) { stop(); return; }
+    go(step + 1);
+    playTimer = setTimeout(tick, 3800);
+  };
+  if (step >= view.diagram.steps.length - 1) go(0);
+  playTimer = setTimeout(tick, 3800);
+};
+
+DOC.diagrams.forEach((d, i) => {
+  const b = html("button", { type: "button", role: "tab" }, d.tab || d.title);
+  b.addEventListener("click", () => select(i));
+  $("tabs").appendChild(b);
+});
+$("prev").addEventListener("click", () => { stop(); go(step - 1); });
+$("next").addEventListener("click", () => { stop(); go(step + 1); });
+$("play").addEventListener("click", play);
+addEventListener("keydown", (e) => {
+  if (e.key === "ArrowRight") { stop(); go(step + 1); }
+  else if (e.key === "ArrowLeft") { stop(); go(step - 1); }
+  else if (e.key === " " && e.target.tagName !== "BUTTON") { e.preventDefault(); play(); }
+});
+window.__flow = { select, go, count: () => DOC.diagrams.length, steps: () => view.diagram.steps.length, ids: () => DOC.diagrams.map((d) => d.id), stop };
+const start = Math.max(0, DOC.diagrams.findIndex((d) => "#" + d.id === location.hash));
+select(start);
+document.documentElement.dataset.ready = "1";
+</script>
+</body>
+</html>

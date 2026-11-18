@@ -50,6 +50,7 @@ Use **developing-changes** as the single entry point. Read `developing-changes/S
 | Skill | Purpose |
 |---|---|
 | [copying-to-clipboard](copying-to-clipboard/) | Places text directly in the macOS clipboard via `pbcopy`, avoiding line-break artifacts when pasting into forms or external apps. |
+| [generating-flow-diagrams](generating-flow-diagrams/) | Builds animated, step-through HTML diagrams that explain a business or system flow to a reader with no context. Viewer template, flow data format, build validator and a Playwright capture check. |
 | [reading-pdf](reading-pdf/) | Extracts text from PDF files page by page using `pypdf`. Text only, no OCR. |
 
 
