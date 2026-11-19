@@ -31,7 +31,7 @@ Never post, approve, request changes, comment on the tracker, or modify the work
    3. The remaining files and tests. Read whole functions and their callers, not just hunks.
 6. **Look for** design fit, functionality and edge cases, user-visible behaviour, concurrency, error and fallback paths, rollout safety (flags, backward-compatible payloads and cache keys, migrations), security on every new entry point (input validation, authN/authZ, unauthenticated reachability, cost per request), tests that would fail on a plausible wrong implementation, and duplication of an existing helper. Leave style to the linter.
 7. **Verify every finding before writing it.** Trace the path, read the callee, and search for existing handling elsewhere. A finding you could not confirm becomes a `question`, never an `issue`.
-8. **Write the review** in the shape below to a file (e.g. `/tmp/pr-review-<n>.md`) and show it.
+8. **Write the review** in the shape below to `$AI_MEMORY_HOME/{project}/reviews/pr-{n}-{YYYY-MM-DD}.md`, where `{project}` is the PR repo's directory name (the same rule as developing-changes). A re-review gets a new dated file, so earlier ones stay. If `AI_MEMORY_HOME` is unset, stop and ask. Never write to `/tmp`. Then show the review and its path.
 
 ## Output contract
 
