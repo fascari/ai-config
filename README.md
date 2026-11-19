@@ -179,6 +179,7 @@ Deterministic gates (zero tokens) + single LLM review (one call per cycle). Insp
 
 - **style-gate**: lint, format, typecheck, tests, style greps (deterministic)
 - **reviewing-code**: single LLM review of rules + diff
+- **reviewing-pull-requests**: review of a teammate's PR against its ticket, Plan and conventions
 - **cognition-lessons**: extract lessons from failures, load in future sessions
 
 ## Updating

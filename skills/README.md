@@ -41,6 +41,7 @@ Use **developing-changes** as the single entry point. Read `developing-changes/S
 | Skill | Purpose |
 |---|---|
 | [reviewing-code](reviewing-code/) | Code review against all project rules and conventions. Categorizes findings as `BLOCKER` or `SUGGESTION`. Uses a cross-vendor model (different vendor from the implementer). |
+| [reviewing-pull-requests](reviewing-pull-requests/) | Read-only review of a teammate's PR: traces the diff against the ticket, its parent Plan and sibling tasks, checks project conventions, and writes verified findings labelled with Conventional Comments. |
 | [sanitizing-text](sanitizing-text/) | Post-processing pass that removes AI-sounding language, forbidden phrases, decorative punctuation, emojis, and formatting issues before text is written to files or sent to external systems. |
 | [committing-changes](committing-changes/) | Analyses changes, groups them into logical commits following Chris Beams' seven rules, and executes only after explicit user approval. |
 | [creating-pull-request](creating-pull-request/) | Gathers context from commits and changed files, generates a PR description following the project template, and opens the PR via GitHub CLI after approval. |
